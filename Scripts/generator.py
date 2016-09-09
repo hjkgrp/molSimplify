@@ -31,6 +31,7 @@ from Scripts.io import *
 from Scripts.inparse import *
 from Scripts.dbinteract import *
 from Scripts.postproc import *
+from Scripts.cellbuilder import*
 from Classes.globalvars import *
 from Classes.mol3D import mol3D
 from Classes.atom3D import atom3D
@@ -86,7 +87,7 @@ def startgen(argv,flag,gui):
         parseinput(args)
     # clean input arguments
     cleaninput(args)
-    if not args.postp and not args.dbsearch and not args.dbfinger:
+    if not args.postp and not args.dbsearch and not args.dbfinger and not (args.slab_gen or args.place_on_slab):
         # check input arguments
         emsg = checkinput(args)
     args.gui = False # deepcopy will give error
@@ -134,6 +135,9 @@ def startgen(argv,flag,gui):
                 print emsg
                 del args
                 return emsg
+    # slab/place on slab?
+    if (args.slab_gen or args.place_on_slab):
+        emsg = slab_module_supervisor(args,rundir)
     # normal structure generation
     else:
         args = copy.deepcopy(args0)

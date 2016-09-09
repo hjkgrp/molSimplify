@@ -18,11 +18,15 @@ edta:edta.mol,edta,0 1 2 3 4 5,build big,A
 ethyl:ethyl.mol,eth,1,functionalize small,N
 fluoride:fluoride.smi,fluo,0,build functionalize small,N
 hydrocyanide:hydrocyanide.mol,hydc,1,build small,N
+misc:methylisocy.mol,misc,0,small,A
+en:en.mol,en,0 1,build bidentate,N
 hydroisocyanide:hydroisocyanide.mol,hisc,0,build small,N
 hydroxyl:hydroxyl.mol,hxl,0,build functionalize small,N
 imidazole:imidazole.mol,imd,2,build small,BA
 imine:imine.mol,imi,0,functionalize small,N
+pisc:tbuphisocy.mol,pisc,0,bulkymono build,N
 isothiocyanate:isothiocyanate.mol,ithcynt,0,build functionalize small,BA
+tbuc:tbucat.mol,tbuc,0 11,bulkybi build,BA
 methanal:methanal.mol,metha,0,functionalize small,N
 methyl:methyl.mol,meth,0,functionalize small,N
 nitro:nitro.mol,nit,1,build functionalize small,N

@@ -454,6 +454,59 @@ def parseinput(args):
             #    args.pdorbs = True
             if (l[0]=='-pnbo'):
                 args.pnbo = True
+            # parse slab building arguments
+            if (l[0]=='-slab_gen'): #0
+               args.slab_gen = True
+            if (l[0]=='-unit_cell'): #1 
+                args.unit_cell = l[1]
+            if (l[0]=='-cell_vector'): #2
+                args.cell_index = [[float(j.strip('(){}<>[],.')) for j in i]  for i in l[1:]] # list-of-lists
+            if (l[0]=='-cif_path'): #3
+                args.cif_path = l[1]
+            if (l[0]=='-duplication_vector'): #4
+                args.duplication_vector = [int(i.strip('(){}<>[],.')) for i in l[1:]]
+            if (l[0]=='-slab_size'): #5
+                 args.slab_size = [float(i.strip('(){}<>[],.')) for i in l[1:]]
+            if (l[0]=='-miller_index'): #6
+                args.miller_index = [int(i.strip('(){}<>[],.')) for i in l[1:]]
+            # parse place on slab options
+            if (l[0]=='-place_on_slab'): #0
+                args.place_on_slab = True
+            if (l[0]=='-target_molecule'): #1 
+                args.target_molecule = l[1]
+            if (l[0]=='-align_distance_method'): #2
+                args.align_distance_method = l[1]
+            if (l[0]=='-align_dist'): #3
+                args.align_dist = float(l[1].strip('(){}<>[],.'))
+            if (l[0]=='-align_method'): #4
+                args.align_method = l[1]
+            if (l[0]=='-object_align'): #5
+                globs = globalvars()
+                elements = globs.elementsbynum()
+                if l[1] in elements:
+                    args.object_align = l[1]
+                else:
+                    args.object_align = [int(i.strip('(){}<>[],.')) for i in l[1:]]
+            if (l[0]=='-surface_atom_type'):#6
+                args.surface_atom_type = l[1]
+            if (l[0] == '-num_surface_atoms'): #7
+                args.num_surface_atoms = int(l[1].strip('()[]<>.'))
+            if (l[0] == '-num_placements'): #8
+                args.num_placements = int(l[1].strip('()[]<>.'))
+            if (l[0]=='-coverage'):#9
+                args.coverage = float(l[1].strip('()[]<>.'))
+            if (l[0]=='-multi_placement_centering'):#10
+                args.multi_placement_centering = float(l[1].strip('()[]<>.'))
+            if (l[0]=='-control_angle'):#11
+                args.control_angle = float(l[1].strip('()[]<>.'))
+            if (l[0] == '-angle_control_partner'): #12
+                args.angle_control_partner = int(l[1].strip('()[]<>.'))
+            if (l[0] == '-angle_surface_axis'): #13
+                args.angle_surface_axis = [float(i.strip('(){}<>[],.')) for i in l[1:]]
+            if (l[0] == '-duplicate'):#14
+                args.duplicate = l[1]
+
+
                 
 #############################################################
 ########## mainly for help and listing options  #############
@@ -578,5 +631,58 @@ def parsecommandline(parser):
     # wavefunction - cube files
     # deloc indices - basin analysis
     # moldparse
+    # Slab builder arguments
+    # slab builder input: controli
+    parser.add_argument("-slab_gen","--slab_gen",
+                        help = "enables slab generation/periodic extension",action="store_true") #0
+    # slab builder input: required
+    parser.add_argument("-unit_cell","--unit_cell",
+                        help = "path to xyz, or give generation instructions ") #1
+    parser.add_argument("-cell_vector","--cell_vector",
+                        help = "unit cell lattice vector, list of 3 list of float (Ang)") #2
+    parser.add_argument("-cif_path","--cif_path",
+                        help = "path to cif file") #3
+    parser.add_argument("-duplication_vector","--duplication_vector",
+                        help = "list of 3 in, lattice vector repeats") #4
+    parser.add_argument("-slab_size","--slab_size",
+                        help = "slab size, list of 3 floats (Ang)") #5
+    # slab buidler: optional
+    parser.add_argument("-miller_index","--miller_index",
+                        help="list of 3 int, miller indicies") #6
+    # placement input: control
+    parser.add_argument("-place_on_slab","--place_on_slab",
+                        help = "enables  placement on slab ",action="store_true") #0
+    # placemnt input: required
+    parser.add_argument("-target_molecule",'--target_molecule',
+                        help = "path to target molecule") #1
+    parser.add_argument("-align_distance_method","--align_distance_method",
+                        help = "align distance method",
+                        choices = ['chemisorption','physisorption','custom']) #2
+    parser.add_argument("-align_dist","--align_dist",
+                        help = "align distance, float") #3
+    # placement input: optional
+    parser.add_argument("-align_method","--align_method",
+                        help = "align method ",choices = ['center', 'staggered','alignpair']) #4
+    parser.add_argument("-object_align","--object_align",
+                        help = "atom symbol or index for alignment partner in placed object")  #5
+    parser.add_argument("-surface_atom_type","--surface_atom_type",
+                        help = "atom symbol for surface aligment partner") #6
+    parser.add_argument("-num_surface_atoms","--num_surface_atoms",
+                        help = "number of surface sites to attach per adsorbate")#7
+    parser.add_argument("-num_placements","--num_placements",
+                        help = "number of copies of object to place.") #8
+    parser.add_argument("-coverage","--coverage",
+                        help = "coverage fraction, float between 0 and 1") #9
+    parser.add_argument("-multi_placement_centering",'--multi_placement_centering',
+                        help = "float between 0 and 1, controls centering of placment.Reccomend leaving as default") #10
+    parser.add_argument("-control_angle","--control_angle",
+                        help =  "angle in degrees to rotate object axis to surface")#11
+    parser.add_argument("-angle_control_partner","-angle_control_partner",
+                        help = 'atom index, int. Controls angle between object_align and this atom') #12
+    parser.add_argument('-angle_surface_axis','--angle_surface_axis',
+                        help = 'list of two floats, vector in surface plane to control angle relative to') #13
+    parser.add_argument('-duplicate','--duplicate',
+                        help = "boolean, duplicate asorbate above and below slab",action = "store_true") #14
+
     args=parser.parse_args()
     return args

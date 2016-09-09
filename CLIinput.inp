@@ -1,0 +1,14 @@
+# molSimplify input file generated from CLI input
+-slab_gen 
+-cif_path Unitcells/gold.cif 
+-slab_size [15,15,5] 
+-align_distance_method chemisorption 
+-miller_index [1,1,1] 
+-align_method alignpair 
+-place_on_slab 
+-target_molecule /home/jp/Runs/copo.xyz 
+-surface_atom_type Au 
+-object_align Co 
+-control_angle 40 
+-angle_control_partner 2 
+-angle_surface_axis [1,1]

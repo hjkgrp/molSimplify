@@ -31,8 +31,11 @@ metalslist = ['Sc','SC','scandium','Ti','TI','titanium','V','vanadium','Cr','CR'
 # list of elements sorted by atomic number
 elementsbynum=['H','He','Li','Be','B','C','N','O','F','Ne','Na','Mg','Al','Si','P','S','Cl','Ar','K','Ca',
                     'Sc','Ti','V','Cr','Mn','Fe','Co','Ni','Cu','Zn','Ga','Ge','As','Se','Br','Kr',
-                    'Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe']
-
+                    'Rb','Sr','Y','Zr','Nb','Mo','Tc','Ru','Rh','Pd','Ag','Cd','In','Sn','Sb','Te','I','Xe',
+		    'Cs','Ba','La','Ce','Pr','Nd','Pm','Sm','Eu','Gd','Tb','Dy','Ho','Er','Tm','Yb','Lu','Hf',
+		    'Ta','W','Re','Os','Ir','Pt','Au','Hg','Tl','Pb','Bi','Po','At','Rn','Fr','Ra','Ac','Th',
+		    'Pa','U','Np','Pu', 'Am','Cm','Bk','Cf','Es','Fm','Md','No','Lr','Rf','Db','Sg','Bh',
+		    'Hs','Mt','Ds','Rg','Cn','Uut','Fl','Uup','Lv','Uus','Uuo']
 ########################################
 ### module for running bash commands ###
 ########################################
@@ -56,6 +59,7 @@ class globalvars:
         s += 'Developed by: Efthymios Ioannidis (timis@mit.edu)\n\n'
         s += 'Contributions by:\n\tHeather J. Kulik (hjkulik@mit.edu)\n'
         s += '\tTerry Gani (terryg@mit.edu)\n'
+        s += '\n slab builder extension by JP Janet (jpjanet@mit.edu)\n'
         self.about = s
         ###### GET INFORMATION ######
         runfromcmd, Linux, OSX = False, False, False
