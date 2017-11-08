@@ -70,7 +70,7 @@ def cut_cell_to_index(unit_cell,cell_vector,miller_index):
             else:
                 zero_indices.append(i)
 
-        #print('nz ind',non_zero_indices)
+        print('nz ind',non_zero_indices)
         if len(non_zero_indices)==3:
             zint = 1/(miller_index[2]*cell_vector[2][2])
             yint = 1/(miller_index[1]*cell_vector[1][1])
@@ -79,7 +79,7 @@ def cut_cell_to_index(unit_cell,cell_vector,miller_index):
             # w[2] = zint
             #w[1] = -w[2]/yint
             #w[0] = -w[2]/xint
-            plane_normal = normalize_vector(numpy.cross(vecdiff([xint,0,0],[0,0,zint]),vecdiff([0,yint,0],[0,0,zint])))
+            plane_normal = numpy.cross(v1,v2)
         elif len(non_zero_indices)==2:
       #      print('\n\n\n\n')
        #     print(cell_vector)
@@ -93,13 +93,13 @@ def cut_cell_to_index(unit_cell,cell_vector,miller_index):
          #   print('vec1',vec1)
          #   print('vec2',vec2)
          #   print('vec3',vec3)
-            plane_normal = normalize_vector(numpy.cross(vecdiff(vec1,vec2),vec3))
+            plane_normal = numpy.cross(v1,v2)
         elif len(non_zero_indices) == 1:
-            plane_normal = miller_index
+
             v1 = cell_vector[zero_indices[0]]
             v2 = cell_vector[zero_indices[1]]
             v3 = cell_vector[non_zero_indices[0]]
-
+            plane_normal = numpy.cross(v1,v2)
         print(miller_index)
         print('plane normal is ', plane_normal)
         angle = vecangle(plane_normal,[0,0,1])
@@ -903,6 +903,9 @@ def slab_module_supervisor(args,rootdir):
     control_angle = False
     angle_control_partner = False
     angle_surface_axis = False
+    
+    # for non-orthogonal unit cells
+    ortho_cell = False
 
     # duplication
     duplicate = False
@@ -925,7 +928,7 @@ def slab_module_supervisor(args,rootdir):
 
     # overwrite surface_atom_ind
     surface_atom_ind = False
-
+    
     ###### Now attempt input ####
     import_success = True
     emsg = list()
@@ -1087,22 +1090,37 @@ def slab_module_supervisor(args,rootdir):
     ## Main calls
     if slab_gen:
         print('Generating a new slab...')
+        print(rootdir)
         if not os.path.exists(rootdir + 'slab'):
                 os.makedirs(rootdir + 'slab')
 
+    
+
         
         if cif_path:
-            try:
+                print('testing cif')
+           # try:
                 unit_cell,cell_vector = import_from_cif(cif_path)
                 if debug:
                     print('cell vector from cif is')
                     print(cell_vector)
-            except:
-                emsg.append('unable to import cif at ' + str(cif_path))
-                return emsg
+          #  except:
+          #      emsg.append('unable to import cif at ' + str(cif_path))
+          #      print(emsg)
+          #      return emsg
+                
+        #### testing
+        unit_cell.writexyz(rootdir + 'slab/before_COB.xyz')
+        old_basis = cell_vector
+        print('loaded')
+        
         if miller_flag:
             print('miller index on '+ str(miller_index) + ' ' + str(miller_flag))
-            ###TESTING
+            point_coefficients = [get_basis_coefficients(at.coords(),cell_vector) for at in unit_cell.getAtoms()]
+            point_coefficients = threshold_basis(point_coefficients,1E-6)
+            print('coords in old UC')
+            for j in point_coefficients:
+                print(j)
             if debug:
                 unit_cell.writexyz(rootdir + 'slab/step_0.xyz')
                 print('\n\n')
@@ -1112,270 +1130,149 @@ def slab_module_supervisor(args,rootdir):
                 print(cell_vector[2])
                 print('\n**********************\n')
             v1,v2,v3,angle,u = cut_cell_to_index(unit_cell,cell_vector,miller_index)
+
             old_cv = cell_vector
             cell_vector = [v1,v2,v3]  # change basis of cell to reflect cut, will rotate after gen
-            if debug:
-                print('cell vector is now ')
-                print(cell_vector[0])
-                print(cell_vector[1])
-                print(cell_vector[2])
-                print('\n')
-#                cell_vector =  [PointRotateAxis(u,[0,0,0],list(i),-1*angle) for i in cell_vector]
-                unit_cell.writexyz(rootdir + 'slab/step_1.xyz')
-#                unit_cell = rotate_around_axis(unit_cell,[0,0,0],u,-1*angle)
-#                unit_cell.writexyz(rootdir + 'slab/just_flat.xyz')
-
-        max_dims = [numpy.linalg.norm(i) for i in cell_vector]
-        print('max dims are' + str(max_dims))
-
-        ext_duplication_vector =[[0,0,0],[0,0,0],[0,0,0]]
-        if (miller_flag) and False:
-            ext_duplication_vector = old_cv
-            #for i in [0,1,2]:
-            #    ext_duplication_vector[i][i] = max_dims[i]
-        else:
-            ext_duplication_vector = cell_vector
+            new_basis = [v1,v2,v3] 
+            print('old basis:')
+            print old_cv
+            print('new basis:')
+            print new_basis
+            print('\n')
+            point_coefficients = [get_basis_coefficients(at.coords(),new_basis) for at in unit_cell.getAtoms()]
+            point_coefficients = threshold_basis(point_coefficients,1E-6)
+            print('coords in transformed UC:' )
+            print(point_coefficients)
+            #for i in range(0,len(point_coefficients)):
+            #    for j in [0,1,2]:
+             #       if point_coefficients[i][j]<0:
+             #           point_coefficients[i][j] += 1      
+            new_coords = [evaluate_basis_coefficients(points,new_basis) for points in point_coefficients]
+            for i,coords in enumerate(new_coords):
+                unit_cell.getAtom(i).setcoords(coords)
+            
+            print('coords in final UC:' )
+            print(point_coefficients)
         
-        if debug:
-            print('first ext_dup vector is: ')
-            print(ext_duplication_vector[0])
-            print(ext_duplication_vector[1])
-            print(ext_duplication_vector[2])        
-
-
+        
+        ## find out how many units to use
+        max_dims = [numpy.linalg.norm(i) for i in cell_vector]
+        print('vector norms of actual cell vector are' + str(max_dims))
         if slab_size:
             duplication_vector = [int(numpy.ceil(slab_size[i]/max_dims[i])) for i in [0,1,2]]
-
- #       print('\n cell vector is '  + str(cell_vector))
-
-#        print('\n\n\n')
-        if debug:
-            print('duplication vector is  '+  str(duplication_vector))
-            print('\n')
-        acell = duplication_vector[0]
-        bcell = duplication_vector[1]
-        ccell = duplication_vector[2]
-        if miller_flag:
-            if (len(non_zero_indices) > 2):
-                duplication_vector[1] +=2 #enusre enough layers to get to height
-                duplication_vector[2] +=4 #enusre enough layers to get to height
-
-        if debug:
-            print('duplication vector is  '+  str(duplication_vector))
-            print('\n')
-
-        ###########################
-        ###########################
-        ###########################
-        ###########################
-        #### perfrom duplication ######################################################
-        super_cell = unit_to_super(unit_cell,cell_vector,duplication_vector) ##########
-        ###############################################################################
-        ###########################
-        ###########################
-        ###########################
-
-        if debug:
-            print(rootdir)
-            super_cell.writexyz(rootdir + 'slab/step_2b.xyz')
- 
-        if miller_flag:
-            if (len(non_zero_indices) > 2):
-                print('Note: this miller index is currenlty unsupported, aborting')
-                return(False)
-                duplication_vector[1] += -2
-                duplication_vector[2] += -4
-
-        if debug:
-            print(rootdir)
-            super_cell.writexyz(rootdir + 'slab/step_2c.xyz')
-        ############################
-        ############################
+            print('duplication vector set to ' +str(duplication_vector))
+            
+        ## keep track of the enlarged cell vector for the slab:
+        ext_duplication_vector = cell_vector
         ext_duplication_vector = [[i*duplication_vector[0] for i in ext_duplication_vector[0]],
                          [i*duplication_vector[1] for i in ext_duplication_vector[1]],
                          [i*duplication_vector[2] for i in ext_duplication_vector[2]]]
+        
+        if miller_index:
+            duplication_vector[2] += 2 ## add some extra height to trim off 
+                                       ## this is a hack to prevent bumpy bottoms
+                                       ## when duplicating cell vectors were
+                                       ## elements in the top an bottom layes
+                                       ## are bonded/close
+                                       
+        ## perfrom duplication
+        ####################################################################
+        super_cell = unit_to_super(unit_cell,cell_vector,duplication_vector)
+        ####################################################################
+        
         if debug:
-            print('second ext_dup vector is: ')
+            super_cell.writexyz(rootdir + 'slab/after_enlargement.xyz') 
+        
+
+        if debug:
+            print('ext_dup vector is: ')
             print(ext_duplication_vector[0])
             print(ext_duplication_vector[1])
             print(ext_duplication_vector[2])
-        if miller_flag:
-           if debug:
-               super_cell.writexyz(rootdir + 'slab/step_3.xyz')
-           ## this lowers the cell into the xy plane
-           #############################################################
-           #############################################################
-           print('rotating angle ' + str(angle) + ' around ' + str(u))
-           super_cell = rotate_around_axis(super_cell,[0,0,0],u,angle)##
-           #############################################################
-           #############################################################
-           if debug:
-               super_cell.writexyz(rootdir + 'slab/step_4.xyz')
-           if miller_flag:
-              if (len(non_zero_indices) > 2):
-                  super_cell= shave_under_layer(super_cell)
-                  super_cell= shave_under_layer(super_cell)
-              #    super_cell= shave_under_layer(super_cell)
-             #     super_cell= shave_under_layer(super_cell)
-             #     super_cell= shave_surface_layer(super_cell)
-               #   super_cell= shave_surface_layer(super_cell)
-                  super_cell= shave_surface_layer(super_cell)
-                  if debug:
-                      super_cell.writexyz(rootdir + 'slab/step_4_after_shave.xyz')
-
-
-
-           r_cv =  [PointRotateAxis(u,[0,0,0],list(i),angle) for i in cell_vector]
-           if debug:
-               print("\n\n\n")
-               print('rotated cv')
-               print(r_cv[0])
-               print(r_cv[1])
-               print(r_cv[2])
-               print("\n\n\n")
-               print('ext_dup vector is now ')
-               print(ext_duplication_vector[0])
-               print(ext_duplication_vector[1])
-               print(ext_duplication_vector[2])
-               print('\n\n')
-               super_cell.writexyz(rootdir + 'slab/step_5.xyz')
- #               super_cell.writexyz(rootdir + 'slab/super_pr_5_before2r.xyz')
-#               vx = v1
-#               vx[2] = 0
-#               angle = vecangle(vx,[1,0,0])
-#               u =  numpy.cross(vx,[1,0,0])
-#               super_cell = rotate_around_axis(super_cell,[0,0,0],u,angle)
-#                super_cell.writexyz(rootdir + 'slab/super_pr6_after2r.xyz')
-#                duplication_vector[2] += -4
-
-
-        super_cell_vector = [[i*duplication_vector[0] for i in cell_vector[0]],
-                         [i*duplication_vector[1] for i in cell_vector[1]],
-                         [i*duplication_vector[2] for i in cell_vector[2]]]
+        
+        
+        ## lower the cell into the xy plane
+        #############################################################
+        #############################################################
+        if miller_index:
+            print('rotating angle ' + str(angle) + ' around ' + str(u))##
+            super_cell = rotate_around_axis(super_cell,[0,0,0],u,angle)##
+            #decoy = rotate_around_axis(decoy,[0,0,0],u,angle)##
+            cell_vector =  [PointRotateAxis(u,[0,0,0],list(i),numpy.pi*angle/(180)) for i in cell_vector]
+            ext_duplication_vector =  [PointRotateAxis(u,[0,0,0],list(i),numpy.pi*angle/(180)) for i in ext_duplication_vector]
+            # threshold:
+            cell_vector=threshold_basis(cell_vector,1E-6)
+            ext_duplication_vector = threshold_basis(ext_duplication_vector,1E-6)
+            u_keep = 0 + u
+            angle_keep  = 0+angle
+        #############################################################
+        
         if debug:
-            print('cell vector is now ')
+            print('cell vector is: ')
             print(cell_vector[0])
             print(cell_vector[1])
             print(cell_vector[2])
-            print('super_cell vector is now ')
-            print(super_cell_vector[0])
-            print(super_cell_vector[1])
-            print(super_cell_vector[2])
-            print('curious?')
-            print('\n\n')
-#        old_super_cell_vector = [[i*duplication_vector[0] for i in old_cell_vector[0]],
-#                         [i*duplication_vector[1] for i in old_cell_vector[1]],
-#                         [i*duplication_vector[2] for i in old_cell_vector[2]]]
-#        old_super_cell_vector = [[i*4 for i in old_cell_vector[0]],
-#                         [i*4 for i in old_cell_vector[1]],
-#                         [i*2 for i in old_cell_vector[2]]]
-
-
-#        print('old_super_cell vector is now ')
-#        print(old_super_cell_vector[0])
-#        print(old_super_cell_vector[1])
-#        print(old_super_cell_vector[2])
-#        print('\n\n')
-#
-        if miller_flag:
-            r_cell_vector =  [PointRotateAxis(u,[0,0,0],list(i),-1*angle) for i in super_cell_vector]
-            if debug:
-                print('r_cell vector is now ')
-                print(r_cell_vector[0])
-                print(r_cell_vector[1])
-                print(r_cell_vector[2])
-                print('\n\n')
-#
-        super_cell_dim = find_extents(super_cell)
-
-        if miller_flag:
-            non_zero_indices  = list()
-            zero_indices  = list()
-            for i in [0,1,2]:
-                if not (miller_index[i] == 0):
-                    non_zero_indices.append(i)
-                else:
-                    zero_indices.append(i)
-
-            if debug:
-                super_cell.writexyz(rootdir + 'slab/step_6.xyz')
-            if (len(non_zero_indices) > 1):
-                super_cell= shave_under_layer(super_cell)
-                super_cell= shave_under_layer(super_cell)
-                super_cell= shave_under_layer(super_cell)
-                super_cell= shave_under_layer(super_cell)
-                super_cell= shave_under_layer(super_cell)
-
-            super_cell=zero_z(super_cell)
-            if debug:
-                super_cell.writexyz(rootdir + 'slab/step_7.xyz')
-            stop_flag = False
+            print('ext_dup vector is: ')
+            print(ext_duplication_vector[0])
+            print(ext_duplication_vector[1])
+            print(ext_duplication_vector[2])
+            super_cell.writexyz(rootdir + 'slab/after_rotate.xyz') 
+        
+        if miller_index: ## get rid of the extra padding we added:
+                  super_cell= shave_under_layer(super_cell)
+                  super_cell= shave_under_layer(super_cell)
+                  super_cell= shave_under_layer(super_cell)
+                  super_cell= shave_surface_layer(super_cell)
+                  super_cell= shave_surface_layer(super_cell)
+                  super_cell=zero_z(super_cell)
+        if debug:
+            super_cell.writexyz(rootdir + 'slab/after_millercut.xyz')          
+        
+        ## check angle between v1 and x for aligining nicely
+        angle = -1*vecangle(cell_vector[0],[1,0,0])
+        if debug:
+            print('x-axis angle is  ' + str(angle))
+        if abs(angle) > 5 and False:
+           print('angle is '+ str(angle))
+           u = [0,0,1]
+           print('aligning  with x-axis')
+           print('rotating angle ' + str(angle) + ' around ' + str(u))
+           super_cell = rotate_around_axis(super_cell,[0,0,0],u,angle)
+           super_cell.writexyz(rootdir + 'slab/after_x_align.xyz')
+           cell_vector =  [PointRotateAxis(u,[0,0,0],list(i),numpy.pi*angle/(180)) for i in cell_vector]
+           ext_duplication_vector =  [PointRotateAxis(u,[0,0,0],list(i),numpy.pi*angle/(180)) for i in ext_duplication_vector]
+           # threshold:
+           cell_vector=threshold_basis(cell_vector,1E-6)
+           ext_duplication_vector = threshold_basis(ext_duplication_vector,1E-6)
+           
+        stop_flag = False
+        if slab_size:
             counter = 0
             while not stop_flag:
-                print('in loop')
-                counter +=1
-                zmin = 1000
+                counter += 1
+                zmax = 0 
                 for atoms in super_cell.getAtoms():
                     coords = atoms.coords()
-                    if (coords[2] < zmin):
-                        zmin = coords[2]
-                    if (zmin >= 0):
+                    if (coords[2] > zmax):
+                        zmax = coords[2]
+                if (zmax <= 1.1*slab_size[2]):
                         stop_flag = True
-                    else:
-                        if debug:
-                            print('cutting due to zmin')
-                        super_cell= shave_under_layer(super_cell)
-                if counter > 10:
-                    stop_flag = True
-            stop_flag = False
-            if slab_size:
-                counter = 0
-                while not stop_flag:
-                    print('in loop')
-                    counter += 1
-                    zmax = 0 
-                    for atoms in super_cell.getAtoms():
-                        coords = atoms.coords()
-                        if (coords[2] > zmax):
-                            zmax = coords[2]
-                    if (zmax <= 1.1*slab_size[2]):
-                            stop_flag = True
-                    else:
-                        if debug:
-                            print('cutting due to zmax')
-                        super_cell= shave_surface_layer(super_cell)
-                    if counter > 10:
-                            stop_flag = True
+                else:
+                    if debug:
+                        print('cutting due to zmax')
+                    super_cell= shave_surface_layer(super_cell)
+                if counter > 20:
+                        print('stopping after 10 cuts, zmax not obtained')
+                        stop_flag = True
+        if debug:
+            super_cell.writexyz(rootdir + 'slab/after_size_control.xyz')   
+        ## measure and recored slab vectors
+        super_cell_dim = find_extents(super_cell)
+        super_cell_vector = copy.copy(ext_duplication_vector)
 
-            if debug:
-                super_cell.writexyz(rootdir + 'slab/step_8.xyz')
-            ## place cell at origin
-            super_cell = zero_z(super_cell)
-            super_cell = zero_y(super_cell)
-            super_cell = zero_x(super_cell)
-            if debug:
-                super_cell.writexyz(rootdir + 'slab/step_9.xyz')
-
-#                angle = vecangle(vx,[1,0,0])
-#                u =  numpy.cross(vx,[1,0,0])   
-#                print('angle is '+str(angle) + " the vec is  " + str(u))
-#                super_cell = rotate_around_axis(super_cell,super_cell.centermass(),[0,0,1],-angle)
-
-        if not slab_size:
-            extents = find_extents_cv(super_cell_vector)
-            target_size = extents[2]
-            while super_cell_dim[2] > 1.1*target_size:
-                print('slab is too thick, shaving...')
-                super_cell = shave_surface_layer(super_cell)
-                super_cell_dim = find_extents(super_cell)
-        if slab_size:
-            while super_cell_dim[2] > 1.1*slab_size[2]:
-                print('slab is too thick, shaving...due to slab size req')
-                super_cell = shave_surface_layer(super_cell)
-                super_cell_dim = find_extents(super_cell)
         ## check if passivation needed
         if passivate:
-            pass
+            pass ## not implemented
         ## check if atoms should be frozen
         if freeze:
             if isinstance(freeze,int):
@@ -1383,6 +1280,7 @@ def slab_module_supervisor(args,rootdir):
                 super_cell = freeze_bottom_n_layers(super_cell,freeze)
             else:
                 super_cell = freeze_bottom_n_layers(super_cell,1)
+                
         ## check if a different surface atom should be exposed:
         if expose_type:
             super_cell = check_top_layer_correct(super_cell,expose_type)
@@ -1391,18 +1289,52 @@ def slab_module_supervisor(args,rootdir):
                 print('shaving ' + str(shave_extra_layers) + ' layers')
                 super_cell =shave_surface_layer(super_cell,TOL =1e-2)
 
-        super_cell.writexyz(rootdir + 'slab/super' +''.join( [str(i) for i in duplication_vector])+'.xyz')
-        print ('\n Created a ' + str(acell)+'x'+str(bcell)+'x' + str(ccell)+' supercell in ' + str(rootdir) + '.\n')
-        points = [[1,1],[2,1],[0,1],[0,0],[0.5,0.5],[0,2]]
-        concave_hull(points,0.1)
-        super_duper_cell = unit_to_super(super_cell,ext_duplication_vector,[2,2,1])
 
+        ## move in all negative positions
+        #if all(super_cell_vector[0]) <= 0: ## all signs are the same:
+        #    super_cell_vector[0] = [-1*i for i in super_cell_vector[0]]
+        point_coefficients = [get_basis_coefficients(at.coords(),super_cell_vector) for at in super_cell.getAtoms()]
+        #print('coords in final slab:' )
+        #print(point_coefficients)
+        point_coefficients = threshold_basis(point_coefficients,1E-6)
+        #for i in range(0,len(point_coefficients)):
+        #    for j in [0,1,2]:
+        #        if point_coefficients[i][j]<0:
+        #            point_coefficients[i][j] += 1
+        #        if point_coefficients[i][j] >1:
+        #            point_coefficients[i][j] -= 1
+        new_coords = [evaluate_basis_coefficients(points,super_cell_vector) for points in point_coefficients]
+        
+        #for j,points in enumerate(point_coefficients):
+            #if min(new_coords[i])<0:
+                ### try shift one cv in each direction:
+                #potential_new_point = []
+            
+        for i,coords in enumerate(new_coords):
+            super_cell.getAtom(i).setcoords(coords)
+        #point_coefficients = [get_basis_coefficients(at.coords(),super_cell_vector) for at in super_cell.getAtoms()]
+        print('coords in final slab:' )
+        print(point_coefficients)
+        ######
+        rest = super_cell.sanitycheck(silence = False)
+        print('result of collision check is  ' + str(rest))
+        
+        #################################
+        ## write slab output
+        super_cell.writexyz(rootdir + 'slab/super' +''.join( [str(i) for i in duplication_vector])+'.xyz')
+        print ('\n Created a supercell in ' + str(rootdir) + '\n')
+        
+        
+        ## let's check if the periodicity is correct
+        super_duper_cell = unit_to_super(super_cell,cell_vector,[2,2,1])
         super_duper_cell.writexyz(rootdir + 'slab/SD.xyz')
-        new_dup_vector = copy.deepcopy(ext_duplication_vector)
-        new_dup_vector[2][2] = float(ext_duplication_vector[2][2]) + 20  
-	print('final cell vector, inc vapour space is :')
-	print(new_dup_vector)
-        write_periodic_mol3d_to_qe(super_cell,new_dup_vector,rootdir + 'slab/slab.in')
+        
+        ## get some vapourspace
+        final_cv = copy.deepcopy(super_cell_vector)
+        final_cv[2][2] = float(final_cv[2][2]) + 20  
+        print('final cell vector, inc vapour space is :')
+        print(final_cv)
+        write_periodic_mol3d_to_qe(super_cell,final_cv,rootdir + 'slab/slab.in')
     elif not slab_gen: #placement only, skip slabbing!
         super_cell = unit_cell
         super_cell_vector = cell_vector

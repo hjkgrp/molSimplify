@@ -47,25 +47,22 @@ def cell_ffopt(ff,mol,frozenats):
     for cat in frozenats:
         constr.AddAtomConstraint(cat+1) # indexing babel
     ### set up forcefield
-    forcefield = openbabel.OBForceField.FindForceField(ff)
-    OBMol = mol.OBMol
-    forcefield.Setup(OBMol,constr)
+    forcefield =openbabel.OBForceField.FindForceField(ff)
+    obmol = mol.OBMol
+    forcefield.Setup(obmol,constr)
     ## force field optimize structure
     forcefield.ConjugateGradients(2500)
-    forcefield.GetCoordinates(OBMol)
-    mol.OBMol = OBMol
+    forcefield.GetCoordinates(obmol)
+    mol.OBmol = obmol
     # reset atomic number to metal
     for i,iiat in enumerate(indmtls):
         mol.OBMol.GetAtomById(iiat).SetAtomicNum(mtlsnums[i])
     mol.convert2mol3D()
 
     en = forcefield.Energy()
- #   print(str(mol.OBMol.atoms[1].OBAtom.GetVector().GetZ()))
-#    print(str(forcefield.Validate()))
-   # print('mol_af ' + str(mol.getAtom(0).coords()))
+ 
+    del forcefield, constr, obmol
 
-  #  print('ff delta = ' + str(backup_mol.rmsd(mol)))
-    del forcefield, constr, OBMol
     return mol,en
 ################################
 def import_from_cif(fst):
@@ -179,7 +176,32 @@ def mdistance(r1,r2):
     dz = r1[2] - r2[2]
     d = sqrt(numpy.power(dx,2) + numpy.power(dy,2) + numpy.power(dz,2))
     return d
+###################################
+def get_basis_coefficients(point, basis):
+    ## function to get basis set coefficients
+    ## for an arbitrary point in a given (complete)
+    ## basis set
+    coefficients  = numpy.linalg.solve(numpy.transpose(numpy.asmatrix(basis)),point)
+    return coefficients
+###################################
+def evaluate_basis_coefficients(coefficients,basis):
+    ## get cartessian coords from basis set and
+    ## coefficients
+    
+    recons = [0,0,0]
+    for j in [0,1,2]:
+        recons = numpy.add(recons,[coefficients[j]*numpy.asarray(basis[j][i]) for i in [0,1,2]])
+    return recons
+###################################
 
+def change_basis(mol, old_basis,new_basis):
+    new_mol = mol3D()
+    new_mol.copymol3D(mol)
+    point_coefficients = [get_basis_coefficients(at.coords(),old_basis) for at in new_mol.getAtoms()]
+    new_points =  [get_basis_coefficients(point,new_basis) for point in point_coefficients]
+    for i,at in enumerate(new_mol.getAtoms()):
+        at.setcoords(new_points[i])
+    return new_mol
 ###################################
 def normalize_vector(v):
     length = distance(v,[0,0,0])
@@ -187,6 +209,17 @@ def normalize_vector(v):
         nv = [float(i)/length for i in v]
     else:
         nv = [0,0,0]
+    return nv
+##############################
+def threshold_basis(basis,threshold):
+    new_basis = [threshold_vector(i,threshold) for i in basis]
+    return new_basis
+##############################
+def threshold_vector(v,threshold):
+    nv = copy.copy(v)
+    for i,vi in enumerate(v):
+        if abs(vi) < threshold:
+            nv[i] = 0
     return nv
 ##############################
 def find_all_surface_atoms(super_cell,tol=1e-2,type_of_atom = False):
@@ -358,6 +391,9 @@ def check_top_layer_correct(super_cell,atom_type):
 ###############################
 
 def shave_surface_layer(super_cell,TOL=1e-1):
+  #  dlist = fractionate_points_by_plane(super_cell,n)
+ #   points_below_plane(point,n,refd)
+        
     shaved_cell = mol3D()
     shaved_cell.copymol3D(super_cell)
     extents = find_extents(super_cell)
@@ -387,7 +423,7 @@ def shave_under_layer(super_cell):
     shaved_cell.deleteatoms(del_list)
     return shaved_cell
 ###############################
-def shave_dim_type(super_cell,dim,mode):
+def shave__type(super_cell,dim,mode):
     ## dim  = 0,1,2
     ##        x,y,z 
     #   mode = 1 for max, -1 for min
@@ -464,11 +500,34 @@ def point_in_box(point,box):
         outcome = True
     return outcome
 ##############################
-def points_below_plane(point,w):
-    outcome = False
-    zplane = w[2] + w[1]*point[1] + w[0]*point[0]
-    if (point[2] <= zplane):
-        outcome =  True
+def apply_plane_to_point(point,n):
+    dplane = sum([n[i]*point[i] for i in [0,1,2]])
+    return dplane
+##############################
+def fractionate_points_by_plane(super_cell,n):
+    vals = list()
+    for i,atoms in enumerate(super_cell.getAtoms()):
+        coords = atoms.coords()
+        this_frac = apply_plane_to_point(coords,n)
+        if len(vals)>0:
+            ## compare to seen values
+            these_dists = [abs(this_frac-j) for j in vals]
+            if max(these_dists)<1E-8:
+                print('have this point')
+            else:
+                vals.append(this_frac)
+        else:
+            vals.append(this_frac)
+    return vals
+##############################
+def points_below_plane(point,n,refd):
+    dplane =  apply_plane_to_point(point,n)
+    if abs(d-refd) < 1E-6:
+        outcome = False
+    elif d<dref:
+        outcome = True
+    else:
+        outcome = False
     return outcome
 #################################
 def freeze_bottom_n_layers(super_cell,n):

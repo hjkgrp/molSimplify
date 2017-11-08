@@ -7,7 +7,6 @@ import math
 import random
 import string
 import numpy
-import pybel
 from geometry import *
 from atom3D import *
 from globalvars import globalvars

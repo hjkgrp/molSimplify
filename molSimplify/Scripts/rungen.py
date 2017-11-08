@@ -81,13 +81,7 @@ def getconstsample(no_rgen,args,licores,coord):
 def constrgen(rundir,args,globs):
     emsg = False
     # load global variables
-    mcores = getmcores()
     licores = getlicores()
-    bindcores = getbcores()
-
-
-    # remove empty ligand
-    licores.pop("x", None)
     print 'Random generation started..\n\n'
     # if ligand constraint apply it now
     ligs0 = []
@@ -100,7 +94,7 @@ def constrgen(rundir,args,globs):
     if args.lig:
         for i,l in enumerate(args.lig):
             ligs0.append(l)
-            ligentry,emsg = lig_load(l,licores) # check ligand
+            ligentry,emsg = lig_load(l) # check ligand
             # update ligand
             if ligentry:
                 args.lig[i] = ligentry.name
@@ -289,7 +283,6 @@ def checkmultilig(ligs):
         else:
             mligs.append([lig])
         tcats.append(connatoms)
-    print mligs
     ligandslist = list(itertools.product(*mligs))
     # convert tuple to list
     llist = []
@@ -309,9 +302,8 @@ def draw_supervisor(args,rundir):
     if args.lig:
         print('Due to technical limitations, we will draw only the first ligand.') 
         print('To view multiple ligands at once, consider using the GUI instead.')
-        licores = getlicores()
         l = args.lig[0]
-        lig, emsg = lig_load(l,licores)
+        lig, emsg = lig_load(l)
         lig.draw_svg(l)
     elif args.core:
         if len(args.core) > 1:
@@ -319,16 +311,14 @@ def draw_supervisor(args,rundir):
         print('Drawing the core.')
         if args.substrate:
             print('Due to technical limitations, we can draw only one structure per run. To draw the substrate, run the program again.')
-        mcores = getmcores()
-        cc, emsg = core_load(args.core[0],mcores)
+        cc, emsg = core_load(args.core[0])
         cc.draw_svg(args.core[0])
     elif args.substrate:
         if len(args.substrate) > 1:
             print('Due to technical limitations, we will draw only the first substrate.')
         print('Drawing the substrate.')
         print args.substrate[0]
-        subcores = getsubcores()
-        substrate, emsg = substr_load(args.substrate[0],subcores)
+        substrate, emsg = substr_load(args.substrate[0])
         substrate.draw_svg(args.substrate[0])
     else:
 		print('You have not specified anything to draw. Currently supported: ligand, core, substrate')
@@ -344,13 +334,6 @@ def rungen(rundir,args,chspfname,globs):
     except ImportError:
         args.gui = False
     emsg = False
-    mcores = getmcores()
-    licores = getlicores()
-    bindcores = getbcores()
-    cc, emsg = core_load(args.core,mcores)
-    if emsg:
-        return emsg
-    mname = cc.ident
     globs.nosmiles = 0 # reset smiles ligands for each run
     # check for specified ligands/functionalization
     ligocc = []
@@ -391,7 +374,7 @@ def rungen(rundir,args,chspfname,globs):
                 ligocc.append('1')
             lig = ''
             for i,l in enumerate(ligands):
-                ligentry,emsg = lig_load(l,licores)
+                ligentry,emsg = lig_load(l)
                 # update ligand
                 if ligentry:
                     ligands[i] = ligentry.name
@@ -414,17 +397,6 @@ def rungen(rundir,args,chspfname,globs):
         fname = name_complex(rundir,args.core,ligands,ligocc,mcount,args,bind=args.bind,bsmi=args.nambsmi)
         if globs.debug:
             print('fname is ' + str(fname))
-
-        #        if args.bind:
-                # create folder for runs and check if it already exists
-        #            if args.nambsmi:
-        #                rootdir = rundir+mname[0:4]+lig+args.nambsmi[0:3]
-        #            elif not args.bind in bindcores.keys():
-        #                rootdir = rundir+mname[0:4]+lig+'bsmi'
-        #            else:
-        #                rootdir = rundir+mname[0:4]+lig+args.bind[0:4]
-        #        else:
-        #            rootdir = rundir+mname[0:4]+lig
         rootdir = fname
         # check for charges/spin
         rootcheck = False
@@ -603,8 +575,7 @@ def rungen(rundir,args,chspfname,globs):
 def tsgen_supervisor(rundir,args,chspfname,globs):
 	emsg = False
 	# load specified core into a mol3D object
-	mcores = getmcores()
-	cc, emsg = core_load(args.core,mcores)
+	cc, emsg = core_load(args.core)
 	if emsg:
 		return emsg	
 	cc.convert2mol3D()

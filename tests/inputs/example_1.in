@@ -1,6 +1,6 @@
--core cobalt
+-core co
 -geometry oct
--coord
+-coord 6
 -lig tpp,imidazole,x
 -ligocc 1,1,1
 -ff MMFF94

@@ -22,8 +22,7 @@ benzene:benzene.mol,bnz,4,build small organic,BA,-1
 benzene_pi:benzene_pi.mol,bnp,0 1 2 3 4 5 pi,build small organometallic,N,0
 benzenedithiol:benzenedithiol.mol,benzenedithiol,0 11,build functionalize bidentate,BA,-1
 benzenethiol:benzenethiol.mol,bthil,0,build functionalize small,N,-1
-bipy:bipy.mol,bip,0 1,build bidentate,BA,0
-bipyridine:bipy.mol,bip,0 1,build bidentate,BA,0
+bipy:bipy.mol,bip,0 1,build bidentate,N,0
 bpabipy:BPAbipy.mol,bpabp,0 13 26 48 30,build core,BA,0
 bromide:bromide.mol,brode,0,build functionalize small,N,-1
 carbonyl:carbonyl.mol,crbn,0,build small,N,0
@@ -40,7 +39,7 @@ cyclen:cyclen.mol,cyclen,6 0 3 9,build tetradentate,A,0
 cyclopentadienyl:cyclopentadienyl.mol,Cp,0 1 2 3 4 pi,build aromatic organometallic,N,-1
 cysteine:cysteine.mol,Cys,5,build functionalize aminoacid,BA,0
 dd:dd.smi,dd,0,all  build functionalize,BA
-diaminomethyl:diaminomethyl.mol,damthyl,0 1,build bidentate,N,-1
+diaminomethyl:diaminomethyl.mol,damthyl,3 1,build bidentate,N,-1
 dicyanamide:dicyanamide.mol,dicyanamide,0,build small,N,-1
 dppe:dppe.mol,dppe,21 25, build bidentate,A,0
 dpmu:dpmu.mol,dpmu,0, build monodentate,A,0
@@ -90,7 +89,7 @@ nitroso:nitroso.mol,nits,0,build functionalize small,N,-1
 nme3:nme3.mol,nme3,0,build small,N,0
 noxygen:noxygen.mol,noxd,0,build small,N,0
 ome2:ome2.mol,ome2,0,build small,N,0
-ox:oxalate.mol,oxate,1 4,build bidentate,BA,-2
+ox:oxalate.mol,oxate,1 4,build bidentate,A,-2
 oxygen:oxygen.mol,oxd,0,build small,N,-2
 pcy3:PCy3.mol,pcy3,0,build bulky big,BA,0
 propylene:propylene.mol,propylene,pi,build organometallic,N,0

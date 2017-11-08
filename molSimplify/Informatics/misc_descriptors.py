@@ -17,7 +17,7 @@ from molSimplify.Informatics.graph_analyze import *
 def generate_all_ligand_misc(mol,loud):
 	result_ax = list()
 	result_eq = list()
-	colnames = ['dent','mde','ki','tki']
+	colnames = ['dent']
 	liglist,ligdents,ligcons = ligand_breakdown(mol)
 	ax_ligand_list,eq_ligand_list,ax_natoms_list,eq_natoms_list,ax_con_int_list,eq_con_int_list,ax_con_list,eq_con_list,built_ligand_list=ligand_assign(mol,liglist,ligdents,ligcons,loud,name=False)
 	## count ligands

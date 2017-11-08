@@ -31,7 +31,7 @@ def getAllLigands(xyz):
     mymol3d.readfromxyz(xyz)
     # OUTPUT
     #   -mol3D: mol3D of all ligands
-    mm = mymol3d.findMetal()
+    mm = mymol3d.findMetal()[0]
     mbonded = mymol3d.getBondedAtoms(mm)
     ligands=[]
     ligAtoms=[]
@@ -63,7 +63,8 @@ def getAllLigands(xyz):
 
 def getMetalLigBondLength(mymol3d):
     # findMetal only returns 1 metal atom?
-    mm = mymol3d.findMetal()
+    # TG: fixed findmetal to return a list
+    mm = mymol3d.findMetal()[0]
     bonded = mymol3d.getBondedAtoms(mm)
     blength = []
     for i in bonded:

@@ -153,9 +153,9 @@ def getPointu(Rr, dist, u):
     t = bl/norm(u) # get t as t=bl/norm(r1-r0)
     # get point
     P = [0,0,0]
-    P[0] = t*u[0]-Rr[0]
-    P[1] = t*u[1]-Rr[1]
-    P[2] = t*u[2]-Rr[2]
+    P[0] = t*u[0]+Rr[0]
+    P[1] = t*u[1]+Rr[1]
+    P[2] = t*u[2]+Rr[2]
     return P
 
 ##################################################
@@ -319,9 +319,9 @@ def PointRotateAxis(u,rp,r,theta):
 ##################################################
 def PointTranslateSph(Rp,p0,D):    
     # INPUT
-    #   - Rp: reference point [x,y,z]
+    #   - Rp: origin [x,y,z]
     #   - p0: point to be translated [x,y,z]
-    #   - D: [radial distance, polar theta, azimuthal phi]
+    #   - D: [radial distance, polar phi, azimuthal theta]
     # OUTPUT
     #   - p: translated point [x,y,z] 
     # translate to origin
@@ -329,19 +329,19 @@ def PointTranslateSph(Rp,p0,D):
     ps[0] = p0[0] - Rp[0]
     ps[1] = p0[1] - Rp[1]
     ps[2] = p0[2] - Rp[2]  
-    # get current spherical coords
+    # get initial spherical coords
     r0 = norm(ps) 
     if (r0 < 1e-16):
         phi0 = 0.5*pi
         theta0 = 0 
     else :
-        phi0 = arccos(ps[2]/r0) #changed sign TIM IOANNIDIS
-        theta0 = arctan2(ps[1],ps[0]) # atan doesn't work due to signs
-    # get translation vector
+        phi0 = arccos(ps[2]/r0) # z/r
+        theta0 = arctan2(ps[1],ps[0]) # y/x
+    # get new point
     p = [0,0,0]
-    p[0] = D[0]*sin(phi0+D[2])*cos(theta0+D[1]) + Rp[0]
-    p[1] = D[0]*sin(phi0+D[2])*sin(theta0+D[1]) + Rp[1]
-    p[2] = D[0]*cos(phi0+D[2]) + Rp[2]
+    p[0] = (D[0])*sin(phi0+D[2])*cos(theta0+D[1]) + Rp[0]
+    p[1] = (D[0])*sin(phi0+D[2])*sin(theta0+D[1]) + Rp[1]
+    p[2] = (D[0])*cos(phi0+D[2]) + Rp[2]
     return p
 
 ##################################################

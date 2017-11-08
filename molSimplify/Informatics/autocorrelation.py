@@ -7,7 +7,6 @@ import math
 import random
 import string
 import numpy
-import pybel
 from molSimplify.Scripts.geometry import *
 from molSimplify.Classes.atom3D import *
 from molSimplify.Classes.globalvars import globalvars

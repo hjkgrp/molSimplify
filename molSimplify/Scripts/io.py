@@ -9,7 +9,6 @@
 # import std modules
 import glob, os,shutil, re, argparse, sys, random, openbabel
 from molSimplify.Classes.mol3D import *
-from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.globalvars import *
 from pkg_resources import resource_filename, Requirement
 
@@ -47,7 +46,6 @@ def printgeoms():
 ##############################################
 def getgeoms():
     globs = globalvars()
-#   f = open(globs.installdir+'/Data/coordinations.dict','r')
     if globs.custom_path:
         f = globs.custom_path + "/Data/coordinations.dict"
     else:
@@ -71,7 +69,7 @@ def getgeoms():
     for i in range(1,len(coords)):
         if coords[i-1]!=coords[i]:
             count += 1
-        geomgroups[count].append(geomshorts[i])
+        geomgroups[count].append(geomshorts[i])   
     return coords,geomnames,geomshorts,geomgroups
 
 ###################################
@@ -296,7 +294,9 @@ def loadcoord(coord):
 ###    load core and    ###
 ### convert to molecule ###
 ###########################
-def core_load(usercore,mcores):
+def core_load(usercore,mcores=None):
+    if mcores == None:
+        mcores = getmcores()
     globs = globalvars()
     if '~' in usercore:
         homedir = os.path.expanduser("~")
@@ -368,7 +368,9 @@ def core_load(usercore,mcores):
 ###    load substrate and ###
 ### convert to molecule   ### 
 #############################
-def substr_load(usersubstrate,subcores):
+def substr_load(usersubstrate,subcores=None):
+    if subcores == None:
+        subcores = getsubcores()
     globs = globalvars()
     if '~' in usersubstrate:
         homedir = os.path.expanduser("~")
@@ -439,7 +441,10 @@ def substr_load(usersubstrate,subcores):
 ###   load ligand and   ###
 ### convert to molecule ###
 ###########################
-def lig_load(userligand,licores):
+def lig_load(userligand,licores=None):
+    if licores == None:
+        licores = getlicores()
+        licores.pop("x", None)
     globs = globalvars()
     ### get groups ###
     groups = []
@@ -473,7 +478,7 @@ def lig_load(userligand,licores):
         if ('.xyz' in flig):
             lig.OBMol = lig.getOBMol(flig,'xyzf')            
         elif ('.mol' in flig):
-            lig.OBMol = lig.getOBMol(flig,'molf')            
+            lig.OBMol = lig.getOBMol(flig,'molf')
         elif ('.smi' in flig):
             lig.OBMol = lig.getOBMol(flig,'smif')
         ### modified the check for length,

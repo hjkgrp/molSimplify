@@ -12,6 +12,7 @@ cu:Cu.mol,0,8
 fe:Fe.mol,0,8
 fen4py:fen4py.xyz,0,1
 fen4pyo:fen4pyO.xyz,49,1
+fe2o2:Fe2O2.xyz,4 5 6 7 8 9 10 11,8
 ferrocene:ferrocene.mol,1 9 4 6 2 10 5 8 3 7,1
 ferrcore:ferrcore.xyz,0,1
 gold:Au.mol,0,8

@@ -310,12 +310,15 @@ def ANN_preproc(args,ligs,occs,dents,batslist,tcats,licores):
         ax_ki = get_truncated_kier(ax_lig3D,ax_lig3D.cat)
         eq_EN = get_lig_EN(eq_lig3D,eq_lig3D.cat)
         ax_EN = get_lig_EN(ax_lig3D,ax_lig3D.cat)
-        eq_bo = get_bond_order(eq_lig3D.OBmol.OBMol,eq_lig3D.cat,eq_lig3D)
-        ax_bo = get_bond_order(ax_lig3D.OBmol.OBMol,ax_lig3D.cat,ax_lig3D)
+        eq_bo = get_bond_order(eq_lig3D.OBMol,eq_lig3D.cat,eq_lig3D)
+        ax_bo = get_bond_order(ax_lig3D.OBMol,ax_lig3D.cat,ax_lig3D)
 
-
-        eq_charge = eq_lig3D.OBmol.charge
-        ax_charge = ax_lig3D.OBmol.charge
+        if axial_ligs[0] in ['carbonyl','cn']:
+            ax_bo = 3
+        if equitorial_ligs[0] in ['carbonyl','cn']:
+            eq_bo = 3
+        eq_charge = eq_lig3D.OBMol.GetTotalCharge()
+        ax_charge = ax_lig3D.OBMol.GetTotalCharge()
 
          
         ## preprocess:
@@ -354,7 +357,7 @@ def ANN_preproc(args,ligs,occs,dents,batslist,tcats,licores):
 
 
         nn_excitation = [0,0,0,0,0, # metals co/cr/fe/mn/ni                 #1-5
-                   ox,alpha,eq_charge,ax_charge, #ox/alpha/eqlig charge/axlig charge #6-9
+                   ox,alpha,ax_charge,eq_charge, #ox/alpha/axlig charge/eqlig charge #6-9
                    ax_dent,eq_dent,# ax_dent/eq_dent/ #10-11
                    0,0,0,0, # axlig_connect: Cl,N,O,S #12 -15
                    0,0,0,0, # eqliq_connect: Cl,N,O,S #16-19
@@ -362,7 +365,7 @@ def ANN_preproc(args,ligs,occs,dents,batslist,tcats,licores):
                    ax_bo,eq_bo, #axlig_bo, eqliq_bo #22-23
                    ax_ki,eq_ki]#axlig_ki, eqliq_kii #24-25
 	slope_excitation = [0,0,0,0,0, # metals co/cr/fe/mn/ni                 #1-5
-                   ox,eq_charge,ax_charge, #ox/eqlig charge/axlig charge #6-8
+                   ox,ax_charge,eq_charge, #ox/axlig charge/eqlig charge #6-8
                    ax_dent,eq_dent,# ax_dent/eq_dent/ #9-10
                    0,0,0,0, # axlig_connect: Cl,N,O,S #11 -14
                    0,0,0,0, # eqliq_connect: Cl,N,O,S #15-18
@@ -533,6 +536,7 @@ def spin_classify(metal,spin,ox):
     return high_spin,spin_ops
 
 def get_splitting(excitation):
+    print(excitation)
     delta = simple_splitting_ann(excitation)
     return delta
 def get_slope(slope_excitation):
