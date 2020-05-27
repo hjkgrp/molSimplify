@@ -6,6 +6,7 @@ channels:
   - defaults
   - pytorch
 dependencies:
+  - libffi=3.2.1
   - openbabel=2.4.1
   - pyqt=5.9.2
   - pip=20.0.2
