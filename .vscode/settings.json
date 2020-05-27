@@ -1,0 +1,5 @@
+{
+    "python.pythonPath": "/Users/kevinmaikjablonka/opt/miniconda3/envs/mols_test/bin/python",
+    "python.formatting.provider": "yapf",
+    "python.linting.enabled": true
+}
