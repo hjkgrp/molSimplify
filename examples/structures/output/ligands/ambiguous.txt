@@ -1,0 +1,6 @@
+UiO66_primitive, Anchors list: {106, 107, 108, 109}, SBU connectlist: {0} set to be linker
+UiO66_primitive, Anchors list: {106, 107, 108, 109}, SBU connectlist: {0} set to be linker
+UiO66_primitive, Anchors list: {104, 105, 106, 107}, SBU connectlist: {0} set to be linker
+UiO66_primitive, Anchors list: {104, 105, 106, 107}, SBU connectlist: {0} set to be linker
+UiO66_primitive, Anchors list: {104, 105, 108, 109}, SBU connectlist: {0} set to be linker
+UiO66_primitive, Anchors list: {104, 105, 108, 109}, SBU connectlist: {0} set to be linker
