@@ -38,7 +38,7 @@ from scipy.spatial import distance
 """<<<< END OF CODE TO COMPUTE PRIMITIVE UNIT CELLS >>>>"""
 
 #########################################################################################
-# The RAC functions here average over the different SBUs or linkers present. This is    #
+# The RAC functions here average and sum over the different SBUs or linkers present. This is    #
 # because one MOF could have multiple different linkers or multiple SBUs, and we need   #
 # the vector to be of constant dimension so we can correlate the output property.       #
 #########################################################################################
@@ -225,7 +225,9 @@ def make_MOF_SBU_RACs(
                 lc_descriptor_list.append(descriptors)
                 if j == 0:
                     lc_names = descriptor_names
-        averaged_lc_descriptors = np.mean(np.array(lc_descriptor_list), axis=0)
+        lc_descriptor_array = np.array(lc_descriptor_list)
+        averaged_lc_descriptors = np.mean(lc_descriptor_array, axis=0)
+        sum_lc_descriptors = np.sum(lc_descriptor_array, axis=0)
         lc_descriptors.to_csv(lc_csv_path, index=False)
         descriptors = []
         descriptor_names = []
@@ -302,8 +304,13 @@ def make_MOF_SBU_RACs(
         if i == 0:
             names = descriptor_names
     sbu_descriptors.to_csv(sbu_csv_path, index=False)
-    averaged_SBU_descriptors = np.mean(np.array(descriptor_list), axis=0)
-    return names, averaged_SBU_descriptors, lc_names, averaged_lc_descriptors
+    sbu_descriptor_array = np.array(descriptor_list)
+    averaged_SBU_descriptors = np.mean(sbu_descriptor_array, axis=0)
+    sum_SBU_descriptors = np.mean(sbu_descriptor_array, axis=0)
+    return names + ["sum-" + k for k in names], np.hstack([
+        averaged_SBU_descriptors, sum_SBU_descriptors
+    ]), lc_names + ["sum-" + k for k in lc_names], np.hstack(
+        [averaged_lc_descriptors, sum_lc_descriptors])
 
 
 def make_MOF_linker_RACs(linkerlist,
