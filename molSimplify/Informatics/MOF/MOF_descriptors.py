@@ -397,8 +397,11 @@ def make_MOF_linker_RACs(linkerlist,
     linker_descriptors.to_csv(os.path.join(linker_descriptor_path,
                                            "linker_descriptors.csv"),
                               index=False)
-    averaged_ligand_descriptors = np.mean(np.array(descriptor_list), axis=0)
-    return colnames, averaged_ligand_descriptors
+    ligand_descriptors = np.array(descriptor_list)
+    averaged_ligand_descriptors = np.mean(ligand_descriptors, axis=0)
+    sum_ligand_descriptors = np.mean(ligand_descriptors, axis=0)
+    return colnames + ["sum-" + k for k in colnames], np.hstack(
+        [averaged_ligand_descriptors, sum_ligand_descriptors])
 
 
 def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
