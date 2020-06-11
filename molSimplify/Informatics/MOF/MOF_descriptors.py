@@ -708,7 +708,8 @@ def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
                               "\n")
                     write2file(ligand_log, tmpstr)
         else:  # definite ligand
-            write2file(logpath, "/%s.log" % name, "found ligand\n")
+            write2file(os.path.join(logpath, "%s.log" % name),
+                       "found ligand\n")
             removelist.update(set(
                 templist[ii]))  # we also want to remove these ligands
             SBUlist.update(set(
