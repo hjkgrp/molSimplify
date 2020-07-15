@@ -1,21 +1,19 @@
-import copy
-import itertools
-
-import networkx as nx
 import numpy as np
-from molSimplify.Informatics.MOF.atomic import (COVALENT_RADII, MASS, METALS,
-                                                actinides, alkali,
-                                                alkaline_earth, lanthanides,
-                                                main_group, metalloids, metals,
-                                                noble_gases, non_metals,
-                                                organic, transition_metals)
-from scipy import sparse
+import itertools
+import networkx as nx
 from scipy.spatial import distance
+from scipy import sparse
+from .atomic import COVALENT_RADII
+from .atomic import organic, non_metals, noble_gases, metalloids, lanthanides, actinides, transition_metals
+from .atomic import alkali, alkaline_earth, main_group, metals
+from .atomic import METALS, MASS, COVALENT_RADII
+import copy
 
 deg2rad = np.pi / 180.0
 
 
 def readcif(name):
+    # FIXME @SMM: improve the function to more general cases of cif files
     with open(name, 'r') as fi:
         EIF = fi.readlines()
         cond = True
@@ -29,32 +27,19 @@ def readcif(name):
             if (not line) or line_stripped.startswith("#"):
                 continue
             line_splitted = line.split()
-
             if line_stripped.startswith("_cell_length_a"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_a = float(temp)
+                cell_a = float(line_splitted[1])
                 cell_parameter_boundary[0] = counter + 1
             elif line_stripped.startswith("_cell_length_b"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_b = float(temp)
+                cell_b = float(line_splitted[1])
             elif line_stripped.startswith("_cell_length_c"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_c = float(temp)
+                cell_c = float(line_splitted[1])
             elif line_stripped.startswith("_cell_angle_alpha"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_alpha = float(temp)
+                cell_alpha = float(line_splitted[1])
             elif line_stripped.startswith("_cell_angle_beta"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_beta = float(temp)
+                cell_beta = float(line_splitted[1])
             elif line_stripped.startswith("_cell_angle_gamma"):
-                temp = line_splitted[1].replace(')', '')
-                temp = temp.replace('(', '')
-                cell_gamma = float(temp)
+                cell_gamma = float(line_splitted[1])
                 cell_parameter_boundary[1] = counter + 1
             if cond2 == True and line_stripped.startswith("loop_"):
                 break
@@ -86,9 +71,9 @@ def readcif(name):
         for cn, at in enumerate(atomlines):
             ln = at.strip().split()
             positions.append([
-                float(ln[fracx_index].replace('(', '').replace(')', '')),
-                float(ln[fracy_index].replace('(', '').replace(')', '')),
-                float(ln[fracz_index].replace('(', '').replace(')', ''))
+                float(ln[fracx_index]),
+                float(ln[fracy_index]),
+                float(ln[fracz_index])
             ])
             ln[type_index] = ln[type_index].strip("_")
             at_type = ''.join([i for i in ln[type_index] if not i.isdigit()])
@@ -182,6 +167,16 @@ def writeXYZfcoords(filename, atoms, cell, fcoords):
             fo.write("%s %s\n" % (atoms[i], s))
 
 
+def stringXYZfcoords(atoms, cell, fcoords):
+    ostr = "%i\n\n" % len(atoms)
+    for i, fcoord in enumerate(fcoords):
+        cart_coord = np.dot(fcoord, cell)
+        s = "%10.2f %10.2f %10.2f" % (cart_coord[0], cart_coord[1],
+                                      cart_coord[2])
+        ostr += "%s %s\n" % (atoms[i], s)
+    return ostr
+
+
 def writeXYZandGraph(filename, atoms, cell, fcoords, molgraph):
     with open(filename, "w") as fo:
         fo.write("%i\n\n" % len(atoms))
@@ -219,35 +214,9 @@ def writeXYZcoords_withcomment(filename, atoms, coords, comment):
     return
 
 
-def write2file(filepath, st):
-    with open(filepath, "a") as fo:
+def write2file(path, st):
+    with open(path, "a") as fo:
         fo.write(st)
-
-
-def write_cif(fname, cellprm, fcoords, atom_labels):
-    with open(fname, 'w') as f_cif:
-        f_cif.write("data_I\n")
-        f_cif.write("_chemical_name_common  \'%s\'\n" % (fname.strip(".cif")))
-        f_cif.write("_cell_length_a %8.05f\n" % (cellprm[0]))
-        f_cif.write("_cell_length_b %8.05f\n" % (cellprm[1]))
-        f_cif.write("_cell_length_c %8.05f\n" % (cellprm[2]))
-        f_cif.write("_cell_angle_alpha %4.05f\n" % (cellprm[3]))
-        f_cif.write("_cell_angle_beta  %4.05f\n" % (cellprm[4]))
-        f_cif.write("_cell_angle_gamma %4.05f\n" % (cellprm[5]))
-        f_cif.write("_space_group_name_H-M_alt      \'P 1\'\n\n\n")
-        f_cif.write(
-            "loop_\n_space_group_symop_operation_xyz\n  'x, y, z' \n\n")
-        f_cif.write("loop_\n")
-        f_cif.write("_atom_site_label\n")
-        f_cif.write("_atom_site_fract_x\n")
-        f_cif.write("_atom_site_fract_y\n")
-        f_cif.write("_atom_site_fract_z\n")
-        f_cif.write("_atom_site_type_symbol\n")
-        for i, atom in enumerate(atom_labels):
-            f_cif.write(
-                "%-5s %8s %8s %8s %5s\n" %
-                (atom, fcoords[i, 0], fcoords[i, 1], fcoords[i, 2], "%s" %
-                 (atom)))
 
 
 def min_img_distance(coords1, coords2, cell):
@@ -257,32 +226,6 @@ def min_img_distance(coords1, coords2, cell):
     three = np.around(one - two)
     four = np.dot(one - two - three, cell)
     return np.linalg.norm(four)
-
-
-def cell_to_cellpar(cell, radians=False):
-    lengths = [np.linalg.norm(v) for v in cell]
-    angles = []
-    for i in range(3):
-        j = i - 1
-        k = i - 2
-        ll = lengths[j] * lengths[k]
-        if ll > 1e-16:
-            x = np.dot(cell[j], cell[k]) / ll
-            angle = 180.0 / np.pi * np.arccos(x)
-        else:
-            angle = 90.0
-        angles.append(angle)
-    if radians:
-        angles = [angle * np.pi / 180 for angle in angles]
-    return np.array(lengths + angles)
-
-
-def findPaths(G, u, n):
-    if n == 0:
-        return [[u]]
-    paths = [[u] + path for neighbor in G.neighbors(u)
-             for path in findPaths(G, neighbor, n - 1) if u not in path]
-    return paths
 
 
 def fractional2cart(fcoord, cell):
@@ -375,7 +318,11 @@ def compute_adj_matrix(distance_mat, allatomtypes):
             rad = (COVALENT_RADII[e1] + COVALENT_RADII[e2])
             dist = distance_mat[i, i + j + 1]
             # check for atomic overlap:
-            if dist < min(COVALENT_RADII[e1], COVALENT_RADII[e2]):
+            #if set("H") & elements:
+            #    tempsf = 0.9
+            #else:
+            #    tempsf = 1.0
+            if dist < max(COVALENT_RADII[e1], COVALENT_RADII[e2]):
                 print("atomic overlap!")
                 raise NotImplementedError
             tempsf = 0.9
@@ -388,6 +335,10 @@ def compute_adj_matrix(distance_mat, allatomtypes):
                     not elements & alkali):
                 tempsf = 0.75
 
+            if (set("B") < elements) and len(
+                    elements
+            ) > 1:  # specific fix for boron nodes, e.g. in ToBaCCo
+                tempsf = 0.8
             if (set("O") < elements) and (elements & metals):
                 tempsf = 0.85
             if (set("N") < elements) and (elements & metals):
@@ -395,7 +346,7 @@ def compute_adj_matrix(distance_mat, allatomtypes):
             # fix for water particle recognition.
             if (set(["O", "H"]) <= elements):
                 tempsf = 0.8
-            # very specific fix for Michelle's amine appended MOF
+            # very specific fix for  amine appended MOF
             if (set(["N", "H"]) <= elements):
                 tempsf = 0.67
             if (set(["Mg", "N"]) <= elements):
@@ -415,14 +366,14 @@ def compute_adj_matrix(distance_mat, allatomtypes):
 
 
 def get_closed_subgraph(linkers, SBUlist, adj_matrix):
-    """
-    This part separates the linkers into their respective subgraphs             
-    First element is the things you want to find subgraphs of.                  
-    If this is the linkers, you input that as the first.                        
-    If you input the SBU as the first, then you get the subgraphs of the SBU.  
-    The second element tells you what part of the matrix is NOT what you want.  
-    If we want subgraphs of linkers, we want to exclude the SBU.                
-    """
+    ###############################################################################
+    # This part separates the linkers into their respective subgraphs             #
+    # First element is the things you want to find subgraphs of.                  #
+    # If this is the linkers, you input that as the first.                        #
+    # If you input the SBU as the first, then you get the subgraphs of the SBU.   #
+    # The second element tells you what part of the matrix is NOT what you want.  #
+    # If we want subgraphs of linkers, we want to exclude the SBU.                #
+    ###############################################################################
 
     linkers_sub = linkers.copy()
     linker_list = []
@@ -450,7 +401,7 @@ def get_closed_subgraph(linkers, SBUlist, adj_matrix):
                 start_idx = list(left_to_check)[0]
         current_linker_list = current_linker_list - SBUlist
         linkers_sub = linkers_sub - current_linker_list
-        # We want to return both the linker itself as well as the subgraph corresponding to it.
+        ####### We want to return both the linker itself as well as the subgraph corresponding to it.
         linker_list.append(list(current_linker_list))
         linker_subgraphlist.append(adj_matrix[np.ix_(
             list(current_linker_list), list(current_linker_list))])
@@ -467,4 +418,13 @@ def include_extra_shells(SBUlists, subgraphlists, molcif, adjmat):
         SBUset = set(SBU)
         SBUs.append(list(SBUset))
         subgraphs.append(adjmat[np.ix_(list(SBUset), list(SBUset))])
+
     return SBUs, subgraphs
+
+
+def upper_triangle(mat):
+    for i in range(mat.shape[0]):
+        for j in range(i):
+            mat[i, j] = 0
+
+    return mat

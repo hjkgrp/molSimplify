@@ -9,7 +9,9 @@ from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Informatics.autocorrelation import (
     generate_atomonly_autocorrelations, generate_full_complex_autocorrelations,
     generate_multimetal_deltametrics, full_autocorrelation,
-    generate_atomonly_deltametrics, generate_multimetal_autocorrelations)
+    generate_atomonly_deltametrics, generate_multimetal_autocorrelations,
+    generate_sum_multimetal_autocorrelations,
+    generate_sum_multimetal_deltametrics)
 from molSimplify.Informatics.MOF.PBC_functions import (
     get_closed_subgraph, write2file, writeXYZandGraph, include_extra_shells,
     readcif, fractional2cart, mkcell, compute_distance_matrix2,
@@ -42,6 +44,63 @@ from scipy.spatial import distance
 # because one MOF could have multiple different linkers or multiple SBUs, and we need   #
 # the vector to be of constant dimension so we can correlate the output property.       #
 #########################################################################################
+
+
+def make_crystalgraph_mc_RACs(molcif, depth, name, cell, sbupath=False):
+    descriptor_list = []
+    names = []
+    descriptor_names = []
+    descriptors = []
+    if sbupath:
+        sbu_descriptor_path = os.path.dirname(sbupath)
+        if os.path.isfile(
+                os.path.join(sbu_descriptor_path, 'mc_descriptors.csv')) > 0:
+            sbu_descriptors = pd.read_csv(
+                os.path.join(sbu_descriptor_path, 'mc_descriptors.csv'))
+        else:
+            sbu_descriptors = pd.DataFrame()
+        """""" """
+        Generate all of the SBU based RACs (full scope, mc)
+        """ """"""
+    results_dictionary = generate_multimetal_autocorrelations(molcif,
+                                                              depth=depth,
+                                                              loud=False)
+    descriptor_names, descriptors = append_descriptors(
+        descriptor_names, descriptors, results_dictionary['colnames'],
+        results_dictionary['results'], 'mc_CRY', 'all')
+    results_dictionary = generate_multimetal_deltametrics(molcif,
+                                                          depth=depth,
+                                                          loud=False)
+    descriptor_names, descriptors = append_descriptors(
+        descriptor_names, descriptors, results_dictionary['colnames'],
+        results_dictionary['results'], 'D_mc_CRY', 'all')
+    results_dictionary = generate_sum_multimetal_autocorrelations(molcif,
+                                                                  depth=depth,
+                                                                  loud=False)
+    descriptor_names, descriptors = append_descriptors(
+        descriptor_names, descriptors, results_dictionary['colnames'],
+        results_dictionary['results'], 'sum-mc_CRY', 'all')
+    results_dictionary = generate_sum_multimetal_deltametrics(molcif,
+                                                              depth=depth,
+                                                              loud=False)
+    descriptor_names, descriptors = append_descriptors(
+        descriptor_names, descriptors, results_dictionary['colnames'],
+        results_dictionary['results'], 'sum-D_mc_CRY', 'all')
+    descriptor_names += ['name']
+    descriptors += [name]
+    descriptors == list(descriptors)
+    desc_dict = {
+        key: descriptors[ii]
+        for ii, key in enumerate(descriptor_names)
+    }
+    descriptors.remove(name)
+    descriptor_names.remove('name')
+    sbu_descriptors = sbu_descriptors.append(desc_dict, ignore_index=True)
+    descriptor_list.append(descriptors)
+    names = descriptor_names
+    sbu_descriptors.to_csv(sbu_descriptor_path + '/mc_descriptors.csv',
+                           index=False)
+    return descriptor_names, descriptors
 
 
 def make_MOF_SBU_RACs(
@@ -111,7 +170,6 @@ def make_MOF_SBU_RACs(
                     loud=False,
                     depth=depth,
                     oct=False,
-                    polarizability=True,
                 )
                 descriptor_names, descriptors = append_descriptors(
                     descriptor_names,
@@ -128,7 +186,6 @@ def make_MOF_SBU_RACs(
                     loud=False,
                     depth=depth,
                     oct=False,
-                    polarizability=True,
                 )
                 descriptor_names, descriptors = append_descriptors(
                     descriptor_names,
@@ -226,8 +283,8 @@ def make_MOF_SBU_RACs(
                 if j == 0:
                     lc_names = descriptor_names
         lc_descriptor_array = np.array(lc_descriptor_list)
-        averaged_lc_descriptors = np.mean(lc_descriptor_array, axis=0)
-        sum_lc_descriptors = np.sum(lc_descriptor_array, axis=0)
+        averaged_lc_descriptors = list(np.mean(lc_descriptor_array, axis=0))
+        sum_lc_descriptors = list(np.sum(lc_descriptor_array, axis=0))
         lc_descriptors.to_csv(lc_csv_path, index=False)
         descriptors = []
         descriptor_names = []
@@ -277,6 +334,10 @@ def make_MOF_SBU_RACs(
             "mc",
             "all",
         )
+
+        results_dictionary = generate_sum_multimetal_autocorrelations(
+            molcif, depth=depth, loud=False)
+
         # print('7',len(descriptor_names),len(descriptors))
         results_dictionary = generate_multimetal_deltametrics(molcif,
                                                               depth=depth,
@@ -305,12 +366,16 @@ def make_MOF_SBU_RACs(
             names = descriptor_names
     sbu_descriptors.to_csv(sbu_csv_path, index=False)
     sbu_descriptor_array = np.array(descriptor_list)
-    averaged_SBU_descriptors = np.mean(sbu_descriptor_array, axis=0)
-    sum_SBU_descriptors = np.mean(sbu_descriptor_array, axis=0)
-    return names + ["sum-" + k for k in names], np.hstack([
-        averaged_SBU_descriptors, sum_SBU_descriptors
-    ]), lc_names + ["sum-" + k for k in lc_names], np.hstack(
-        [averaged_lc_descriptors, sum_lc_descriptors])
+    averaged_SBU_descriptors = list(np.mean(sbu_descriptor_array, axis=0))
+    sum_SBU_descriptors = list(np.sum(sbu_descriptor_array, axis=0))
+
+    mc_CRY_descriptors_names, mc_CRY_descriptors = make_crystalgraph_mc_RACs(
+        molcif, depth, name, cell, sbupath)
+    return names + [
+        "sum-" + k for k in names
+    ] + mc_CRY_descriptors_names, averaged_SBU_descriptors + sum_SBU_descriptors + mc_CRY_descriptors, lc_names + [
+        "sum-" + k for k in lc_names
+    ], averaged_lc_descriptors + sum_lc_descriptors
 
 
 def make_MOF_linker_RACs(linkerlist,
@@ -320,21 +385,27 @@ def make_MOF_linker_RACs(linkerlist,
                          name,
                          cell,
                          linkerpath=False):
-    #### This function makes full scope linker RACs for MOFs ####
     descriptor_list = []
     nlink = len(linkerlist)
-    descriptor_names = []
-    descriptors = []
+    lc_descriptors = []
+    lc_names = []
+    func_descriptors = []
+    func_names = []
+    full_descriptors = []
+    full_names = []
+    metal_set = set(molcif.findMetal())
     if linkerpath:
         linker_descriptor_path = os.path.dirname(linkerpath)
-        if (os.path.getsize(
-                os.path.join(linker_descriptor_path, "linker_descriptors.csv"))
-                > 0):
-            linker_descriptors = pd.read_csv(
-                os.path.join(linker_descriptor_path, "linker_descriptors.csv"))
+        if os.path.getsize(linker_descriptor_path +
+                           '/linker_descriptors.csv') > 0:
+            linker_descriptors = pd.read_csv(linker_descriptor_path +
+                                             '/linker_descriptors.csv')
         else:
             linker_descriptors = pd.DataFrame()
+
     for i, linker in enumerate(linkerlist):
+        print('looping over linkers')
+        # 1. make mol3D of linker and print it
         linker_mol = mol3D()
         for val in linker:
             linker_mol.addAtom(molcif.getAtom(val))
@@ -343,33 +414,106 @@ def make_MOF_linker_RACs(linkerlist,
             [atom.coords() for atom in linker_mol.atoms])
         linker_mol_atom_labels = [atom.sym for atom in linker_mol.atoms]
         linker_mol_adj_mat = np.array(linker_mol.graph)
-        # WRITE THE LINKER MOL TO THE PLACE
-        if linkerpath and not os.path.exists(
-                os.path.join(linkerpath,
-                             str(name) + str(i) + ".xyz")):
-            xyzname = os.path.join(linkerpath,
-                                   str(name) + "_linker_" + str(i) + ".xyz")
-            linker_mol_fcoords_connected = XYZ_connected(
-                cell, linker_mol_cart_coords, linker_mol_adj_mat)
-            writeXYZandGraph(
-                xyzname,
-                linker_mol_atom_labels,
-                cell,
-                linker_mol_fcoords_connected,
-                linker_mol_adj_mat,
-            )
+        ###### WRITE THE LINKER MOL TO THE PLACE
+        # if linkerpath and not os.path.exists(linkerpath+"/"+str(name)+str(i)+".xyz"):
+        #     # linker_mol.writexyz(linkerpath+"/"+str(name)+str(i))
+        #     xyzname = linkerpath+"/"+str(name)+"_linker_"+str(i)+".xyz"
+        #     linker_mol_fcoords_connected = XYZ_connected(cell , linker_mol_cart_coords , linker_mol_adj_mat )
+        #     writeXYZandGraph(xyzname , linker_mol_atom_labels , cell , linker_mol_fcoords_connected,linker_mol_adj_mat)
+
+        link_list = []
+        lc_atoms = []
+        descriptor_names = []
+        descriptors = []
+        # find the anchoring atoms to metals:
+        for jj, linkeratom in enumerate(linker):
+            all_bonded_atoms = set(molcif.getBondedAtomsSmart(linkeratom))
+            if metal_set.intersection(all_bonded_atoms):
+                link_list.append(jj)
+                lc_atoms.append(linkeratom)
+
+        if not len(lc_atoms) > 0:
+            print(
+                'A linker with no connection to metals! cannot be featurized')
+            continue
+        else:
+            """""" """
+            Generate all of the lc autocorrelations
+            """ """"""
+            print('generating lc autocorrelations')
+            results_dictionary = generate_atomonly_autocorrelations(
+                linker_mol, link_list, loud=False, depth=depth, oct=False)
+            descriptor_names, descriptors = append_descriptors(
+                descriptor_names, descriptors, results_dictionary['colnames'],
+                results_dictionary['results'], 'lc', 'all')
+            results_dictionary = generate_atomonly_deltametrics(linker_mol,
+                                                                link_list,
+                                                                loud=False,
+                                                                depth=depth,
+                                                                oct=False)
+            descriptor_names, descriptors = append_descriptors(
+                descriptor_names, descriptors, results_dictionary['colnames'],
+                results_dictionary['results'], 'D_lc', 'all')
+            """""" """
+            If functional groups exist (anything that is not C or H, so methyl is missed, also excludes anything lc, so carboxylic metal-coordinating oxygens skipped), 
+            compile the list of atoms
+            """ """"""
+
+            functional_atoms = []
+            for jj in range(len(linker_mol.graph)):
+                if not jj in link_list:
+                    if not set({linker_mol.atoms[jj].sym}) & set({"C", "H"}):
+                        functional_atoms.append(jj)
+
+            if len(functional_atoms) > 0:
+                results_dictionary = generate_atomonly_autocorrelations(
+                    linker_mol,
+                    functional_atoms,
+                    loud=False,
+                    depth=depth,
+                    oct=False)
+                descriptor_names, descriptors = append_descriptors(
+                    descriptor_names, descriptors,
+                    results_dictionary['colnames'],
+                    results_dictionary['results'], 'func', 'all')
+                results_dictionary = generate_atomonly_deltametrics(
+                    linker_mol,
+                    functional_atoms,
+                    loud=False,
+                    depth=depth,
+                    oct=False)
+                descriptor_names, descriptors = append_descriptors(
+                    descriptor_names, descriptors,
+                    results_dictionary['colnames'],
+                    results_dictionary['results'], 'D_func', 'all')
+
+            else:
+                descriptor_names, descriptors = append_descriptors(
+                    descriptor_names, descriptors,
+                    results_dictionary['colnames'],
+                    [list(np.zeros(int(6 * (depth + 1))))], 'func', 'all')
+
+                descriptor_names, descriptors = append_descriptors(
+                    descriptor_names, descriptors,
+                    results_dictionary['colnames'],
+                    [list(np.zeros(int(6 * (depth + 1))))], 'D_func', 'all')
+
+            for val in descriptors:
+                if not (type(val) == float or isinstance(val, np.float64)):
+                    print(
+                        'Mixed typing. Please convert to python float, and avoid np float'
+                    )
+
+        # 2. make full linker RACs
         allowed_strings = [
-            "electronegativity",
-            "nuclear_charge",
-            "ident",
-            "topology",
-            "size",
+            'electronegativity', 'nuclear_charge', 'ident', 'topology', 'size'
         ]
-        labels_strings = ["chi", "Z", "I", "T", "S"]
+        labels_strings = ['chi', 'Z', 'I', 'T', 'S']
         colnames = []
         lig_full = list()
+        ligand_ac_full = []
         for ii, properties in enumerate(allowed_strings):
-            if not list(descriptors):
+            if not list():
                 ligand_ac_full = full_autocorrelation(linker_mol, properties,
                                                       depth)
             else:
@@ -377,31 +521,39 @@ def make_MOF_linker_RACs(linkerlist,
                                                        depth)
             this_colnames = []
             for j in range(0, depth + 1):
-                this_colnames.append("f-lig-" + labels_strings[ii] + "-" +
+                this_colnames.append('f-lig-' + labels_strings[ii] + '-' +
                                      str(j))
             colnames.append(this_colnames)
             lig_full.append(ligand_ac_full)
         lig_full = [item for sublist in lig_full
-                    for item in sublist]  # flatten lists
+                    for item in sublist]  #flatten lists
         colnames = [item for sublist in colnames for item in sublist]
-        colnames += ["name"]
-        lig_full += [name]
-        desc_dict = {key: lig_full[i] for i, key in enumerate(colnames)}
+        descriptors += lig_full
+        descriptor_names += colnames
+
+        # merging all linker descriptors
+        descriptor_names += ['name']
+        descriptors += [name]
+        desc_dict = {
+            key2: descriptors[kk]
+            for kk, key2 in enumerate(descriptor_names)
+        }
+        descriptors.remove(name)
+        descriptor_names.remove('name')
         linker_descriptors = linker_descriptors.append(desc_dict,
                                                        ignore_index=True)
-        lig_full.remove(name)
-        colnames.remove("name")
-        descriptor_list.append(lig_full)
-    # We dump the standard lc descriptors without averaging or summing so that the user
-    # can make the modifications that they want. By default we take the average ones.
-    linker_descriptors.to_csv(os.path.join(linker_descriptor_path,
-                                           "linker_descriptors.csv"),
+        descriptor_list.append(descriptors)
+
+    linker_descriptors.to_csv(linker_descriptor_path +
+                              '/linker_descriptors.csv',
                               index=False)
-    ligand_descriptors = np.array(descriptor_list)
-    averaged_ligand_descriptors = np.mean(ligand_descriptors, axis=0)
-    sum_ligand_descriptors = np.mean(ligand_descriptors, axis=0)
-    return colnames + ["sum-" + k for k in colnames], np.hstack(
-        [averaged_ligand_descriptors, sum_ligand_descriptors])
+    averaged_linker_descriptors = list(
+        np.mean(np.array(descriptor_list), axis=0))
+    summed_linker_descriptors = list(np.sum(np.array(descriptor_list), axis=0))
+    summed_colnames = ["sum-" + k for k in descriptor_names]
+    descriptor_names += summed_colnames
+    descriptors = averaged_linker_descriptors + summed_linker_descriptors
+    return descriptor_names, descriptors
 
 
 def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
@@ -778,23 +930,26 @@ def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
     """
     if len(linker_subgraphlist) >= 1:  # Featurize cases that did not fail
         try:
-            (
-                descriptor_names,
-                descriptors,
-                lc_descriptor_names,
-                lc_descriptors,
-            ) = make_MOF_SBU_RACs(
-                SBU_list,
-                SBU_subgraphlist,
-                molcif,
-                depth,
-                name,
-                cell_v,
-                anc_atoms,
-                sbupath,
-                connections_list,
-                connections_subgraphlist,
-            )
+            # (
+            #     descriptor_names,
+            #     descriptors,
+            #     lc_descriptor_names,
+            #     lc_descriptors,
+            # ) = make_MOF_SBU_RACs(
+            #     SBU_list,
+            #     SBU_subgraphlist,
+            #     molcif,
+            #     depth,
+            #     name,
+            #     cell_v,
+            #     anc_atoms,
+            #     sbupath,
+            #     connections_list,
+            #     connections_subgraphlist,
+            # )
+            descriptor_names, descriptors = make_crystalgraph_mc_RACs(
+                molcif, depth, name, cell_v, sbupath)
+
             print('Making the SBU RACs worked')
             lig_descriptor_names, lig_descriptors = make_MOF_linker_RACs(
                 linker_list,
@@ -805,12 +960,11 @@ def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
                 cell_v,
                 linkerpath,
             )
-            full_names = (descriptor_names + lig_descriptor_names +
-                          lc_descriptor_names)  # + ECFP_names
-            full_descriptors = (list(descriptors) + list(lig_descriptors) +
-                                list(lc_descriptors))
+            full_names = (descriptor_names + lig_descriptor_names )  # + ECFP_names
+            full_descriptors = (list(descriptors) + list(lig_descriptors))
             print(len(full_names), len(full_descriptors))
-        except Exception:
+        except Exception as e:
+            print(e)
             full_names = [0]
             full_descriptors = [0]
     elif len(linker_subgraphlist) == 1:  # this never happens, right?

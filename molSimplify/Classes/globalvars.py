@@ -392,6 +392,22 @@ all_angle_refs = {
     "pentagonal bipyramidal": [[90, 90, 90, 90, 90, 180] for x in range(2)] + [[72, 72, 144, 144, 90, 90] for x in range(5)]
 }
 
+## Static dipole polarizabilities of the neutral elements by atom symbol
+## extracted from Peter Schwerdtfeger & Jeffrey K. Nagle (2019) 2018 Table of static dipole polarizabilities of the neutral elements in the periodic table, Molecular Physics, 117:9-12, 1200-1225, DOI: 10.1080/00268976.2018.1535143
+polarizability_dict = {"H": 4.5    ,
+          "Li": 164.0 , "Be": 37.7 ,  "B": 20.5 , "C" : 11.3 ,  "N": 7.4  ,  "O": 5.3 , "F": 3.74 ,
+          "Na": 163.0 , "Mg": 71.2 , "Al": 57.8 , "Si":37.3  ,  "P": 25.0 ,  "S": 19.4, "Cl": 14.6,
+          "K":  290.0 , "Ca": 161.0, "Sc": 97.0 , "Ti":100.0 ,  "V": 87.0 , "Cr": 83.0,
+          "Mn": 68.0  , "Fe": 62.0 , "Co": 55.0 , "Ni": 49.0 , "Cu": 47.0 , "Zn": 38.7, "Ga": 50.0,
+          "Ge": 40.0  , "As": 30.0 , "Se":29.0  , "Br": 21.0 , "Rb": 320  ,  "Sr":197 , "Y": 162 ,
+          "Zr": 112.0 , "Nb":98.0  , "Mo":87.0  , "Tc": 79.0 , "Ru": 72.0 , "Rh": 66.0,
+          "Pd": 26.1  , "Ag":55.0  , "Cd": 46.0 , "In": 65.0 , "Sn":53.0  , "Sb": 43.0, "I": 32.9 ,
+          "Cs": 401.0 , "Ba": 272.0, "Lu":137.0 ,"Hf" : 103.0, "Ta": 74.0 ,  "W":68.0 , "Re": 62.0, "Ir":54.0 ,
+          "Pt": 48.0  , "Au": 36.0 , "Hg": 33.4 , "Tl": 50.0 , "Pb":47.0  , "Bi":48.0 ,
+          "La": 215.0 , "Ce":205.0 , "Pr": 216.0, "Nd":208.0 , "Sm": 192.0,
+          "Gd": 158.0 , "Dy": 165.0, "Ho": 156.0, "Er": 150.0, "Tm":144.0 ,
+          "Fr": 318.0 , "Ra": 246.0, "Ac":203.0 , "Th": 217.0, "Pa": 154.0,  "U": 129.0, "Np": 151.0, "Pu":132.0 ,
+          "Am": 131.0 , "Cm": 144.0, "Bk": 125.0, "Cf": 122.0, "Es":118.0 , "Fm": 113.0, "Md": 109.0, "No": 110.0 }
 
 # Module for running bash commands
 #  @param cmd String containing command to be run
@@ -537,6 +553,9 @@ class globalvars:
     #  @return Electronegativity dictionary
     def endict(self):
         return endict
+
+    def polarizability_dict(self): 
+        return polarizability_dict
 
     # Returns electronegativity dictionary
     #  @param self The object pointer
