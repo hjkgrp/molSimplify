@@ -337,9 +337,10 @@ groups_dict = {
 }
 
 # Metals (includes alkali, alkaline earth, and transition metals)
-metalslist = [  # 'Li', 'li', 'LI', 'lithium', 'Be', 'be', 'BE', 'beryllium',
-    'Na', 'na', 'NA', 'sodium', 'Mg', 'mg', 'MG', 'magnesium', 'Al', 'al',
-    'AL', 'aluminum', 'aluminium', 'K', 'k', 'potassium', 'Ca', 'ca', 'CA',
+metalslist = [
+    'Li', 'li', 'LI', 'lithium', 'Be', 'be', 'BE', 'beryllium', 'Na', 'na',
+    'NA', 'sodium', 'Mg', 'mg', 'MG', 'magnesium', 'Al', 'al', 'AL',
+    'aluminum', 'aluminium', 'K', 'k', 'potassium', 'Ca', 'ca', 'CA',
     'calcium', 'Rb', 'rb', 'RB', 'rubidium', 'Sr', 'sr', 'SR', 'strontium',
     'Cs', 'cs', 'CS', 'cesium', 'Ba', 'ba', 'BA', 'barium', 'Fr', 'fr', 'FR',
     'francium', 'Ra', 'ra', 'RA', 'radium', 'Sc', 'sc', 'SC', 'scandium', 'Ti',

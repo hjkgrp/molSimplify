@@ -166,3 +166,8 @@ UiO66_primitive, Anchors list: {104, 105, 106, 107}, SBU connectlist: {0} set to
 UiO66_primitive, Anchors list: {104, 105, 106, 107}, SBU connectlist: {0} set to be linker
 UiO66_primitive, Anchors list: {104, 105, 108, 109}, SBU connectlist: {0} set to be linker
 UiO66_primitive, Anchors list: {104, 105, 108, 109}, SBU connectlist: {0} set to be linker
+Zn-Al-PyC-H-opt, Anchors list: {2}, SBU connectlist: {2} set to be ligand
+Zn-Al-PyC-H-opt, Anchors list: {3}, SBU connectlist: {3} set to be linker
+Zn-Al-PyC-H-opt, Anchors list: {0}, SBU connectlist: {0} set to be linker
+Zn-Al-PyC-H-opt, Anchors list: {1}, SBU connectlist: {1} set to be ligand
+Structure Zn-Al-PyC-H-opt has extreamly short ligands, check the outputs

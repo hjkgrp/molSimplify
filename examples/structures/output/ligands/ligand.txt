@@ -1,0 +1,8 @@
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+AlPMOF, Anchors list: set(), SBU connectlist: set()
+Zn-Al-PyC-H-opt11, Anchors list: {2}, SBU connectlist: {2}
+Zn-Al-PyC-H-opt8, Anchors list: {1}, SBU connectlist: {1}

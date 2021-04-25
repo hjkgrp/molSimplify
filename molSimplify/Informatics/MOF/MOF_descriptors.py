@@ -674,17 +674,17 @@ def get_MOF_descriptors(structurepath, depth, path=None, xyzpath=None):
             i for i in range(len(labels_components))
             if labels_components[i] == comp
         ]
-        if not set(inds_in_comp) & metal_list:
-            full_names = [0]
-            full_descriptors = [0]
-            tmpstr = "Failed to featurize %s: solvent molecules\n" % (name)
-            write2file(failed_log, tmpstr)
-            return full_names, full_descriptors
+        # if not set(inds_in_comp) & metal_list:
+        #     full_names = [0]
+        #     full_descriptors = [0]
+        #     tmpstr = "Failed to featurize %s: solvent molecules\n" % (name)
+        #     write2file(failed_log, tmpstr)
+        #     return full_names, full_descriptors
 
-    if n_components > 1:
-        print("structure is interpenetrated")
-        tmpstr = "%s found to be an interpenetrated structure\n" % (name)
-        write2file(os.path.join(logpath, "%s.log" % name), tmpstr)
+    # if n_components > 1:
+    #     print("structure is interpenetrated")
+    #     tmpstr = "%s found to be an interpenetrated structure\n" % (name)
+    #     write2file(os.path.join(logpath, "%s.log" % name), tmpstr)
     """
     step 1: metallic part
         removelist = metals (1) + atoms only connected to metals (2) + H connected to (1+2)
