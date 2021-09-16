@@ -17,7 +17,7 @@ import sys
 import subprocess
 import re
 import unicodedata
-import openbabel
+from openbabel import openbabel
 import random
 import shutil
 from pkg_resources import resource_filename, Requirement

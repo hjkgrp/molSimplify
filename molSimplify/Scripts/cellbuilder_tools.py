@@ -8,7 +8,7 @@
 import re
 
 import numpy
-import openbabel
+from openbabel import openbabel
 import copy
 from math import sqrt, pi
 from molSimplify.Classes.globalvars import globalvars

@@ -14,7 +14,7 @@ import time
 import xml.etree.ElementTree as ET
 from math import sqrt
 import numpy as np
-import openbabel
+from openbabel import openbabel
 from scipy.spatial import ConvexHull
 
 from molSimplify.Classes.atom3D import atom3D

@@ -56,7 +56,7 @@ from molSimplify.Informatics.decoration_manager import (decorate_ligand)
 from molSimplify.Informatics.RACassemble import (assemble_connectivity_from_parts)
 from molSimplify.Classes.ligand import ligand
 from molSimplify.Classes.globalvars import globalvars
-import openbabel
+from openbabel import openbabel
 import random
 import itertools
 import numpy
@@ -680,10 +680,10 @@ def ffopt(ff, mol, connected, constopt, frozenats, frozenangles, mlbonds, nsteps
                         deleted_bonds += 1
                 print(('FFopt deleted ' + str(deleted_bonds) + ' bonds'))
                 # then add back one metal-ligand bond for FF
-                if OBMol.GetAtom(m+1).GetValence() == 0:
+                if OBMol.GetAtom(m+1).GetExplicitDegree() == 0:
                     # getBondedAtomsOct(m,deleted_bonds+len(bridgingatoms)):
                     for i in mol.getBondedAtoms(m):
-                        if OBMol.GetAtom(m+1).GetValence() < 1 and i not in bridgingatoms:
+                        if OBMol.GetAtom(m+1).GetExplicitDegree() < 1 and i not in bridgingatoms:
                             OBMol.AddBond(m+1, i+1, 1)
         # freeze small ligands
         for cat in frozenats:
@@ -693,7 +693,7 @@ def ffopt(ff, mol, connected, constopt, frozenats, frozenangles, mlbonds, nsteps
         if debug:
             for iiat, atom in enumerate(openbabel.OBMolAtomIter(OBMol)):
                 print((' atom '+str(iiat)+' atomic num '+str(atom.GetAtomicNum())+' valence ' +
-                       str(atom.GetValence()) + ' is fixed ' + str(constr.IsFixed(iiat+1))))
+                       str(atom.GetExplicitDegree()) + ' is fixed ' + str(constr.IsFixed(iiat+1))))
         # set up forcefield
         s = forcefield.Setup(OBMol, constr)
         if s == False:

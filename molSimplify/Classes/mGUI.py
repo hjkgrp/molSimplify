@@ -29,7 +29,7 @@ import tempfile
 from pkg_resources import resource_filename, Requirement
 import xml.etree.ElementTree as ET
 
-import openbabel
+from openbabel import openbabel
 
 # Main GUI class
 

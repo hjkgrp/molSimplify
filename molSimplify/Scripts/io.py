@@ -12,7 +12,7 @@ import re
 import argparse
 import sys
 import random
-import openbabel
+from openbabel import openbabel
 import copy
 from molSimplify.Classes.mol3D import *
 from molSimplify.Classes.globalvars import *

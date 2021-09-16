@@ -14,7 +14,7 @@
 
 import numpy as np
 import numpy
-import openbabel
+from openbabel import openbabel
 from scipy import optimize
 from math import sqrt, cos
 

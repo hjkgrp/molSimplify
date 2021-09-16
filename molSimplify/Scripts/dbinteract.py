@@ -14,7 +14,7 @@ try:
     import pymol
 except:
     pass
-import openbabel
+from openbabel import openbabel
 
 from molSimplify.Classes.globalvars import (amassdict,
                                             glob,

@@ -27,7 +27,7 @@
 import sys, argparse, os, platform, shutil
 if not('win' in sys.platform):
     flags = sys.getdlopenflags()
-import openbabel
+from openbabel import openbabel
 if not('win' in sys.platform):
     sys.setdlopenflags(flags)
 

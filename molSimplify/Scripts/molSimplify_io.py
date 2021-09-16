@@ -13,7 +13,7 @@ import glob
 import os
 import time
 
-import openbabel
+from openbabel import openbabel
 from pkg_resources import resource_filename, Requirement
 
 from molSimplify.Classes.globalvars import (globalvars,

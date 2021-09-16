@@ -1,7 +1,7 @@
 import pytest
 import argparse
 import os
-import openbabel as ob
+from openbabel import openbabel as ob
 import numpy as np
 from molSimplify.Scripts.inparse import *
 from molSimplify.Scripts.generator import *
