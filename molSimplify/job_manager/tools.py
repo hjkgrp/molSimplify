@@ -151,7 +151,11 @@ def get_machine():
     elif "gridsan" in hostname or "login-" in hostname:
         machine = "supercloud"
     else:
-        raise ValueError('Machine Unknown to Job Manager')
+        hostname = call_bash('hostname -A')[0]
+        if "expanse" in hostname:
+            machine = "expanse"
+        else:
+            raise ValueError('Machine Unknown to Job Manager')
     return machine
 
 def get_username():
@@ -242,7 +246,7 @@ def list_active_jobs(ids=False, home_directory=False, parse_bundles=False):
     try:
         if get_machine() == 'gibraltar':
             job_report.lines = call_bash("qstat -r")
-        elif get_machine() in ['comet', 'bridges']:
+        elif get_machine() in ['comet', 'bridges',"expanse"]:
             job_report.lines = call_bash('squeue -o "%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R" -u '+get_username(),
                                          version=2)
         else:
@@ -252,7 +256,7 @@ def list_active_jobs(ids=False, home_directory=False, parse_bundles=False):
     if get_machine() == 'gibraltar':
         names = job_report.wordgrab('jobname:', 2)[0]
         names = [i for i in names if i]  # filters out NoneTypes
-    elif get_machine() in ['comet', 'bridges', "mustang", "supercloud"]:
+    elif get_machine() in ['comet', 'bridges', "mustang", "supercloud","expanse"]:
         names = job_report.wordgrab(get_username(), 2)[0]
         names = [i for i in names if i]  # filters out NoneTypes
     else:
@@ -261,13 +265,13 @@ def list_active_jobs(ids=False, home_directory=False, parse_bundles=False):
         job_ids = []
         if get_machine() == 'gibraltar':
             line_indices_of_jobnames = job_report.wordgrab('jobname:', 2, matching_index=True)[0]
-        elif get_machine() in ['comet', 'bridges', "mustang", "supercloud"]:
+        elif get_machine() in ['comet', 'bridges', "mustang", "supercloud","expanse"]:
             line_indices_of_jobnames = job_report.wordgrab(get_username(), 2, matching_index=True)[0]
         line_indices_of_jobnames = [i for i in line_indices_of_jobnames if i]  # filters out NoneTypes
         for line_index in line_indices_of_jobnames:
             if get_machine() == 'gibraltar':
                 job_ids.append(int(job_report.lines[line_index - 1].split()[0]))
-            elif get_machine() in ['comet', 'bridges', "mustang", "supercloud"]:
+            elif get_machine() in ['comet', 'bridges', "mustang", "supercloud","expanse"]:
                 job_ids.append(int(job_report.lines[line_index].split()[0]))
         if len(names) != len(job_ids):
             print(len(names))
@@ -345,7 +349,7 @@ def get_total_queue_usage():
     # gets the number of jobs in the queue for this user, regardless of where they originate
     if get_machine() == 'gibraltar':
         jobs = call_bash("qstat -u '" + get_username() + "'", version=2)
-    elif get_machine() in ['comet', 'bridges', "mustang", "supercloud"]:
+    elif get_machine() in ['comet', 'bridges', "mustang", "supercloud","expanse"]:
         jobs = call_bash('squeue -o "%.18i %.9P %.50j %.8u %.2t %.10M %.6D %R" -u ' + get_username(),
                          version=2)
     else:
@@ -566,7 +570,7 @@ def qsub(jobscript_list):
         if get_machine() in ['gibraltar']:
             stdout, stderr = call_bash('qsub ' + jobscript, error=True)
             stdouts.append(stdout)
-        elif get_machine() in ['bridges', 'comet']:
+        elif get_machine() in ['bridges', 'comet',"expanse"]:
             stdout, stderr = call_bash('sbatch ' + jobscript, error=True)
             stdouts.append(stdout)
         if len(stderr) > 0:
