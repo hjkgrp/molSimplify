@@ -757,7 +757,7 @@ def make_supercell(cell,atoms,fcoords,exp_coeff):
     return supercell,superatoms,superfcoords
 
 
-def compute_adj_matrix(distance_mat,allatomtypes):
+def compute_adj_matrix(distance_mat,allatomtypes,wiggle_room=1):
     """
     Calculates what atoms are bonded to each other.
 
@@ -770,6 +770,8 @@ def compute_adj_matrix(distance_mat,allatomtypes):
         The distance of each atom to each other atom. Shape is (number of atoms, number of atoms).
     allatomtypes : list of str
         The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    wiggle_room : float
+        A multiplier that allows for more or less strict bond distance cutoffs.
 
     Returns
     -------
@@ -777,10 +779,14 @@ def compute_adj_matrix(distance_mat,allatomtypes):
         1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
 
     """
+    # print(f'check check in compute_adj_matrix') # TODO remove later
+    # print(f'check length {len(allatomtypes)}') # TODO remove later
 
     adj_matrix=np.zeros(distance_mat.shape)
     for i,e1 in enumerate(allatomtypes[:-1]): # Iterating through all pairs of atoms.
+        # print(f'i is {i}') # TODO remove later
         for j,e2 in enumerate(allatomtypes[i+1:]):
+            # print(f'i is {i} and j is {j}') # TODO remove later
             elements = set([e1, e2])
 
             # In the context of sets, < means that all the items in the set elements is in the set metals, for example.
@@ -823,7 +829,15 @@ def compute_adj_matrix(distance_mat,allatomtypes):
                 tempsf = 0.95
             if(elements ==set(["C"]) ):
                 tempsf = 0.85
-            if dist*tempsf < rad: # and not (alkali & elements):
+            # For Al-PMOF, atom 168 and 179 [1-indexed] should be bonded. carbon and oxygen. # TODO debugging, remove later
+            if i==167 and j==(178-167):
+                print('hit hit hit')
+                print(f'j is {j}')
+                print(f'elements is {elements}')
+                print(f'rad is {rad}')
+                print(f'cutoff is {dist*tempsf}')
+            # TODO remove later
+            if dist*tempsf < rad * wiggle_room: # and not (alkali & elements):
                 # Entering this if statement means there is a bond between the two atoms.
                 adj_matrix[i,i+j+1]=1
                 adj_matrix[i+j+1,i]=1
@@ -1003,7 +1017,7 @@ def disorder_detector(name):
 
         return disordered_atom_indices, disordered_atom_types, disordered_atom_occupancies
 
-def solvent_removal(cif_path, new_cif_path):
+def solvent_removal(cif_path, new_cif_path, wiggle_room=1):
     """
     It is recommended that get_primitive be run before this function is applied.
     Reads a cif file, removes floating solvent, and writes the cif to the provided path.
@@ -1014,6 +1028,9 @@ def solvent_removal(cif_path, new_cif_path):
         The path of the cif file to be read.
     new_cif_path : str
         The path to which the modified cif file will be written.
+    wiggle_room : float
+        A multiplier that allows for more or less strict bond distance cutoffs.
+        Useful for some trouble CIFs.
 
     Returns
     -------
@@ -1032,8 +1049,10 @@ def solvent_removal(cif_path, new_cif_path):
 
     # Assuming that the cif does not have graph information of the structure.
     distance_mat = compute_distance_matrix3(cell_v,cart_coords)
+    print(f'distance_mat: {distance_mat}')
     try:
-        adj_matrix=compute_adj_matrix(distance_mat,allatomtypes)
+        adj_matrix=compute_adj_matrix(distance_mat,allatomtypes, wiggle_room=wiggle_room)
+        # print(f'adj_matrix: {adj_matrix}')
     except NotImplementedError:
         raise Exception("Failed due to atomic overlap")
 
@@ -1044,6 +1063,8 @@ def solvent_removal(cif_path, new_cif_path):
 
     # Finding the connected components
     n_components, labels_components = sparse.csgraph.connected_components(csgraph=adj_matrix, directed=False, return_labels=True)
+    print(f'n_components: {n_components}')
+    print(f'labels_components: {labels_components}')
     metal_list = set([at for at in molcif.findMetal(transition_metals_only=False)]) # the atom indices of the metals
     if not len(metal_list) > 0:
         raise Exception("No metal in the structure.")
