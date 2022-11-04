@@ -937,18 +937,16 @@ def plugin_defs() -> str:
 #  @param rootdir Root directory
 #  @param core mol3D of core
 #  @param ligs List of ligand names
-    # For SMILES ligands, the name is a SMILES string.
 #  @param ligoc List of ligand occurrences
 #  @param sernum Complex serial number
 #  @param args Namespace of arguments
 #  @param bind Flag for binding species (default False)
 #  @param bsmi Flag for SMILES binding species (default False)
-#  @param SMILES_lig_names List of user-provided names for the SMILES strings
 #  @return Complex name
 
 
 def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum,
-                 args, nconf=False, sanity=False, bind=False, bsmi=False, SMILES_lig_names=[]) -> str:
+                 args, nconf=False, sanity=False, bind=False, bsmi=False) -> str:
     # new version of the above, designed to
     # produce more human and machine-readable formats
     if args.name:  # if set externerally
@@ -984,22 +982,15 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum,
                 # Checking if it is likely a misspelling
                 text_similarities = [difflib.SequenceMatcher(None, lig, i).ratio() for i in list(licores.keys())]
                 if max(text_similarities) > 0.6:  # likely a misspelling of a ligand that is in ligands.dict
-                    # Find the most similar ligand in ligands.dict by name. Swap for the misspelling.
                     max_similarity = max(text_similarities)
                     index_max = text_similarities.index(max_similarity)
                     desired_ligand = list(licores.keys())[index_max]
                     name += '_' + str(desired_ligand) + '_' + str(ligoc[i])
                 else:  # SMILES string
                     lig = lig.split('\t')[0]
-                    # Checking to see if there is a user-provided name for this SMILES string
-                    if sminum < len(SMILES_lig_names):
-                        # The user provided enough names for this SMILES string to be named.
-                        # This will affect file and folder naming down the line.
-                        prefix = f'_{SMILES_lig_names[sminum]}'
-                    else:
-                        prefix = f'_smi{int(sernum)+int(sminum+1)}'
-                    name += f'{prefix}_{ligoc[i]}'
                     sminum += 1
+                    name += '_smi' + str(int(sernum)+int(sminum)
+                                         ) + '_' + str(ligoc[i])
             else:  # ligand is in ligands.dict
                 name += '_' + str(lig) + '_' + str(ligoc[i])
         name += "_s_"+str(spin)
@@ -1014,7 +1005,7 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum,
             name += '_antigeoisomer'
     return name
 
-# Generate TS complex name (this is actually used instead of namegen.py)
+# Generate complex name (this is actually used instead of namegen.py)
 #  @param rootdir Root directory
 #  @param core mol3D of core
 #  @param ligs List of ligand names

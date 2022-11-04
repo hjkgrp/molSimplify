@@ -2669,7 +2669,7 @@ def mcomplex(args, ligs, ligoc, licores, globs):
     return core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext
 
 
-def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True, SMILES_lig_names=[]):
+def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True):
     """Main structure generation routine - multiple structures
     Parameters
     ----------
@@ -2687,8 +2687,6 @@ def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True, SM
             Serial number of complex for naming.
         write_files : bool, optional
             Flag to write files. Default is True. False for pythonic generation.
-        SMILES_lig_names : list, optional
-            List of user-provided names for the SMILES strings
     Returns
     -------
         strfiles : str
@@ -2884,7 +2882,7 @@ def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True, SM
         this_diag.set_ANN(ANN_flag, ANN_reason, ANN_attributes, catalysis_flag)
     # generate file name
     fname = name_complex(rootdir, name_core, args.geometry,
-                         ligands, ligoc, sernum, args, 1, sanity, SMILES_lig_names=SMILES_lig_names)
+                         ligands, ligoc, sernum, args, 1, sanity)
     if args.debug:
         print(('fname is ' + fname))
 
