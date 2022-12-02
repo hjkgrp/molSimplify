@@ -2,7 +2,6 @@ name: mols_test
 channels:
      - hjkgroup
      - psi4
-     - intel
      - conda-forge
      - anaconda
      - theochem
