@@ -16,7 +16,7 @@ dependencies:
      - tensorflow
      - keras
      - python-flatbuffers
-     - h5py
+     - h5py=3.1.0 
      # GUI
      - qt
      - pyqt
