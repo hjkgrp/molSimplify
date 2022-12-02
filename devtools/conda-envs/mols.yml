@@ -8,15 +8,19 @@ channels:
      - defaults
 dependencies:
      - python=3.7
+     - pip
      - openbabel=2.4
      - xtb
      - psi4=1.5
+     # Tensorflow and its dependencies
      - tensorflow
      - keras
-     - python-flatbuffers  # Needed for tensorflow
-     - pyqt
-     - pip
+     - python-flatbuffers
+     - h5py
+     # GUI
      - qt
+     - pyqt
+     # Other ML
      - scikit-learn
      - pandas
      - scipy
