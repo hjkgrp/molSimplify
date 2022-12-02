@@ -45,6 +45,17 @@ def test_keras_import():
         assert 0
 
 
+def test_h5py_import():
+    '''
+    Test whether h5py can be imported
+    '''
+    try:
+        import h5py
+        assert "h5py" in sys.modules
+    except ImportError:
+        assert 0
+
+
 def test_openbabel_import():
     '''
     Test whether openbabel can be imported
