@@ -3,17 +3,18 @@ channels:
      - defaults
 dependencies:
      - python=3.7
+     - pip:
+       - tensorflow
      - hjkgroup::openbabel=2.4
      - conda-forge::xtb
      - psi4::psi4
-     - pip:
-       - tensorflow
-       - scikit-learn
-       - pandas
-       - scipy
      # GUI
      - qt
      - pyqt
+     # Other ML
+     - scikit-learn
+     - pandas
+     - scipy
        #- gpy # in pip the spelling is GPy, optional
        #- hyperopt # optional
      - theochem::iodata
