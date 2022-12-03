@@ -1,8 +1,9 @@
 name: mols_test
 channels:
+     - conda-forge
      - defaults
 dependencies:
-     - python=3.8
+     - python=3.7
      - pip
      - hjkgroup::openbabel=2.4
      - conda-forge::xtb
@@ -11,8 +12,8 @@ dependencies:
      - tensorflow
      - keras
      - python-flatbuffers
-     - hdf5=1.10.6  # This has to be compatible with the h5py version
-     - h5py=3.2.1  # Pinned to working version because of bad mambda solve
+     - conda-forge::hdf5=1.10.6  # This has to be compatible with the h5py version
+     - conda-forge::h5py=3.2.1  # Pinned to working version because of bad mambda solve
      # GUI
      - qt
      - pyqt
