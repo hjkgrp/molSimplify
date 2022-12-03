@@ -11,9 +11,9 @@ dependencies:
        - scikit-learn
        - pandas
        - scipy
-       - iodata
      # GUI
      - qt
      - pyqt
        #- gpy # in pip the spelling is GPy, optional
        #- hyperopt # optional
+     - theochem::iodata
