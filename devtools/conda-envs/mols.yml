@@ -9,11 +9,11 @@ dependencies:
      - conda-forge::xtb
      - psi4::psi4
      # Tensorflow and its dependencies
-     - conda-forge::tensorflow
-     - conda-forge::keras
-     - conda-forge::python-flatbuffers
-     - conda-forge::hdf5=1.10.6  # This has to be compatible with the h5py version
-     - conda-forge::h5py=3.2.1  # Pinned to working version because of bad mambda solve
+     - defaults::tensorflow
+     - defaults::keras
+     - defaults::python-flatbuffers
+     - defaults::hdf5=1.10.6  # This has to be compatible with the h5py version
+     - defaults::h5py=3.2.1  # Pinned to working version because of bad mambda solve
      # GUI
      - qt
      - pyqt
