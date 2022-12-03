@@ -16,7 +16,8 @@ dependencies:
      - tensorflow
      - keras
      - python-flatbuffers
-     - h5py=3.2.1  # Pinned to working version because of bad mambda solve 
+     - hdf5=1.10.6  # This has to be compatible with the h5py version
+     - h5py=3.2.1  # Pinned to working version because of bad mambda solve
      # GUI
      - qt
      - pyqt
