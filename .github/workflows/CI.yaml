@@ -72,7 +72,7 @@ jobs:
 
     - name: Install package
       run: |
-        pip install -e .
+        pip install --no-deps -e .
         pip install pytest-cov codecov
         conda list
     
