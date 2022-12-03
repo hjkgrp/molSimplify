@@ -2,7 +2,7 @@ name: mols_test
 channels:
      - defaults
 dependencies:
-     - python=3.7
+     - python=3.8
      - pip
      - hjkgroup::openbabel=2.4
      - conda-forge::xtb
