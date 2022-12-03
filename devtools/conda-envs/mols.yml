@@ -6,7 +6,7 @@ dependencies:
      - pip
      - hjkgroup::openbabel=2.4
      - conda-forge::xtb
-     - psi4::psi4=1.5
+     - psi4::psi4
      # Tensorflow and its dependencies
      - tensorflow
      - keras
