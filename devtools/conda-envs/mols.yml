@@ -1,6 +1,7 @@
 name: mols_test
 channels:
      - conda-forge
+     - anaconda
      - defaults
 dependencies:
      - python=3.7
