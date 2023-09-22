@@ -67,8 +67,7 @@ def perform_ANN_prediction(RAC_dataframe: pd.DataFrame, predictor_name: str,
     rescaled_output = data_rescale(ANN_prediction, train_mean_y, train_var_y)
 
     # Get latent vectors for training data and queried data
-    train_x = load_training_data(predictor_name)
-    train_x = pd.DataFrame(train_x, columns=train_vars).astype(float)
+    train_x = pd.DataFrame(load_training_data(predictor_name), columns=train_vars).astype(float)
     get_outputs = K.function([my_ANN.layers[0].input, K.learning_phase()],
                              [my_ANN.layers[len(my_ANN.layers) - 2].output])
     normalized_train = data_normalize(train_x, train_mean_x, train_var_x)
