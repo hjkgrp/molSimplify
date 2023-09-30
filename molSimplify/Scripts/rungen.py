@@ -195,7 +195,6 @@ def getconstsample(no_rgen, args, licores, coord):
 # Generates multiple runs for different oxidation and spin states
 #  @param rundir Run directory
 #  @param args Namespace of arguments
-#  @param globs Global variables
 #  @return Error messages
 
 
@@ -560,14 +559,14 @@ def rungen(rundir, args, chspfname=None, write_files=True):
                 args.ffoption = 'ba'
                 args.MLbonds = False
                 strfiles, emsg, this_diag = structgen(
-                    args, rootdir, ligands, ligocc, globs, mcount, write_files=write_files)
+                    args, rootdir, ligands, ligocc, mcount, write_files=write_files)
                 for strf in strfiles:
                     tstrfiles.append(strf+'FFML')
                     os.rename(strf+'.xyz', strf+'FFML.xyz')
                 # generate xyz with FF and covalent
                 args.MLbonds = ['c' for i in range(0, len(args.lig))]
                 strfiles, emsg, this_diag = structgen(
-                    args, rootdir, ligands, ligocc, globs, mcount, write_files=write_files)
+                    args, rootdir, ligands, ligocc, mcount, write_files=write_files)
                 for strf in strfiles:
                     tstrfiles.append(strf+'FFc')
                     os.rename(strf+'.xyz', strf+'FFc.xyz')
@@ -576,14 +575,14 @@ def rungen(rundir, args, chspfname=None, write_files=True):
                 args.MLbonds = False
                 # generate xyz without FF and trained ML
                 strfiles, emsg, this_diag = structgen(
-                    args, rootdir, ligands, ligocc, globs, mcount, write_files=write_files)
+                    args, rootdir, ligands, ligocc, mcount, write_files=write_files)
                 for strf in strfiles:
                     tstrfiles.append(strf+'ML')
                     os.rename(strf+'.xyz', strf+'ML.xyz')
                 args.MLbonds = ['c' for i in range(0, len(args.lig))]
                 # generate xyz without FF and covalent ML
                 strfiles, emsg, this_diag = structgen(
-                    args, rootdir, ligands, ligocc, globs, mcount, write_files=write_files)
+                    args, rootdir, ligands, ligocc, mcount, write_files=write_files)
                 for strf in strfiles:
                     tstrfiles.append(strf+'c')
                     os.rename(strf+'.xyz', strf+'c.xyz')
@@ -591,7 +590,7 @@ def rungen(rundir, args, chspfname=None, write_files=True):
             else:
                 # generate xyz files
                 strfiles, emsg, this_diag = structgen(
-                    args, rootdir, ligands, ligocc, globs, mcount, write_files=write_files)
+                    args, rootdir, ligands, ligocc, mcount, write_files=write_files)
             # generate QC input files
             if args.qccode and (not emsg) and write_files:
                 if args.charge and (isinstance(args.charge, list)):

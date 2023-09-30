@@ -215,8 +215,8 @@ def init_ANN(args, ligands: List[str], occs: List[int], dents: List[int],
     return ANN_flag, ANN_bondl, ANN_reason, ANN_attributes, catalysis_flag
 
 
-def init_template(args, cpoints_required: int,
-                  globs) -> Tuple[mol3D, mol3D, str, list, int, mol3D]:
+def init_template(args, cpoints_required: int
+                  ) -> Tuple[mol3D, mol3D, str, list, int, mol3D]:
     """Initializes core and template mol3Ds and properties.
 
     Parameters
@@ -225,8 +225,6 @@ def init_template(args, cpoints_required: int,
             Namespace of arguments.
         cpoints_required : int
             Number of connecting points required.
-        globs : dict
-            Globalvars dictionary. Globalvars class in molSimplify.
 
     Returns
     -------
@@ -244,6 +242,7 @@ def init_template(args, cpoints_required: int,
             Core reference atom index, mol3D instance.
 
     """
+    globs = globalvars()
     # initialize core and template
     core3D = mol3D()
     m3D = mol3D()
@@ -2252,7 +2251,8 @@ def align_dent3_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
     return lig3D_aligned, frozenats, MLoptbds
 
 
-def mcomplex(args, ligs, ligoc, licores, globs):  # -> Tuple[mol3D, List[mol3D], str, run_diag, List, List]:
+
+def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, run_diag, List, List]:
     """Main ligand placement routine
 
     Parameters
@@ -2265,8 +2265,6 @@ def mcomplex(args, ligs, ligoc, licores, globs):  # -> Tuple[mol3D, List[mol3D],
             List of ligand occupations.
         licores : dict
             Ligand dictionary as in molSimplify.
-        globs : dict
-            Globalvars dictionary. molSimplify Class.
 
     Returns
     -------
@@ -2284,6 +2282,7 @@ def mcomplex(args, ligs, ligoc, licores, globs):  # -> Tuple[mol3D, List[mol3D],
             Ligand connection atoms from TSGen. Deprecated.
 
     """
+    globs = globalvars()
     this_diag = run_diag()
     if globs.debug:
         print(('\nGenerating complex with ligands and occupations:', ligs, ligoc))
@@ -2430,7 +2429,7 @@ def mcomplex(args, ligs, ligoc, licores, globs):  # -> Tuple[mol3D, List[mol3D],
 
     # load core and initialize template
     m3D, core3D, geom, backbatoms, coord, corerefatoms = init_template(
-        args, cpoints_required, globs)
+        args, cpoints_required)
     # Get connection points for all the ligands
     # smart alignment and forced order
 
@@ -2789,7 +2788,7 @@ def mcomplex(args, ligs, ligoc, licores, globs):  # -> Tuple[mol3D, List[mol3D],
     return core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext
 
 
-def generate_report(args, ligands, ligoc, licores, globs):
+def generate_report(args, ligands, ligoc, licores):
     ligs = []
     cons = []
     # Bunch of unused variables?? RM 2022/02/17
@@ -2866,7 +2865,7 @@ def generate_report(args, ligands, ligoc, licores, globs):
 
     # load core and initialize template
     m3D, core3D, geom, backbatoms, coord, corerefatoms = init_template(
-        args, cpoints_required, globs)
+        args, cpoints_required)
     # Get connection points for all the ligands
     # smart alignment and forced order
 
@@ -2913,7 +2912,7 @@ def generate_report(args, ligands, ligoc, licores, globs):
     return core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext
 
 
-def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True) -> Tuple[List[str], str, run_diag]:
+def structgen(args, rootdir, ligands, ligoc, sernum, write_files=True) -> Tuple[List[str], str, run_diag]:
     """Main structure generation routine - multiple structures
 
     Parameters
@@ -2955,12 +2954,12 @@ def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True) ->
     if (ligands):
         if args.reportonly:
             core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext = generate_report(
-                args, ligands, ligoc, licores, globs)
+                args, ligands, ligoc, licores)
             if emsg:
                 return strfiles, emsg, this_diag
         else:
             core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext = mcomplex(
-                args, ligands, ligoc, licores, globs)
+                args, ligands, ligoc, licores)
             if args.debug:
                 print(('subcatoms_ext are ' + str(subcatoms_ext)))
             if emsg:
