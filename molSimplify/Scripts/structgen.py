@@ -2251,6 +2251,59 @@ def align_dent3_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
     return lig3D_aligned, frozenats, MLoptbds
 
 
+def align_dent4_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
+                    catoms, MLb, ANN_flag, ANN_bondl, this_diag, MLbonds,
+                    MLoptbds: List[float], frozenats: List[int], i: int
+                    ) -> Tuple[mol3D, List[int], List[float]]:
+    # note: catoms for ligand should be specified clockwise
+    # connection atoms in backbone
+    if args.antigeoisomer:
+        print('anti geometric isomer requested.')
+        catoms = catoms[::-1]
+    if len(batoms) < 1:
+        raise ValueError('Connecting all ligands is not possible. Check your input!')
+    # connection atom
+    atom0 = catoms[0]
+    # align ligand center of symmetry to core reference atom
+    auxmol_lig = mol3D()
+    auxmol_m3D = mol3D()
+    for iiax in range(0, 4):
+        auxmol_lig.addAtom(lig3D.getAtom(catoms[iiax]))
+        auxmol_m3D.addAtom(m3D.getAtom(batoms[iiax]))
+    lig3D.alignmol(
+        atom3D('C', auxmol_lig.centersym()), m3D.getAtom(0))
+    # necessary to prevent lig3D from being overwritten
+    lig3Dtmp = mol3D()
+    lig3Dtmp.copymol3D(lig3D)
+    # compute average metal-ligand distance
+    auxmol_lig = mol3D()
+    auxmol_m3D = mol3D()
+    sum_MLdists = 0
+    for iiax in range(0, 4):
+        auxmol_lig.addAtom(lig3Dtmp.getAtom(catoms[iiax]))
+        auxmol_m3D.addAtom(m3D.getAtom(batoms[iiax]))
+        sum_MLdists += distance(m3D.getAtomCoords(0),
+                                auxmol_lig.getAtomCoords(iiax))
+    avg_MLdists = sum_MLdists/4
+    # scale template by average M-L distance
+    auxmol_m3D.addAtom(m3D.getAtom(0))
+    # TODO BCM definition slightly modified. Keep an eye for unexpected structures
+    for iiax in range(0, 4):
+        auxmol_m3D.BCM(iiax, 4, avg_MLdists)
+    auxmol_m3D.deleteatom(4)
+    # align lig3D to minimize RMSD from template
+    auxmol_lig, U, d0, d1 = kabsch(auxmol_lig, auxmol_m3D)
+    lig3D.translate(d0)
+    lig3D = rotate_mat(lig3D, U)
+
+    bondl = get_MLdist(m3D.getAtom(0), args.oxstate, args.spin,
+                       lig3D, atom0, ligand, MLb, i, ANN_flag,
+                       ANN_bondl, this_diag, MLbonds,
+                       args.debug)
+    for iib in range(0, 4):
+        MLoptbds.append(bondl)
+    return lig3D, frozenats, MLoptbds
+
 
 def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, run_diag, List, List]:
     """Main ligand placement routine
@@ -2529,7 +2582,6 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
                 # initialize variables
                 # metal coordinates in backbone
                 mcoords = core3D.getAtom(0).coords()
-                atom0 = 0  # initialize variables
                 coreref = corerefatoms.getAtom(totlig)
                 # connecting point in backbone to align ligand to
                 batoms = get_batoms(args, batslist, ligsused)
@@ -2559,58 +2611,10 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
                         lig3D, catoms, MLb, ANN_flag, ANN_bondl[ligsused],
                         this_diag, MLbonds, MLoptbds, frozenats, i)
                 elif (denticity == 4):
-                    # note: catoms for ligand should be specified clockwise
-                    # connection atoms in backbone
-                    if args.antigeoisomer:
-                        print('anti geometric isomer requested.')
-                        catoms = catoms[::-1]
-                    batoms = batslist[ligsused]
-                    if len(batoms) < 1:
-                        if args.gui:
-                            emsg = 'Connecting all ligands is not possible. Check your input!'
-                            qqb = mQDialogWarn('Warning', emsg)
-                            qqb.setParent(args.gui.wmain)
-                        break
-                    # connection atom
-                    atom0 = catoms[0]
-                    # align ligand center of symmetry to core reference atom
-                    auxmol_lig = mol3D()
-                    auxmol_m3D = mol3D()
-                    for iiax in range(0, 4):
-                        auxmol_lig.addAtom(lig3D.getAtom(catoms[iiax]))
-                        auxmol_m3D.addAtom(m3D.getAtom(batoms[iiax]))
-                    lig3D.alignmol(
-                        atom3D('C', auxmol_lig.centersym()), m3D.getAtom(0))
-                    # necessary to prevent lig3D from being overwritten
-                    lig3Dtmp = mol3D()
-                    lig3Dtmp.copymol3D(lig3D)
-                    # compute average metal-ligand distance
-                    auxmol_lig = mol3D()
-                    auxmol_m3D = mol3D()
-                    sum_MLdists = 0
-                    for iiax in range(0, 4):
-                        auxmol_lig.addAtom(lig3Dtmp.getAtom(catoms[iiax]))
-                        auxmol_m3D.addAtom(m3D.getAtom(batoms[iiax]))
-                        sum_MLdists += distance(m3D.getAtomCoords(0),
-                                                auxmol_lig.getAtomCoords(iiax))
-                    avg_MLdists = sum_MLdists/4
-                    # scale template by average M-L distance
-                    auxmol_m3D.addAtom(m3D.getAtom(0))
-                    # TODO BCM definition slightly modified. Keep an eye for unexpected structures
-                    for iiax in range(0, 4):
-                        auxmol_m3D.BCM(iiax, 4, avg_MLdists)
-                    auxmol_m3D.deleteatom(4)
-                    # align lig3D to minimize RMSD from template
-                    auxmol_lig, U, d0, d1 = kabsch(auxmol_lig, auxmol_m3D)
-                    lig3D.translate(d0)
-                    lig3D = rotate_mat(lig3D, U)
-
-                    bondl = get_MLdist(m3D.getAtom(0), args.oxstate, args.spin,
-                                       lig3D, atom0, ligand, MLb, i, ANN_flag,
-                                       ANN_bondl[ligsused], this_diag, MLbonds,
-                                       args.debug)
-                    for iib in range(0, 4):
-                        MLoptbds.append(bondl)
+                    lig3D, frozenats, MLoptbds = align_dent4_lig(
+                        args, cpoint, batoms, m3D, core3D, coreref, ligand,
+                        lig3D, catoms, MLb, ANN_flag, ANN_bondl[ligsused],
+                        this_diag, MLbonds, MLoptbds, frozenats, i)
                 elif (denticity == 5):
                     # connection atoms in backbone
                     batoms = batslist[ligsused]
