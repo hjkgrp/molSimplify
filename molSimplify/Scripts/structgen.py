@@ -2105,10 +2105,12 @@ def align_dent2_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
     return lig3D_aligned, frozenats, MLoptbds
 
 
-def align_dent3_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
-                    catoms, MLb, ANN_flag, ANN_bondl, this_diag, MLbonds,
-                    MLoptbds: List[float], frozenats: List[int], i: int
-                    ) -> Tuple[mol3D, List[int], List[float]]:
+def align_dent3_lig(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
+                    core3D: mol3D, coreref: atom3D, ligand: str,
+                    lig3D: mol3D, catoms: List[int], MLb,
+                    ANN_flag: bool, ANN_bondl, this_diag: run_diag,
+                    MLbonds: Dict, MLoptbds: List[float], frozenats: List[int],
+                    i: int) -> Tuple[mol3D, List[int], List[float]]:
     """Aligns a tridentate ligand to core connecting atom coordinates
 
     Parameters
