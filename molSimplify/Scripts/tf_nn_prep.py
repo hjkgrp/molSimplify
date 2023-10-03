@@ -241,13 +241,15 @@ def tf_check_ligands(ligs: List[str], batslist: List[List[int]],
                 eq_occs.append(occs[i])
                 equatorial_ind_list.append(i)
     if (len(axial_ligs) > 2):
-        print(('axial lig error : ', axial_ligs, ax_dent, ax_tcat, ax_occs))
+        print('ANN setup error: axial lig error : ',
+              axial_ligs, ax_dent, ax_tcat, ax_occs)
         valid = False
     if debug:
         print(('eq occupations  ' + str(eq_occs)))
         print(('eq dent   ' + str(eq_dent)))
     if not (4.0 / (float(eq_dent) * sum(eq_occs)) == 1):
-        print(('equatorial ligs error: ', equatorial_ligs, eq_dent, eq_tcat))
+        print('ANN setup error: equatorial ligs error: ',
+              equatorial_ligs, eq_dent, eq_tcat)
         valid = False
     if valid and len(axial_ind_list) == 0:  # get the index position in ligs
         axial_ind_list = [ligs.index(ax_lig) for ax_lig in axial_ligs]
