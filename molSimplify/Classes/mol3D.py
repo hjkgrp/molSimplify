@@ -51,7 +51,7 @@ class mol3D:
 
     def __init__(self, name='ABC', loc='', use_atom_specific_cutoffs=False):
         # List of atom3D objects
-        self.atoms = []
+        self.atoms: List[atom3D] = []
         # Number of atoms
         self.natoms = 0
         # Mass of molecule
@@ -821,6 +821,15 @@ class mol3D:
             xyz = atom.coords()
             coord_string += "%s \t%f\t%f\t%f\n" % (atom.sym, xyz[0], xyz[1], xyz[2])
         return coord_string
+
+    def get_positions(self):
+        return self.coordsvect()
+
+    def set_positions(self, positions):
+        if len(positions) != len(self.atoms):
+            raise ValueError("Length of new positions does not match number of atoms")
+        for p, a in zip(positions, self.atoms):
+            a.setcoords(p)
 
     def coordsvect(self):
         """
