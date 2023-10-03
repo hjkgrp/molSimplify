@@ -356,6 +356,40 @@ def checkTrue(arg):
     else:
         return False
 
+
+def check_ligloc(line: str):
+    # Strip the keyword
+    value = line.lstrip("-ligloc").strip()
+    if value.lower() in ('true', 't', 'yes', 'y', '1'):
+        return True
+    elif value.lower() in ('false', 'f', 'no', 'n', '0'):
+        return False
+    elif value[0] == "[" and value[-1] == "]":
+        # try to parse as list character by character:
+        result = []
+        # State variable
+        reading = False
+        for char in value[1:-1]:
+            if char == " ":
+                continue
+            elif char == "[":
+                sublist = []
+                current_string = ""
+                reading = True
+            elif char == "]":
+                sublist.append(int(current_string))
+                result.append(sublist)
+                reading = False
+            elif char == ",":
+                if reading:
+                    sublist.append(int(current_string))
+                    current_string = ""
+            elif reading:
+                current_string += char
+        return result
+    else:
+        raise ValueError(f"Unable to parse -ligloc for value {value}")
+
 # Check if variable is a number
 #  @param s variable to be checked
 #  @return bool
@@ -633,7 +667,7 @@ def parseinputfile(args, inputfile_str=None):
             if (l[0] == '-stripHs'):
                 args.stripHs = True
             if (l[0] == '-ligloc'):
-                args.ligloc = checkTrue(l[1])
+                args.ligloc = check_ligloc(line)
             if (l[0] == '-ligalign'):
                 args.ligalign = checkTrue(l[1])
             if (l[0] == '-replig'):

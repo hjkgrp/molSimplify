@@ -2,7 +2,8 @@ import os
 from molSimplify.Scripts.inparse import (parseinputfile, checkinput,
                                          parseall,
                                          parseinputs_basic,
-                                         parseinputs_advanced)
+                                         parseinputs_advanced,
+                                         check_ligloc)
 from argparse import ArgumentParser, Namespace
 from pkg_resources import resource_filename, Requirement
 
@@ -76,3 +77,14 @@ def test_parseinputfile_inputfile_kwarg():
     args2.i = infile
 
     assert args1 == args2
+
+
+def test_check_ligloc():
+    assert check_ligloc('-ligloc True') is True
+    assert check_ligloc('-ligloc true') is True
+    assert check_ligloc('-ligloc False') is False
+    assert check_ligloc('-ligloc false') is False
+    # Test passing in backbone atoms
+    assert check_ligloc('-ligloc [[1,2,3],[4,5],[6]]') == [[1, 2, 3], [4, 5], [6]]
+    assert check_ligloc('-ligloc [[1, 2, 5], [3, 4, 6]]') == [[1, 2, 5], [3, 4, 6]]
+    assert check_ligloc('-ligloc [[12, 4], [2,17], [3, 4]]') == [[12, 4], [2, 17], [3, 4]]

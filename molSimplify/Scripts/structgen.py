@@ -2488,7 +2488,6 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
     # Get connection points for all the ligands
     # smart alignment and forced order
 
-    # if geom:
     if args.ligloc and args.ligalign:
         batslist0 = []
         for i, ligand in enumerate(ligandsU):
@@ -2503,6 +2502,8 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
                 offset += (occsU[ii]-1)
             for j in range(0, occsU[i]):
                 batslist.append(batslist0[i+j+offset])  # sort connections list
+    elif isinstance(args.ligloc, list):  # Check if a list was passed in
+        batslist = args.ligloc
     else:
         for i, ligand in enumerate(ligands):
             for j in range(0, occs[i]):
