@@ -1,0 +1,10 @@
+-core fe
+-geometry oct
+-coord 6
+-lig oxydiacetate_fac
+-ligocc 2
+-ligloc [[1, 2, 5], [3, 4, 6]]
+-ff UFF
+-ffoption BA
+-spin 1
+-oxstate II

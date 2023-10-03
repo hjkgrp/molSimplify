@@ -242,3 +242,95 @@ def test_align_dent3_lig():
     assert MLoptbds == [2.08, 2.08, 2.08]
 
 
+# RM: commented ligands do not yield same results, however I am confident that
+# the newer version actually yields the better alignment
+@pytest.mark.parametrize("ligand, connecting_atoms", [
+        ("oxydiacetate_mer", [11, 0, 12]),
+        # ("5fad5a1d35c34d073da2cebf", [0, 1, 3]),
+        # ("5fad5a2c35c34d073da2cf7b", [4, 2, 3]),
+        ("5fad5a5d35c34d073da2d1f4", [0, 2, 1]),
+        # ("5fad5a0335c34d073da2cd72", [5, 41, 51]),
+    ]
+)
+def test_align_dent3_lig_mer_against_old(ligand, connecting_atoms, atol=0.1):
+    args = Namespace(geometry='oct', coord=6, ccatoms=None, ligloc=True,
+                     pangles=False, distort='0', core='Fe', calccharge=True,
+                     oxstate='II', spin='1', debug=False)
+    cpoint = atom3D(Sym="X", xyz=[0.0, -2.077, 0.0])
+    batoms = [1, 2, 3]
+    m3D, core3D, _, _, _, _ = init_template(args, cpoints_required=6)
+    coreref = m3D.getAtom(0)
+    MLb = False
+    ANN_flag = False
+    ANN_bondl = False
+    this_diag = run_diag()
+    MLbonds = loaddata('/Data/ML.dat')
+    i = 0
+    # Load ligand
+    ligand_file = resource_filename(
+        Requirement.parse("molSimplify"),
+        f"tests/inputs/tridentates/mer/{ligand}.xyz"
+    )
+    lig3D = mol3D()
+    lig3D.OBMol = lig3D.getOBMol(ligand_file, 'xyzf')
+    lig3D.convert2mol3D()
+    lig3D.charge = lig3D.OBMol.GetTotalCharge()
+
+    lig3D_ref, frozenats_ref, MLoptbds_ref = align_dent3_lig_old(
+        args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D, connecting_atoms,
+        MLb, ANN_flag, ANN_bondl, this_diag, MLbonds, [], [], i)
+
+    lig3D_new, frozenats_new, MLoptbds_new = align_dent3_lig(
+        args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D, connecting_atoms,
+        MLb, ANN_flag, ANN_bondl, this_diag, MLbonds, [], [], i)
+
+    # Compare the (unaligned!) rmsd between the two ligands
+    assert rmsd(lig3D_ref.get_positions(), lig3D_new.get_positions()) < atol
+
+    assert frozenats_ref == frozenats_new
+    assert MLoptbds_ref == MLoptbds_new
+
+
+def test_mcomplex_tridentate_fac(atol=1e-2):
+    args = Namespace(
+        gui=False, ligalign=True, ffoption='ba', decoration=None, keepHs=['auto'],
+        MLbonds=False, pangles=False, geometry='oct', coord='6', ccatoms=None,
+        ligloc=[[1, 2, 5], [3, 4, 6]], distort='0', core='Fe', calccharge=True,
+        oxstate='II', skipANN=True, oldANN=False, debug=False, spin='1',
+        exchange=False, mligcatoms=False, mlig=None, ff='uff', ff_final_opt=None)
+    ligs = ['oxydiacetate_fac']
+    ligoc = ['2']
+    licores = getlicores()
+
+    # TODO: Check the other return values
+    core3D, _, _, _, _, _ = mcomplex(args, ligs, ligoc, licores)
+
+    xyzs_ref = np.array([
+        [0.000,  0.000,  0.000],
+        [2.080,  0.000,  0.000],
+        [2.441,  1.390, -0.213],
+        [2.529, -0.440,  1.295],
+        [1.285,  2.241, -0.679],
+        [3.276,  1.436, -0.972],
+        [2.832,  1.896,  0.693],
+        [1.396, -0.481,  2.326],
+        [3.369,  0.147,  1.715],
+        [2.940, -1.474,  1.173],
+        [1.366,  2.921, -1.672],
+        [1.622, -0.918,  3.435],
+        [0.051,  2.093, -0.066],
+        [0.133, -0.066,  2.010],
+        [-2.080,  0.000,  0.000],
+        [-2.326, -0.990,  0.979],
+        [-2.368,  1.005, -0.944],
+        [-1.224, -2.140,  0.883],
+        [-3.364, -1.357,  0.935],
+        [-2.225, -0.490,  1.976],
+        [-1.267,  0.911, -2.097],
+        [-2.298,  1.990, -0.431],
+        [-3.409,  0.933, -1.320],
+        [-1.303, -3.057,  1.687],
+        [-1.303,  1.764, -2.980],
+        [-0.051, -2.093,  0.066],
+        [-0.133,  0.066, -2.010]])
+    np.testing.assert_allclose(core3D.get_positions(), xyzs_ref, atol=atol)

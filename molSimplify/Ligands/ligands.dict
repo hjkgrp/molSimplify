@@ -181,6 +181,8 @@ opme3:pme3o.mol,opme3,13,build big,BA,0
 opph3:pph3o.mol,opph,34,build bulky big,BA,0
 ox:oxalate.mol,oxate,1 4,build bidentate,A,-2
 oxo:oxygen.mol,oxo,0,build small,N,-2
+oxydiacetate_fac:oxydiacetate_fac.mol,oda_fac,11 0 12,build tridentate,A,-2
+oxydiacetate_mer:oxydiacetate_mer.mol,oda_mer,11 0 12,build tridentate,A,-2
 pcy3:PCy3.mol,pcy3,0,build bulky big,BA,0
 pentacyanopentadienide:pentacyanocyclopentadienide.mol,pcyanopent,1,build bulky,A,-1
 pf3:phosphorustrifluoride.mol,pf3,1,build small,BA,0

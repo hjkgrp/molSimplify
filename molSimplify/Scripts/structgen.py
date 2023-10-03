@@ -50,6 +50,7 @@ from molSimplify.Classes.globalvars import (elementsbynum,
                                             )
 from molSimplify.Informatics.decoration_manager import (decorate_ligand)
 from molSimplify.Classes.ligand import ligand as ligand_class
+from molSimplify.Scripts.rmsd import quaternion_rotate
 import logging
 
 logger = logging.getLogger(__name__)
@@ -1546,7 +1547,7 @@ def rotate_catoms_fix_Hs(lig3D: mol3D, catoms: List[int], mcoords, core3D: mol3D
 
 
 def get_MLdist(metal: atom3D, oxstate: str, spin: str, lig3D: mol3D,
-               atom0: int, ligand: str, MLb: List[str], i: int,
+               atom0: int, ligand: str, MLb, i: int,
                ANN_flag: bool, ANN_bondl: float, this_diag: run_diag,
                MLbonds: dict, debug: bool = False) -> float:
     """Gets target M-L distance from desired source (custom, sum cov rad or ANN).
@@ -2105,12 +2106,12 @@ def align_dent2_lig(args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D,
     return lig3D_aligned, frozenats, MLoptbds
 
 
-def align_dent3_lig(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
-                    core3D: mol3D, coreref: atom3D, ligand: str,
-                    lig3D: mol3D, catoms: List[int], MLb,
-                    ANN_flag: bool, ANN_bondl, this_diag: run_diag,
-                    MLbonds: Dict, MLoptbds: List[float], frozenats: List[int],
-                    i: int) -> Tuple[mol3D, List[int], List[float]]:
+def align_dent3_lig_old(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
+                        core3D: mol3D, coreref: atom3D, ligand: str,
+                        lig3D: mol3D, catoms: List[int], MLb,
+                        ANN_flag: bool, ANN_bondl, this_diag: run_diag,
+                        MLbonds: Dict, MLoptbds: List[float], frozenats: List[int],
+                        i: int) -> Tuple[mol3D, List[int], List[float]]:
     """Aligns a tridentate ligand to core connecting atom coordinates
 
     Parameters
@@ -2169,8 +2170,6 @@ def align_dent3_lig(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
     auxm.addAtom(lig3D.getAtom(catoms[0]))
     auxm.addAtom(lig3D.getAtom(catoms[2]))
     r0 = core3D.getAtom(0).coords()
-    lig3Db = mol3D()
-    lig3Db.copymol3D(lig3D)
     theta, urot = rotation_params(
         r0, lig3D.getAtom(atom0).coords(), auxm.centersym())
     lig3D = rotate_around_axis(
@@ -2236,7 +2235,7 @@ def align_dent3_lig(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
     bondl = get_MLdist(m3D.getAtom(0), args.oxstate, args.spin, lig3D, atom0,
                        ligand, MLb, i, ANN_flag, ANN_bondl, this_diag, MLbonds,
                        args.debug)
-    for iib in range(0, 3):
+    for _ in range(0, 3):
         MLoptbds.append(bondl)
     # set correct distance
     setPdistance(lig3D, lig3D.getAtom(atom0).coords(),
@@ -2245,11 +2244,114 @@ def align_dent3_lig(args, cpoint: atom3D, batoms: List[int], m3D: mol3D,
     lig3D = rotate_catoms_fix_Hs(
         lig3D, [catoms[0], catoms[1], catoms[2]], m3D.getAtom(0).coords(), core3D)
     # freeze local geometry
-    lats = lig3D.getBondedAtoms(catoms[0])+lig3D.getBondedAtoms(catoms[1])
-    for lat in list(set(lats)):
-        frozenats.append(lat+core3D.natoms)
+    lats = (lig3D.getBondedAtoms(catoms[0])
+            + lig3D.getBondedAtoms(catoms[1])
+            + lig3D.getBondedAtoms(catoms[2]))
+    for lat in set(lats):
+        frozenats.append(lat + core3D.natoms)
     lig3D_aligned = mol3D()
     lig3D_aligned.copymol3D(lig3D)
+    return lig3D_aligned, frozenats, MLoptbds
+
+
+def align_dent3_lig(args, cpoint: atom3D, backbone_atoms: List[int], backbone3D: mol3D,
+                    core3D: mol3D, coreref: atom3D, ligand: str,
+                    lig3D: mol3D, connecting_atoms: List[int], MLb,
+                    ANN_flag: bool, ANN_bondl, this_diag: run_diag,
+                    MLbonds: Dict, MLoptbds: List[float], frozenats: List[int],
+                    i: int) -> Tuple[mol3D, List[int], List[float]]:
+    """Aligns a tridentate ligand to core connecting atom coordinates
+
+    Parameters
+    ----------
+        args : Namespace
+            Namespace of arguments.
+        cpoint : atom3D
+            atom3D class instance containing backbone connecting point.
+        backbone_atoms : list
+            List of backbone atom indices.
+        backbone3D : mol3D
+            mol3D of backbone template.
+        core3D : mol3D
+            mol3D class instance of partially built complex.
+        coreref : atom3D
+            atom3D of core reference atom.
+        ligand : str
+            Name of ligand for dictionary lookup.
+        lig3D : mol3D
+            mol3D class instance of the ligand.
+        connecting_atoms : list
+            List of ligand connecting atom indices.
+        MLb : list
+            Custom M-L bond length (if any).
+        ANN_flag : bool
+            Flag for ANN activation.
+        ANN_bondl : list
+            List of ANN predicted bond lengths.
+        this_diag : run_diag
+            ANN run_diag class instance.
+        MLbonds : dict
+            M-L bond dictionary.
+        MLoptbds : list
+            List of final M-L bond lengths.
+        frozenats : list
+            List of atoms frozen in FF optimization.
+        i : int, optional
+            Ligand serial number. Default is 0.
+
+    Returns
+    -------
+        lig3D_aligned : mol3D
+            mol3D class instance of aligned ligand.
+        frozenats : list
+            List of frozen atoms.
+        MLoptbds : list
+            Updated list of metal ligand bonds.
+
+    """
+    print(f"align_dent3_lig() called with backbone_atoms: {backbone_atoms}")
+    # Make a copy of lig3D that we will work on
+    lig3D_aligned = mol3D()
+    lig3D_aligned.copymol3D(lig3D)
+    # translate the ligand such that the reference atom coincides with the corresponding
+    # backbone_atom, where the reference atom is the center atom in a mer type ligand.
+    reference_atom = connecting_atoms[1]
+    lig3D_aligned.alignmol(lig3D_aligned.getAtom(connecting_atoms[1]),
+                           backbone3D.getAtom(backbone_atoms[1]))
+    # Set the correct bond length for the reference atom:
+    bondl = get_MLdist(backbone3D.getAtom(0), args.oxstate, args.spin, lig3D, reference_atom,
+                       ligand, MLb, i, ANN_flag, ANN_bondl, this_diag, MLbonds,
+                       args.debug)
+    for _ in range(0, 3):
+        MLoptbds.append(bondl)
+    # set correct distance
+    setPdistance(lig3D_aligned, lig3D_aligned.getAtom(reference_atom).coords(),
+                 backbone3D.getAtom(0).coords(), bondl)
+    # Get the array of position vectors of the ligand:
+    ligand_xyz = lig3D_aligned.get_positions()
+    # And the position vectors of the backbone atoms
+    backbone_xyz = backbone3D.get_positions()
+
+    rotation_origin = ligand_xyz[reference_atom]
+    rotation_matrix = quaternion_rotate(
+        ligand_xyz[connecting_atoms] - rotation_origin,
+        backbone_xyz[backbone_atoms] - rotation_origin
+    )
+
+    lig3D_aligned.set_positions(
+        (ligand_xyz - rotation_origin) @ rotation_matrix
+        + rotation_origin)
+
+    # Add the atom indices of neighbors of the connecting atoms to the list of
+    # frozen atoms. The set is used to remove possible duplicates.
+    neighbor_indices = set(
+        lig3D.getBondedAtoms(connecting_atoms[0])
+        + lig3D.getBondedAtoms(connecting_atoms[1])
+        + lig3D.getBondedAtoms(connecting_atoms[2])
+    )
+    # Add the current number of atoms in core3D as offset
+    frozenats.extend([core3D.natoms + i for i in neighbor_indices])
+
     return lig3D_aligned, frozenats, MLoptbds
 
 
