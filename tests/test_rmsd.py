@@ -1,6 +1,8 @@
 import pytest
+import numpy as np
 from molSimplify.Classes.mol3D import mol3D
-from molSimplify.Scripts.rmsd import rigorous_rmsd
+from molSimplify.Scripts.rmsd import rigorous_rmsd, quaternion_rotate
+from scipy.spatial.transform import Rotation
 from pkg_resources import resource_filename, Requirement
 
 
@@ -34,3 +36,13 @@ def test_rigorous_rmsd(path1, path2, ref_hungarian, ref_none, atol=1e-3):
 
     r = rigorous_rmsd(mol1, mol2, reorder='none')
     assert abs(r - ref_none) < atol
+
+
+def test_quaternion_rotate(atol=1e-3):
+    rot_mat = Rotation.from_rotvec(np.array([1., 2., 3.])).as_matrix()
+    x = np.array([[1.2, 0., 0.],
+                  [0., 0., 0.],
+                  [0.5, 0.9, 0.]])
+    y = x @ rot_mat
+
+    np.testing.assert_allclose(quaternion_rotate(x, y), rot_mat, atol=atol)
