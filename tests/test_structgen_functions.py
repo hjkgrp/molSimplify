@@ -1,12 +1,20 @@
+import pytest
 import numpy as np
 from argparse import Namespace
-from molSimplify.Classes.atom3D import atom3D
-from molSimplify.Classes.rundiag import run_diag
+from molSimplify.Classes import atom3D, mol3D, run_diag
 from molSimplify.Scripts.io import loaddata, lig_load, getlicores
 from molSimplify.Scripts.structgen import (smartreorderligs,
+                                           getbackbcombsall,
+                                           getnupdateb,
                                            get_MLdist_database,
                                            get_MLdist,
-                                           init_ANN)
+                                           init_template,
+                                           init_ANN,
+                                           align_dent3_lig,
+                                           align_dent3_lig_old,
+                                           mcomplex)
+from molSimplify.Scripts.rmsd import rmsd
+from pkg_resources import resource_filename, Requirement
 
 
 def test_smartreorderligs():
@@ -108,6 +116,34 @@ def test_get_MLdist():
     assert dist == 3.14
 
 
+@pytest.mark.parametrize(["geometry", "coordination"], [
+    ('no', 1),
+    ('tpl', 3),
+    ('sqp', 4),
+    # ('tdh', 4),  TODO: fix tdh (currently not centered correctly)
+    ('spy', 5),
+    ('tbp', 5),
+    ('oct', 6),
+    ('tpr', 6),
+    ('pbp', 7),
+    ('sqap', 8),
+    # ('sq', 8),  TODO: Seems to be missing?
+])
+def test_init_template(geometry, coordination):
+    args = Namespace(geometry=geometry, coord=coordination, ccatoms=None, ligloc=True,
+                     pangles=False, distort='0', core='Fe', calccharge=True,
+                     oxstate='II')
+    (m3D, core3D, geom, backbatoms, coord,
+     corerefatoms) = init_template(args, cpoints_required=6)
+
+    assert [a.sym for a in m3D.getAtoms()] == ['Fe'] + coordination * ['X']
+    assert core3D.getAtoms() == [atom3D('Fe')]
+    assert backbatoms == getbackbcombsall(list(range(1, 1 + coordination)))
+    assert geom == geometry
+    assert coord == coordination
+    assert corerefatoms.getAtoms() == [atom3D('Fe') for _ in range(coordination)]
+
+
 def test_init_ANN():
     licores = getlicores()
 
@@ -150,3 +186,59 @@ def test_init_ANN():
     assert ANN_bondl == ANN_attributes['ANN_bondl']
     np.testing.assert_allclose(ANN_bondl, [2.1664] * 4 + [2.1349, 2.1218], atol=1e-4)
     assert catalysis_flag is False
+
+
+def test_getnupdateb():
+    backbone_atoms = [[5, 4, 6], [4, 5], [4, 6], [4], [5], [6]]
+    batoms, backbone_atoms_modified = getnupdateb(backbone_atoms, 3)
+    assert batoms == [5, 4, 6]
+    assert backbone_atoms_modified == []
+
+    backbone_atoms = [[5, 4, 6], [4, 5], [4, 6], [4], [5], [6]]
+    batoms, backbone_atoms_modified = getnupdateb(backbone_atoms, 2)
+    assert batoms == [4, 5]
+    assert backbone_atoms_modified == [[6]]
+
+
+def test_align_dent3_lig():
+    args = Namespace(geometry='oct', coord=6, ccatoms=None, ligloc=True,
+                     pangles=False, distort='0', core='Fe', calccharge=True,
+                     oxstate='II', spin='1', debug=False)
+    cpoint = atom3D(Sym="X", xyz=[0.0, -2.077, 0.0])
+    batoms = [1, 2, 3]
+    m3D, core3D, _, _, _, _ = init_template(args, cpoints_required=6)
+    coreref = m3D.getAtom(0)
+    ligand = "oxydiacetate_mer"
+    lig3D, _ = lig_load(ligand)
+    catoms = [11, 0, 12]
+    MLb = False
+    ANN_flag = False
+    ANN_bondl = False
+    this_diag = run_diag()
+    MLbonds = loaddata('/Data/ML.dat')
+    MLoptbds = []
+    frozenats = []
+    i = 0
+    lig3D_aligned, frozenats, MLoptbds = align_dent3_lig(
+        args, cpoint, batoms, m3D, core3D, coreref, ligand, lig3D, catoms, MLb,
+        ANN_flag, ANN_bondl, this_diag, MLbonds, MLoptbds, frozenats, i)
+
+    np.testing.assert_allclose(
+        lig3D_aligned.coordsvect(),
+        [[2.080, 0.0, 0.0],
+         [2.894,  1.154, -0.012],
+         [2.893, -1.154, -0.014],
+         [1.832,  2.222, -0.018],
+         [3.507,  1.188, -0.941],
+         [3.550,  1.178,  0.887],
+         [1.831, -2.222, -0.011],
+         [3.535, -1.188,  0.896],
+         [3.521, -1.178, -0.933],
+         [2.173,  3.394, -0.039],
+         [2.173, -3.394, -0.021],
+         [0.512,  1.926,  0.0],
+         [0.512, -1.926,  0.0]], atol=1e-2)
+    assert frozenats == [2, 3, 4, 7]  # RM: Actually not sure thats what we want..
+    assert MLoptbds == [2.08, 2.08, 2.08]
+
+
