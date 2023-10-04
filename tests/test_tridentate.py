@@ -6,7 +6,7 @@ def test_oxydiacetate_mer(tmpdir):
     threshMLBL = 0.1
     threshLG = 1.0
     threshOG = 1.0
-    [passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin] = hp.runtest(
+    [passNumAtoms, passMLBL, passLG, passOG, pass_report, _] = hp.runtest(
         tmpdir, testName, threshMLBL, threshLG, threshOG)
     assert passNumAtoms
     assert passMLBL
@@ -21,7 +21,22 @@ def test_oxydiacetate_fac(tmpdir):
     threshMLBL = 0.1
     threshLG = 1.0
     threshOG = 1.0
-    [passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin] = hp.runtest(
+    [passNumAtoms, passMLBL, passLG, passOG, pass_report, _] = hp.runtest(
+        tmpdir, testName, threshMLBL, threshLG, threshOG)
+    assert passNumAtoms
+    assert passMLBL
+    assert passLG
+    assert passOG
+    assert pass_report
+    assert hp.runtest_reportonly(tmpdir, testName)
+
+
+def test_triaminocyclohexanol(tmpdir):
+    testName = "triaminocyclohexanol"
+    threshMLBL = 0.1
+    threshLG = 1.0
+    threshOG = 1.0
+    [passNumAtoms, passMLBL, passLG, passOG, pass_report, _] = hp.runtest(
         tmpdir, testName, threshMLBL, threshLG, threshOG)
     assert passNumAtoms
     assert passMLBL
