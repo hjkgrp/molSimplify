@@ -3,7 +3,7 @@
 -coord 6
 -lig oxydiacetate_fac
 -ligocc 2
--ligloc [[1, 2, 5], [3, 4, 6]]
+-ligloc [[1, 2, 5], [6, 4, 3]]
 -ff UFF
 -ffoption BA
 -spin 1

@@ -1,8 +1,8 @@
 import helperFuncs as hp
 
 
-def test_tridentate_mer(tmpdir):
-    testName = "tridentate_mer"
+def test_oxydiacetate_mer(tmpdir):
+    testName = "oxydiacetate_mer"
     threshMLBL = 0.1
     threshLG = 1.0
     threshOG = 1.0
@@ -16,8 +16,8 @@ def test_tridentate_mer(tmpdir):
     assert hp.runtest_reportonly(tmpdir, testName)
 
 
-def test_tridentate_fac(tmpdir):
-    testName = "tridentate_fac"
+def test_oxydiacetate_fac(tmpdir):
+    testName = "oxydiacetate_fac"
     threshMLBL = 0.1
     threshLG = 1.0
     threshOG = 1.0
