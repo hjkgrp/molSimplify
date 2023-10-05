@@ -2309,7 +2309,6 @@ def align_dent3_lig(args, cpoint: atom3D, backbone_atoms: List[int], backbone3D:
             Updated list of metal ligand bonds.
 
     """
-    print(f"align_dent3_lig() called with backbone_atoms: {backbone_atoms}")
     # Make a copy of lig3D that we will work on
     lig3D_aligned = mol3D()
     lig3D_aligned.copymol3D(lig3D)
@@ -2590,7 +2589,9 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
     # Get connection points for all the ligands
     # smart alignment and forced order
 
-    if args.ligloc and args.ligalign:
+    if isinstance(args.ligloc, list):  # Check if a list was passed in
+        batslist = args.ligloc
+    elif args.ligloc and args.ligalign:
         batslist0 = []
         for i, ligand in enumerate(ligandsU):
             for j in range(0, occsU[i]):
@@ -2604,8 +2605,6 @@ def mcomplex(args, ligs, ligoc, licores):  # -> Tuple[mol3D, List[mol3D], str, r
                 offset += (occsU[ii]-1)
             for j in range(0, occsU[i]):
                 batslist.append(batslist0[i+j+offset])  # sort connections list
-    elif isinstance(args.ligloc, list):  # Check if a list was passed in
-        batslist = args.ligloc
     else:
         for i, ligand in enumerate(ligands):
             for j in range(0, occs[i]):
