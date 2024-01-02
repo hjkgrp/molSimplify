@@ -14,9 +14,12 @@ import os
 import time
 import difflib
 
-import openbabel
-from typing import Any, List, Dict, Tuple, Union
-from pkg_resources import resource_filename, Requirement
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
+from typing import Any, List, Dict, Tuple, Union, Optional
+from importlib_resources import files as resource_files
 
 from molSimplify.Classes.globalvars import (globalvars,
                                             romans)
@@ -31,8 +34,7 @@ def printgeoms():
     if globs.custom_path:
         f = globs.custom_path + "/Data/coordinations.dict"
     else:
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Data/coordinations.dict")
+        f = resource_files("molSimplify").joinpath("Data/coordinations.dict")
     with open(f, 'r') as f:
         s = f.read().splitlines()
     s = [_f for _f in s if _f]
@@ -61,8 +63,7 @@ def getgeoms():
     if globs.custom_path:
         f = globs.custom_path + "/Data/coordinations.dict"
     else:
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Data/coordinations.dict")
+        f = resource_files("molSimplify").joinpath("Data/coordinations.dict")
     with open(f, 'r') as f:
         s = f.read().splitlines()
     s = [_f for _f in s if _f]
@@ -161,8 +162,7 @@ def getlicores(flip: bool = True) -> Dict[str, Any]:
     if globs.custom_path:  # test if a custom path is used:
         licores_path = str(globs.custom_path).rstrip('/') + "/Ligands/ligands.dict"
     else:
-        licores_path = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Ligands/ligands.dict")
+        licores_path = resource_files("molSimplify").joinpath("Ligands/ligands.dict")
     licores = readdict(licores_path)
     if flip:
         for ligand in list(licores.keys()):
@@ -192,8 +192,7 @@ def getslicores() -> Dict[str, Any]:
         slicores_path = str(globs.custom_path).rstrip(
             '/') + "/Ligands/simple_ligands.dict"
     else:
-        slicores_path = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Ligands/simple_ligands.dict")
+        slicores_path = resource_files("molSimplify").joinpath("Ligands/simple_ligands.dict")
     slicores = readdict(slicores_path)
     return slicores
 
@@ -242,8 +241,7 @@ def getbcores() -> dict:
     if globs.custom_path:  # test if a custom path is used:
         bcores_path = str(globs.custom_path).rstrip('/') + "/Bind/bind.dict"
     else:
-        bcores_path = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Bind/bind.dict")
+        bcores_path = resource_files("molSimplify").joinpath("Bind/bind.dict")
     bcores = readdict(bcores_path)
     return bcores
 
@@ -272,8 +270,7 @@ def getmcores():
     if globs.custom_path:  # test if a custom path is used:
         mcores = str(globs.custom_path).rstrip('/') + "/Cores/cores.dict"
     else:
-        mcores = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Cores/cores.dict")
+        mcores = resource_files("molSimplify").joinpath("Cores/cores.dict")
     mcores = readdict(mcores)
     return mcores
 
@@ -303,8 +300,7 @@ def getsubcores():
         subcores = str(globs.custom_path).rstrip(
             '/') + "/Substrates/substrates.dict"
     else:
-        subcores = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Substrates/substrates.dict")
+        subcores = resource_files("molSimplify").joinpath("Substrates/substrates.dict")
     subcores = readdict_sub(subcores)
     return subcores
 
@@ -320,8 +316,7 @@ def loaddata(path: str) -> dict:
     if globs.custom_path:  # test if a custom path is used:
         fname = str(globs.custom_path).rstrip('/') + path
     else:
-        fname = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify"+path)
+        fname = resource_files("molSimplify").joinpath(path.strip('/'))
     d = dict()
 
     with open(fname) as f:
@@ -345,8 +340,7 @@ def loaddata_ts(path: str) -> dict:
     if globs.custom_path:  # test if a custom path is used:
         fname = str(globs.custom_path).rstrip('/') + path
     else:
-        fname = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify"+path)
+        fname = resource_files("molSimplify").joinpath(path.strip('/'))
     d = dict()
 
     with open(fname) as f:
@@ -449,8 +443,7 @@ def loadcoord(coord: str) -> List[List[float]]:
     if globs.custom_path:
         f = globs.custom_path + "/Data/" + coord + ".dat"
     else:
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/Data/" + coord + ".dat")
+        f = resource_files("molSimplify").joinpath(f"Data/{coord}.dat")
     with open(f) as f:
         txt = [_f for _f in f.read().splitlines() if _f]
     b = []
@@ -465,7 +458,7 @@ def loadcoord(coord: str) -> List[List[float]]:
 #  @return mol3D of core, error messages
 
 
-def core_load(usercore: str, mcores: dict = None) -> Tuple[Union[mol3D, None], str]:
+def core_load(usercore: str, mcores: Optional[dict] = None) -> Tuple[Union[mol3D, None], str]:
     if mcores is None:
         mcores = getmcores()
     globs = globalvars()
@@ -482,8 +475,7 @@ def core_load(usercore: str, mcores: dict = None) -> Tuple[Union[mol3D, None], s
         if globs.custom_path:
             fcore = globs.custom_path + "/Cores/" + dbentry[0]
         else:
-            fcore = resource_filename(Requirement.parse(
-                "molSimplify"), "molSimplify/Cores/" + dbentry[0])
+            fcore = str(resource_files("molSimplify").joinpath(f"Cores/{dbentry[0]}"))
         # check if core xyz/mol file exists
         if not glob.glob(fcore):
             emsg = "We can't find the core structure file %s right now! Something is amiss. Exiting..\n" % fcore
@@ -550,7 +542,7 @@ def core_load(usercore: str, mcores: dict = None) -> Tuple[Union[mol3D, None], s
 def substr_load(usersubstrate: str,
                 sub_i: int,
                 subcatoms: List[int],
-                subcores: dict = None) -> Tuple[Union[mol3D, None], List[int], str]:
+                subcores: Optional[dict] = None) -> Tuple[Union[mol3D, None], List[int], str]:
     # if not using a user-defined substrate dictionary
     if subcores is None:
         subcores = getsubcores()
@@ -579,8 +571,7 @@ def substr_load(usersubstrate: str,
         if globs.custom_path:
             fsubst = globs.custom_path + "/Substrates/" + var_list_sub_i[0]
         else:
-            fsubst = resource_filename(Requirement.parse(
-                "molSimplify"), "molSimplify/Substrates/" + var_list_sub_i[0])
+            fsubst = str(resource_files("molSimplify").joinpath(f"Substrates/{var_list_sub_i[0]}"))
         # check if substrate xyz/mol file exists
         if not glob.glob(fsubst):
             emsg = "We can't find the substrate structure file %s right now! Something is amiss. Exiting..\n" % fsubst
@@ -661,7 +652,7 @@ def substr_load(usersubstrate: str,
 
 # TODO: Output currently typed as any instead of Union[mol3D, None] because many other
 # scripts depend on a mol3D as first return value.
-def lig_load(userligand: str, licores: dict = None) -> Tuple[Any, str]:
+def lig_load(userligand: str, licores: Optional[dict] = None) -> Tuple[Any, str]:
 
     if licores is None:
         licores = getlicores()
@@ -703,8 +694,7 @@ def lig_load(userligand: str, licores: dict = None) -> Tuple[Any, str]:
         if globs.custom_path:
             flig = globs.custom_path + "/Ligands/" + dbentry[0]
         else:
-            flig = resource_filename(Requirement.parse(
-                "molSimplify"), "molSimplify/Ligands/" + dbentry[0])
+            flig = str(resource_files("molSimplify").joinpath(f"Ligands/{dbentry[0]}"))
         # check if ligand xyz/mol file exists
         print(('looking for '+flig))
         if not os.path.isfile(flig):
@@ -715,6 +705,8 @@ def lig_load(userligand: str, licores: dict = None) -> Tuple[Any, str]:
             lig.OBMol = lig.getOBMol(flig, 'xyzf')
             # Set charge to last entry in ligands.dict
             lig.OBMol.SetTotalCharge(int(dbentry[-1][0]))
+        elif ('.mol2' in flig):
+            lig.OBMol = lig.getOBMol(flig, 'mol2f')
         elif ('.mol' in flig):
             lig.OBMol = lig.getOBMol(flig, 'molf')
         elif ('.smi' in flig):
@@ -748,7 +740,6 @@ def lig_load(userligand: str, licores: dict = None) -> Tuple[Any, str]:
             lig.ffopt = dbentry[4][0]
     # load from file
     elif ('.mol' in userligand or '.xyz' in userligand or '.smi' in userligand or '.sdf' in userligand):
-        # flig = resource_filename(Requirement.parse("molSimplify"),"molSimplify/" +userligand)
         if glob.glob(userligand):
             ftype = userligand.split('.')[-1]
             # try and catch error if conversion doesn't work
@@ -813,8 +804,7 @@ def bind_load(userbind: str, bindcores: dict) -> Tuple[Union[mol3D, None], bool,
         if globs.custom_path:
             fbind = globs.custom_path + "/Bind/" + bindcores[userbind][0]
         else:
-            fbind = resource_filename(Requirement.parse(
-                "molSimplify"), "molSimplify/Bind/" + bindcores[userbind][0])
+            fbind = str(resource_files("molSimplify").joinpath(f"Bind/{bindcores[userbind][0]}"))
         # check if bind xyz/mol file exists
         if not glob.glob(fbind):
             emsg = "We can't find the binding species structure file %s right now! Something is amiss. Exiting..\n" % fbind
@@ -898,8 +888,7 @@ def getinputargs(args, fname: str):
 
 
 def plugin_defs() -> str:
-    plugin_path = resource_filename(Requirement.parse(
-        "molSimplify"), "molSimplify/plugindefines_reference.txt")
+    plugin_path = str(resource_files("molSimplify").joinpath("plugindefines_reference.txt"))
     return plugin_path
 
 # def get_name(args,rootdir,core,ligname,bind = False,bsmi = False):
@@ -994,7 +983,8 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum,
             else:  # ligand is in ligands.dict
                 name += '_' + str(lig) + '_' + str(ligoc[i])
         name += "_s_"+str(spin)
-        print([nconf, args.nconfs])
+        if args.debug:
+            print([nconf, args.nconfs])
         if nconf and int(args.nconfs) >= 1:
             name += "_conf_"+str(nconf)
         if args.bind:
@@ -1138,16 +1128,11 @@ def copy_to_custom_path():
     if not os.path.exists(globs.custom_path):
         os.makedirs(globs.custom_path)
     # copytree cannot overwrite, need to enusre directory does not exist already
-    core_dir = resource_filename(Requirement.parse(
-        "molSimplify"), "molSimplify/Cores")
-    li_dir = resource_filename(Requirement.parse(
-        "molSimplify"), "molSimplify/Ligands")
-    bind_dir = (resource_filename(
-        Requirement.parse("molSimplify"), "molSimplify/Bind"))
-    data_dir = (resource_filename(
-        Requirement.parse("molSimplify"), "molSimplify/Data"))
-    subs_dir = (resource_filename(Requirement.parse(
-        "molSimplify"), "molSimplify/Substrates"))
+    core_dir = resource_files("molSimplify").joinpath("Cores")
+    li_dir = resource_files("molSimplify").joinpath("Ligands")
+    bind_dir = resource_files("molSimplify").joinpath("Bind")
+    data_dir = resource_files("molSimplify").joinpath("Data")
+    subs_dir = resource_files("molSimplify").joinpath("Substrates")
     if os.path.exists(str(globs.custom_path).rstrip("/")+"/Cores"):
         print('Note: removing old molSimplify data')
         shutil.rmtree(str(globs.custom_path).rstrip("/")+"/Cores")

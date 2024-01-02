@@ -26,10 +26,9 @@
 # fix OB bug: https://github.com/openbabel/openbabel/issues/1983
 import sys
 import argparse
-import os
-if not('win' in sys.platform):
+if not ('win' in sys.platform):
     flags = sys.getdlopenflags()
-if not('win' in sys.platform):
+if not ('win' in sys.platform):
     sys.setdlopenflags(flags)
 
 from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabgen,
@@ -41,6 +40,7 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
                                          parseCLI)
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import globalvars
+from molSimplify.utils.tensorflow import tensorflow_silence
 
 globs = globalvars()
 # Basic help description string
@@ -88,27 +88,6 @@ DescString_customcore = 'Printing ligand replacement help.'
 DescString_naming = 'Printing custom filename help.'
 # Ligand dictionary help description string
 DescString_ligdict = 'Printing ligand dictionary help.'
-
-
-def tensorflow_silence():
-    # thanks to
-    # stackoverflow.com/questions/40426502/is-there-a-way-to-suppress-the-messages-tensorflow-prints
-    try:
-        from tensorflow.compat.v1 import logging
-        logging.set_verbosity(logging.ERROR)
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-        os.environ['KMP_WARNINGS'] = '0'
-
-        def deprecated(date, instructions, warn_once=False):
-            def deprecated_wrapper(func):
-                return func
-            return deprecated_wrapper
-
-        from tensorflow.python.util import deprecation
-        deprecation.deprecated = deprecated
-
-    except ImportError:
-        pass
 
 
 try:
@@ -193,7 +172,7 @@ def main(args=None):
         print('molSimplify is starting!')
         # ## create main application
         app = QApplication(sys.argv)  # main application
-        gui = mGUI(app)  # main GUI class
+        _ = mGUI(app)  # main GUI class
         app.processEvents()
         app.exec_()
     # ## if input file is specified run without GUI ###

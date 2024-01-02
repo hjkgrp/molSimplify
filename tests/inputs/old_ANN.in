@@ -1,7 +1,0 @@
-# molSimplify input file generated from CLI input
--core Fe
--oxstate II
--spin 5
--coord 6
--lig water
--oldANN true

@@ -22,23 +22,21 @@ pbp_adjacency = {0: (1, 4), 1: (0, 2), 2: (1, 3), 3: (2, 4), 4: (3, 0), 5: (0, 1
 
 def generateisomers(args):
     # Check if this is a non-supported case
-    continue_flag = True
     dents = []
     for ligands in args.lig:
         denticity = checkdenticity(ligands)
         dents.append(denticity)
     if max(dents) > 2:
         print('WARNING, -isomers does not support ligand denticities greater than two. Quiting...')
-        continue_flag = False
+        return []
 
     # If supported, run the program
-    if continue_flag:
-        expanded = expandrepresentation(args)
-        permutations = findpermutations(expanded)
-        unique_permutations = checkunique(args, permutations)
-        isomers = collapserepresentation(args, unique_permutations)
-        if args.stereos:
-            isomers = generatestereo(isomers)
+    expanded = expandrepresentation(args)
+    permutations = findpermutations(expanded)
+    unique_permutations = checkunique(args, permutations)
+    isomers = collapserepresentation(args, unique_permutations)
+    if args.stereos:
+        isomers = generatestereo(isomers)
 
     return isomers
 

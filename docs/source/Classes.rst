@@ -18,10 +18,10 @@ mol3D Class
    :undoc-members:
    :show-inheritance:
 
-AA3D Class
+monomer3D Class
 --------------------------------
 
-.. automodule:: molSimplify.Classes.AA3D
+.. automodule:: molSimplify.Classes.monomer3D
    :members:
    :undoc-members:
    :show-inheritance:

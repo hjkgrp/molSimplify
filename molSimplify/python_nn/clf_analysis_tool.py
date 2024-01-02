@@ -1,6 +1,7 @@
 # import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
+from packaging import version
 import tensorflow as tf
 from tensorflow.keras import backend as K
 from tensorflow.keras import Model
@@ -99,7 +100,7 @@ def get_entropy(dists, neighbor_targets) -> np.ndarray:
 
 def get_layer_outputs(model, layer_index, input,
                       training_flag=False) -> np.ndarray:
-    if not tf.__version__ >= '2.0.0':
+    if not version.parse(tf.__version__) >= version.parse('2.0.0'):
         get_outputs = K.function([model.layers[0].input, K.learning_phase()],
                                  [model.layers[layer_index].output])
         nn_outputs = get_outputs([input, training_flag])[0]

@@ -1,7 +1,7 @@
 import os
 import time
 import logging
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from collections import OrderedDict
 import numpy as np
 import skimage.transform as skitransform
@@ -228,8 +228,7 @@ class dft_control:
 
     def load_models(self):
         if not self.modelfile:
-            modelpath = resource_filename(Requirement.parse("molSimplify"),
-                                          "molSimplify/molscontrol/models/" + self.mode + "/")
+            modelpath = str(resource_files("molSimplify.molscontrol").joinpath(f"models/{self.mode}"))
         else:
             modelpath = self.modelfile
             logging.warning("Using user-specified models from %s." % modelpath)
@@ -245,8 +244,7 @@ class dft_control:
 
     def load_training_data(self):
         if not self.traindatafile:
-            datapath = resource_filename(Requirement.parse("molSimplify"),
-                                         "molSimplify/molscontrol/data/" + self.mode + "/train_data.pkl")
+            datapath = resource_files("molSimplify.molscontrol").joinpath(f"data/{self.mode}/train_data.pkl")
         else:
             datapath = self.traindatafile
             logging.warning("Using user-specified models from %s." % datapath)
@@ -261,8 +259,7 @@ class dft_control:
 
     def load_normalization_vec(self):
         if not self.normfile:
-            normvecpath = resource_filename(Requirement.parse("molSimplify"),
-                                            "molSimplify/molscontrol/normalization_vec/" + self.mode + "/norm_dict.json")
+            normvecpath = resource_files("molSimplify.molscontrol").joinpath(f"normalization_vec/{self.mode}/norm_dict.json")
         else:
             normvecpath = self.normfile
             logging.warning(

@@ -7,10 +7,12 @@ import copy
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
 from molSimplify.Informatics.MOF.atomic import (
     COVALENT_RADII,
-    alkali, 
-    lanthanides, 
-    metals,     
+    alkali,
+    lanthanides,
+    metals,
     )
+
+# PBC: periodic boundary conditions
 
 deg2rad = np.pi/180.0
 def readcif(name):
@@ -44,7 +46,7 @@ def readcif(name):
             if (not line) or line_stripped.startswith("#"):
                 continue
             line_splitted=line.split()
-            
+
             if line_stripped.startswith("_cell_length_a"):
                 temp = line_splitted[1].replace(')','')
                 temp = temp.replace('(','')
@@ -90,7 +92,7 @@ def readcif(name):
                     fracz_index=atom_props_count
                 # elif "charge" in line_stripped:
                 #     charge_index=atom_props_count
-    
+
                 if cond:
                     atom_props_count+=1 # Another atom property in the block we are interested in.
 
@@ -102,9 +104,9 @@ def readcif(name):
                     continue # Allow for newlines between the _atom_ lines and the lines holding the atom information
                 else:
                     break # Don't need to keep looking through the file, since we've seen all the desired information for all atoms. We left the block.
-        
+
             counter+=1
-        
+
         positions=[]
         atomtypes=[]
         for cn,at in enumerate(atomlines):
@@ -118,13 +120,14 @@ def readcif(name):
             #     if char.isdigit(): # This means one of the characters in the atom type is a number.
             #         at_type = ln[type_index][:idx] # Overwriting. Use the atom element symbol without numbers.
             #         break # Get the characters up to the number, then stop
+            at_type = at_type.capitalize()
             atomtypes.append(at_type)
 
         cpar=np.array([cell_a,cell_b,cell_c,cell_alpha,cell_beta,cell_gamma])
         positions = np.array(positions)
         return cpar, atomtypes, positions
 
-def compute_image_flag(cell,fcoord1,fcoord2):
+def compute_image_flag(cell, fcoord1, fcoord2):
     """
     Calculates how to shift fcoord2 to get it as close as possible to fcoord1. Shift by the crystal cell vectors.
 
@@ -153,7 +156,7 @@ def compute_image_flag(cell,fcoord1,fcoord2):
     return supercells[image]
 
 
-def linker_length(adjmat,anchors):
+def linker_length(adjmat, anchors):
     """
     Computes the shortest and longest paths between anchors in a linker.
 
@@ -167,8 +170,8 @@ def linker_length(adjmat,anchors):
     Returns
     -------
     (min_length,max_length) : tuple of ints
-        min_length is the shortest path between two anchors in a linker.
-        max_length is the longest path between two anchors in a linker.
+        min_length is the shortest path length between two anchors in a linker.
+        max_length is the longest path length between two anchors in a linker.
 
     """
     rows, cols = np.where(adjmat == 1)
@@ -185,7 +188,7 @@ def linker_length(adjmat,anchors):
         min_length=min(len(nx.shortest_path(gr,i,j))-1,min_length)
     return (min_length,max_length)
 
-def slice_mat(mat,atoms):
+def slice_mat(mat, atoms):
     """
     Slice the matrix mat.
 
@@ -205,7 +208,7 @@ def slice_mat(mat,atoms):
     return np.array(mat[np.ix_(list(atoms),list(atoms))])
 
 
-def ligand_detect(cell,cart_coords,adj_mat,anchorlist):
+def ligand_detect(cell, cart_coords, adj_mat, anchorlist):
     """
     Calculates how to shift anchor atoms so that they are close to atoms bonded to them.
     I imagine this tackles the issue of two bonded atoms being on different sides of a crystal cell.
@@ -239,7 +242,7 @@ def ligand_detect(cell,cart_coords,adj_mat,anchorlist):
         current_node = connected_components[counter]
         for j,v in enumerate(adj_mat[current_node]):
             if v==1 and (j not in checked) and (j not in connected_components): # If find a bonded atom that hasn't been checked yet
-                image_flag = compute_image_flag(cell,fcoords[current_node],fcoords[j]) 
+                image_flag = compute_image_flag(cell,fcoords[current_node],fcoords[j])
                 fcoords[j] += image_flag # Shifting fractional coordinates by the number of cells specified by compute_image_flag
                 connected_components.append(j)
                 checked.append(j)
@@ -250,7 +253,7 @@ def ligand_detect(cell,cart_coords,adj_mat,anchorlist):
     return np.array(periodic_images)
 
 
-def XYZ_connected(cell,cart_coords,adj_mat):
+def XYZ_connected(cell, cart_coords, adj_mat):
     """
     Calculate fractional coordinates of atoms for the specified connected component, shifted by cell vectors to make the coordinates close to each other.
 
@@ -277,7 +280,7 @@ def XYZ_connected(cell,cart_coords,adj_mat):
     from scipy import sparse
     n_components, labels_components = sparse.csgraph.connected_components(csgraph=adj_mat, directed=False, return_labels=True)
     # print(n_components,'comp',labels_components)
-    tested_index = 0 # The label for the connected components. 0 indicates the first connected componet, etc.
+    tested_index = 0 # The label for the connected components. 0 indicates the first connected component, etc.
     index_counter = 0
     while len(connected_components) < len(cart_coords):
         try:
@@ -286,7 +289,7 @@ def XYZ_connected(cell,cart_coords,adj_mat):
             indices = [i for i, x in enumerate(labels_components) if x == tested_index] # Indices corresponding to atoms in the component corresponding to tested_index
             current_node = indices[index_counter]
             # print(current_node,indices)
-            
+
             if index_counter == (len(indices)-1):
                 tested_index += 1
                 index_counter = 0
@@ -301,27 +304,24 @@ def XYZ_connected(cell,cart_coords,adj_mat):
         counter+=1
     return fcoords
 
-def writeXYZfcoords(filename,atoms,cell,fcoords):
+def writeXYZfcoords(filename, atoms, cell, fcoords):
     """
-    TODO
+    Write an XYZ file using fractional coordinates.
 
     Parameters
     ----------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
+    filename : str
+        The path to where the xyz of the MOF structure will be written.
+    atoms : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    cell : numpy.ndarray
+        The three Cartesian vectors representing the edges of the crystal cell. Shape is (3,3).
+    fcoords : numpy.ndarray
+        The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
 
     Returns
     -------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
+    None
 
     """
     with open(filename,"w") as fo:
@@ -331,7 +331,7 @@ def writeXYZfcoords(filename,atoms,cell,fcoords):
             s="%10.2f %10.2f %10.2f"%(cart_coord[0],cart_coord[1],cart_coord[2])
             fo.write("%s %s\n"%(atoms[i],s))
 
-def writeXYZandGraph(filename,atoms,cell,fcoords,molgraph):
+def writeXYZandGraph(filename, atoms, cell, fcoords, molgraph):
     """
     Write the xyz file for the MOF structure, as well as the net file containing the MOF's graph.
 
@@ -361,10 +361,10 @@ def writeXYZandGraph(filename,atoms,cell,fcoords,molgraph):
             s="%10.2f %10.2f %10.2f"%(cart_coord[0],cart_coord[1],cart_coord[2]) # X, Y, Z
             fo.write("%s %s\n"%(atoms[i],s)) # Writing the coordinates of each atom.
     tmpstr=",".join([at for at in atoms])
-    np.savetxt(filename[:-4]+".net",molgraph,fmt="%i",delimiter=",",header=tmpstr) # Save a net file. 
+    np.savetxt(filename[:-4]+".net",molgraph,fmt="%i",delimiter=",",header=tmpstr) # Save a net file.
 
 
-def returnXYZandGraph(filename,atoms,cell,fcoords,molgraph):
+def returnXYZandGraph(filename, atoms, cell, fcoords, molgraph):
     """
     TODO
 
@@ -392,31 +392,26 @@ def returnXYZandGraph(filename,atoms,cell,fcoords,molgraph):
         cart_coord=np.dot(fcoord,cell)
         coord_list.append([cart_coord[0],cart_coord[1],cart_coord[2]])
     tmpstr=",".join([at for at in atoms])
-    if filename != None: 
+    if filename != None:
         np.savetxt(filename[:-4]+".net",molgraph,fmt="%i",delimiter=",",header=tmpstr)
     return coord_list, molgraph
 
-def writeXYZcoords(filename,atoms,coords):
+def writeXYZcoords(filename, atoms, coords):
     """
-    TODO
+    Write an XYZ file using Cartesian coordinates.
 
     Parameters
     ----------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
+    filename : str
+        The path to where the xyz of the MOF structure will be written.
+    atoms : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    coords : numpy.ndarray
+        The Cartesian positions of the atoms of the cif file. Shape is (number of atoms, 3).
 
     Returns
     -------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
+    None
 
     """
     with open(filename,"w") as fo:
@@ -426,27 +421,20 @@ def writeXYZcoords(filename,atoms,coords):
             fo.write("%s %s\n"%(atoms[i],s))
     return
 
-def writeXYZcoords_withcomment(filename,atoms,coords,comment):
+def writeXYZcoords_withcomment(filename, atoms, coords, comment):
     """
-    TODO
+    Write an XYZ file using Cartesian coordinates, with a comment included.
 
     Parameters
     ----------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-
-    Returns
-    -------
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
-    TODO : TODO
-        TODO
+    filename : str
+        The path to where the xyz of the MOF structure will be written.
+    atoms : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    coords : numpy.ndarray
+        The Cartesian positions of the atoms of the cif file. Shape is (number of atoms, 3).
+    comment : str
+        The comment to include in the XYZ file.
 
     """
     with open(filename,"w") as fo:
@@ -457,7 +445,7 @@ def writeXYZcoords_withcomment(filename,atoms,coords,comment):
             fo.write("%s %s\n"%(atoms[i],s))
     return
 
-def write2file(pt,fn,st):
+def write2file(pt, fn, st):
     """
     Writes the string st to a file.
 
@@ -478,7 +466,7 @@ def write2file(pt,fn,st):
     with open(pt+fn, "a") as fo:
         fo.write(st)
 
-def write_cif(fname,cellprm,fcoords,atom_labels):
+def write_cif(fname, cellprm, fcoords, atom_labels):
     """
     Writes a cif file with the provided parameters.
 
@@ -557,7 +545,7 @@ def cell_to_cellpar(cell, radians=False):
         angles = [angle * np.pi / 180 for angle in angles]
     return np.array(lengths + angles)
 
-def findPaths(G,u,n):
+def findPaths(G, u, n):
     """
     Finds paths between atom u and atoms n bonds away.
 
@@ -584,24 +572,24 @@ def findPaths(G,u,n):
         # Example of paths: [[12, 3, 7, 6], [12, 3, 7, 14], [12, 4, 0, 14], [12, 4, 0, 15], [12, 4, 9, 5], [12, 4, 9, 11]]
     return paths
 
-def fractional2cart(fcoord, cell):
+def fractional2cart(fcoords, cell):
     """
     Convert from fractional coordinates to Cartesian coordinates.
 
     Parameters
     ----------
-    fcoord : numpy.ndarray
+    fcoords : numpy.ndarray
         The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
     cell : The three Cartesian vectors representing the edges of the crystal cell.
         Shape is (3,3).
 
     Returns
     -------
-    np.dot(fcoord,cell) : numpy.ndarray
+    np.dot(fcoords,cell) : numpy.ndarray
         The Cartesian coordinates of the crystal atoms. Shape is (number of atoms, 3).
 
     """
-    return np.dot(fcoord,cell)
+    return np.dot(fcoords,cell)
 
 def frac_coord(coord, cell):
     """
@@ -623,7 +611,7 @@ def frac_coord(coord, cell):
     invcell=np.linalg.inv(cell)
     return np.dot(coord,invcell)
 
-def compute_distance_matrix3(cell, cart_coords, num_cells = 1):
+def compute_distance_matrix3(cell, cart_coords, num_cells=1):
     """
     Computes the pairwise distances between all atom pairs in the crystal cell.
 
@@ -661,8 +649,60 @@ def compute_distance_matrix3(cell, cart_coords, num_cells = 1):
     distance_matrix = np.min(dist, axis=-1) # Consider the distance between two atoms at the crystal cell shift where they are closest.
     return distance_matrix
 
+def position_nearest_atom(cell, cart_coords, index_of_interest, num_cells=1):
+    """
+    Computes the pairwise distances between all atoms in the crystal cell to the atom specified by index_of_interest; returns the position of the nearest atom.
 
-def make_graph_from_nodes_edges(nodes,edges,attribs):
+    Parameters
+    ----------
+    cell : numpy.ndarray
+        The three Cartesian vectors representing the edges of the crystal cell. Shape is (3,3).
+    cart_coords : numpy.ndarray
+        The Cartesian coordinates of the crystal atoms. Shape is (number of atoms, 3).
+    index_of_interest : int
+        The index of the atom to which we want to find the nearest atom's position.
+    num_cells : int
+        The number of crystal cells to put together for the evaluation of distances.
+
+    Returns
+    -------
+    nearest_position : numpy.ndarray
+        The Cartesian coordinates of the nearest atom. Shape is (3,).
+    nearest_index : numpy.int64
+        The index of the nearest atom.
+    shift_for_nearest_atom : numpy.ndarray
+        The crystal cell shifts that position the nearest atom closest to the atom of interest. Shape is (3,). Will look something like [-1  0 -1] or [0 0 0] or etc.
+
+    """
+    pos = np.arange(-num_cells, num_cells+1, 1) # [-1, 0, 1] if num_cells is 1
+    combos = np.array(np.meshgrid(pos, pos, pos)).T.reshape(-1,3) # The 27 combinations of -1, 0, 1 if num_cells is 1
+    shifts = np.sum(np.expand_dims(cell, axis=0)*np.expand_dims(combos, axis=-1), axis=1) # The possible shifts by the crystal cell vectors.
+    # NxNxCells distance array
+    shifted = np.expand_dims(cart_coords, axis=1) + np.expand_dims(shifts, axis=0) # The shifted Cartesian coordinates. Shape is (number of atoms, number of combinations in combos, 3)
+
+    # The distances between atoms, across different crystal cell shifts, for the three Cartesian dimensions.
+    dist = np.expand_dims(np.expand_dims(cart_coords[index_of_interest], axis=0), axis=0) - shifted # Shape is (number of atoms, number of combinations in combos, 3)
+        # The shape of np.expand_dims(np.expand_dims(cart_coords[index_of_interest], axis=0), axis=0) is (1, 1, 3). These are the coordinates of the atom of interest.
+        # numpy subtraction expands out the axes of length one for the subtraction.
+
+    # The standard distance formula of square root of x^2 + y^2 + z^2
+    dist = np.sqrt(np.sum(np.square(dist), axis=-1)) # Shape is (number of atoms, number of combinations in combos)
+
+    # Want the atom that is closest to index_of_interest, given the ideal shift
+    # Don't want to consider distance of atom of interest to itself, so I eliminate it from consideration this way.
+    dist[index_of_interest,:] = np.array([np.Inf]*np.shape(dist)[1])
+    # Find the index of the closest atom.
+    index_nearest_atom = np.argmin(dist)
+    index_nearest_atom = np.unravel_index(index_nearest_atom, np.shape(dist)) # This is (atom index, shift index)
+
+    # Get the Cartesian coordinates of the nearest atom
+    nearest_position = shifted[index_nearest_atom[0], index_nearest_atom[1], :]
+    nearest_index = index_nearest_atom[0]
+    shift_for_nearest_atom = combos[index_nearest_atom[1],:]
+
+    return nearest_position, nearest_index, shift_for_nearest_atom
+
+def make_graph_from_nodes_edges(nodes, edges, attribs):
     """
     TODO
 
@@ -691,13 +731,13 @@ def make_graph_from_nodes_edges(nodes,edges,attribs):
     gr.add_edges_from(edges)
     return gr
 
-def mkcell(params):
+def mkcell(cpar):
     """
     Update the cell representation to match the parameters.
 
     Parameters
     ----------
-    params : numpy.ndarray
+    cpar : numpy.ndarray
         The parameters (i.e. lattice constants) of the MOF cell. Specifically, A, B, C, alpha, beta, and gamma. Shape is (6,).
 
     Returns
@@ -707,17 +747,17 @@ def mkcell(params):
 
     """
 
-    a_mag, b_mag, c_mag = params[:3]
-    alpha, beta, gamma = [x * deg2rad for x in params[3:]] # Converting the angles to radians from degrees.
+    a_mag, b_mag, c_mag = cpar[:3]
+    alpha, beta, gamma = [x * deg2rad for x in cpar[3:]] # Converting the angles to radians from degrees.
     a_vec = np.array([a_mag, 0.0, 0.0]) # a_vec is taken to be along the x axis
     b_vec = np.array([b_mag * np.cos(gamma), b_mag * np.sin(gamma), 0.0]) # See this depiction of lattice parameters for reasoning behind these equations. https://www.doitpoms.ac.uk/tlplib/crystallography3/parameters.php. b_vec is taken to be in the X-Y plane.
     c_x = c_mag * np.cos(beta)
     c_y = c_mag * (np.cos(alpha) - np.cos(gamma) * np.cos(beta)) / np.sin(gamma) # You have to use a matrix to convert. This is derived in most textbooks on crystallography, such as McKie & McKie 'Essentials of Crystallography'. https://chemistry.stackexchange.com/questions/136836/converting-fractional-coordinates-into-cartesian-coordinates-for-crystallography
     c_vec = np.array([c_x, c_y, (c_mag**2 - c_x**2 - c_y**2)**0.5]) # c_x**2 + c_y**2 + c_z**2 = c_mag**2
-    vectors = np.array([a_vec, b_vec, c_vec]) 
+    vectors = np.array([a_vec, b_vec, c_vec])
     return vectors
 
-def make_supercell(cell,atoms,fcoords,exp_coeff):
+def make_supercell(cell, atoms, fcoords, exp_coeff):
     """
     TODO
 
@@ -757,7 +797,7 @@ def make_supercell(cell,atoms,fcoords,exp_coeff):
     return supercell,superatoms,superfcoords
 
 
-def compute_adj_matrix(distance_mat,allatomtypes):
+def compute_adj_matrix(distance_mat, allatomtypes, wiggle_room=1, handle_overlap=False):
     """
     Calculates what atoms are bonded to each other.
 
@@ -770,14 +810,21 @@ def compute_adj_matrix(distance_mat,allatomtypes):
         The distance of each atom to each other atom. Shape is (number of atoms, number of atoms).
     allatomtypes : list of str
         The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    wiggle_room : float
+        A multiplier that allows for more or less strict bond distance cutoffs.
+    handle_overlap : bool
+        Indicates whether to provide diagnostics for atoms that are overlapping, or to just raise an error if it finds overlaps
 
     Returns
     -------
     sparse.csr_matrix(adj_matrix) : scipy.sparse.csr.csr_matrix
-        1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
+        Adjacency matrix. 1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
+    overlap_atoms : list
+        Indices of atoms that overlap with any atom of a lower index.
 
     """
 
+    overlap_atoms = []
     adj_matrix=np.zeros(distance_mat.shape)
     for i,e1 in enumerate(allatomtypes[:-1]): # Iterating through all pairs of atoms.
         for j,e2 in enumerate(allatomtypes[i+1:]):
@@ -791,8 +838,16 @@ def compute_adj_matrix(distance_mat,allatomtypes):
             dist = distance_mat[i,i+j+1]
             # check for atomic overlap:
             if dist < min(COVALENT_RADII[e1] , COVALENT_RADII[e2]):
-                print("atomic overlap!")
-                raise NotImplementedError
+                print(f"Atomic overlap involving atom {i} and {i+j+1}! Zero-indexed.")
+                print(f"dist is {dist} and the cutoff is {min(COVALENT_RADII[e1] , COVALENT_RADII[e2])}")
+                if handle_overlap:
+                    # Check whether atom i is already in overlap_atoms and will be removed.
+                    # If so, no need to remove an atom that overlaps with atom i.
+                    if i not in overlap_atoms:
+                        overlap_atoms.append(i+j+1) # The atom with index i+j+1 overlapped with another atom.
+                else:
+                    print('Overlapping atoms! Error')
+                    raise NotImplementedError # Exit the function.
             tempsf = 0.9 # This is modified below under certain conditions, to account for looser or tigher bonding.
             # There is probably a better way to fix these kinds of issues.
             # In the context of sets, & is the intersection. If the intersection is null, the (&) expression is False.
@@ -801,7 +856,7 @@ def compute_adj_matrix(distance_mat,allatomtypes):
             if (set("C") < elements) and  (elements & metals):
                 tempsf = 0.95
             if (set("H") < elements) and  (elements & metals) and (not elements & alkali):
-                tempsf = 0.75 
+                tempsf = 0.75
 
             if (set("O") < elements) and (elements & metals):
                 tempsf = 0.85
@@ -823,11 +878,14 @@ def compute_adj_matrix(distance_mat,allatomtypes):
                 tempsf = 0.95
             if(elements ==set(["C"]) ):
                 tempsf = 0.85
-            if dist*tempsf < rad: # and not (alkali & elements):
+            if dist*tempsf < rad * wiggle_room: # and not (alkali & elements):
                 # Entering this if statement means there is a bond between the two atoms.
                 adj_matrix[i,i+j+1]=1
                 adj_matrix[i+j+1,i]=1
-    return sparse.csr_matrix(adj_matrix)
+
+        # Removing duplicates and sorting.
+        overlap_atoms = [*set(overlap_atoms)]
+    return sparse.csr_matrix(adj_matrix), overlap_atoms
 
 
 
@@ -844,19 +902,19 @@ def get_closed_subgraph(linkers, SBUlist, adj_matrix):
 
     Parameters
     ----------
-    linkers : set
+    linkers : set of int
         Indices corresponding to atoms in the linkers (or SBUs; see the summary part of this docstring) of the MOF. The part of the matrix to analyze.
-    SBUlist : set
+    SBUlist : set of numpy.int64
         Indices corresponding to atoms in the SBUs (or linkers) of the MOF. The part of the matrix to ignore.
     adj_matrix : scipy.sparse.csr.csr_matrix
-        1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
+        Adjacency matrix. 1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
 
     Returns
     -------
     linker_list : list of lists of ints
-        Each inner list is its own separate linker. The ints are the atom indices of that linker. Length is # of linkers.
+        Each inner list is its own separate linker (or SBU). The ints are the atom indices of that linker (or SBU). Length is # of linkers (or SBUs).
     linker_subgraphlist : list of scipy.sparse.csr.csr_matrix
-        The atom connections in the linker subgraph. Length is # of linkers.
+        The atom connections in the linker (or SBU) subgraph. Length is # of linkers (or SBUs).
 
     """
 
@@ -927,7 +985,7 @@ def include_extra_shells(SBUlists, subgraphlists, molcif, adjmat):
         SBUs.append(list(SBUset))
         subgraphs.append(adjmat[np.ix_(list(SBUset),list(SBUset))])
 
-    return SBUs,subgraphs
+    return SBUs, subgraphs
 
 def disorder_detector(name):
     """
@@ -944,6 +1002,8 @@ def disorder_detector(name):
         The indices of atoms with fractional occupancies.
     disordered_atom_types : list of str
         The elemental symbols of atoms with fractional occupancies.
+    disordered_atom_occupancies : list of floats
+        The fractional occupancies of the atoms with fractional occupancies.
 
     """
     with open(name , 'r', errors='ignore') as fi: # ignore takes care of unicode errors in some cifs
@@ -957,17 +1017,17 @@ def disorder_detector(name):
             if (not line) or line_stripped.startswith("#"):
                 continue
             line_splitted=line.split()
-            
+
             if line_stripped.startswith("_atom") :
 
-                if line_stripped=="_atom_site_label" or line_stripped == '_atom_site_type_symbol':
+                if line_stripped == "_atom_site_label" or line_stripped == '_atom_site_type_symbol':
                     cond=True # We have entered the block with the desired atom information.
                     # The reason for the or is that the order fo these lines can vary depending on cif
                 if line_stripped == '_atom_site_type_symbol':
                     type_index=atom_props_count
                 elif line_stripped=="_atom_site_occupancy":
                     occupancy_index=atom_props_count
-    
+
                 if cond:
                     atom_props_count+=1 # Another atom property in the block we are interested in.
 
@@ -977,12 +1037,13 @@ def disorder_detector(name):
                 else:
                     break # Don't need to keep looking through the file, since we've seen all the desired information for all atoms. We left the block.
 
-                
-        disordered_atom_indices=[]
+
+        disordered_atom_indices = []
         disordered_atom_types = []
+        disordered_atom_occupancies = []
 
         if occupancy_index != False: # This means that occupancy information is available
-            for idx, at in enumerate(atomlines): # Go through the lines of the cif with atom specific information
+            for idx, at in enumerate(atomlines): # Go through the lines of the cif with atom specific information. Atom by atom.
                 ln=at.strip().split()
 
                 current_atom_occupancy = ln[occupancy_index].split('(')[0] # Excluding parentheses in order to convert to float.
@@ -996,19 +1057,125 @@ def disorder_detector(name):
                     at_type = ln[type_index]
                     disordered_atom_types.append(at_type)
 
-        return disordered_atom_indices, disordered_atom_types
+                    disordered_atom_occupancies.append(current_atom_occupancy)
 
-def solvent_removal(cif_path, new_cif_path):
+        return disordered_atom_indices, disordered_atom_types, disordered_atom_occupancies
+
+def remove_duplicate_atoms(allatomtypes, fcoords):
     """
-    It is recommended that get_primitive be run before this function is applied.
-    Reads a cif file, removes floating solvent, and writes the cif to the provided path.
+    Removes any atoms that have the exact same coordinate as a lower index atom.
+    This pops up after removing symmetry with Vesta. Symmetry removal helps the molSimplify code get connectivity right.
 
     Parameters
     ----------
-    cit_path : str
+    allatomtypes : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    fcoords : numpy.ndarray
+        The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
+
+    Returns
+    -------
+    allatomtypes_trim : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+        All duplicate atoms removed.
+    fcoords_trim : numpy.ndarray
+        The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
+        All duplicate atoms removed.
+
+    """
+
+    # Get the unique fractional coordinate 3-tuples.
+    fcoords_trim, indices = np.unique(fcoords, axis=0, return_index=True)
+    # Get the atom types of the unique fractional coordinates.
+    allatomtypes_trim = [allatomtypes[_i] for _i in indices]
+
+    return allatomtypes_trim, fcoords_trim
+
+def remove_undesired_atoms(undesired_indices, allatomtypes, fcoords):
+    """
+    Takes a list of indices, and removes those elements from allatomtypes and fcoords.
+
+    Parameters
+    ----------
+    undesired_indices : list
+        The indices of the atoms to remove.
+    allatomtypes : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+    fcoords : numpy.ndarray
+        The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
+
+    Returns
+    -------
+    allatomtypes_trim : list of str
+        The atom types of the cif file, indicated by periodic symbols like 'O' and 'Cu'. Length is the number of atoms.
+        All undesired atoms removed.
+    fcoords_trim : numpy.ndarray
+        The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
+        All undesired atoms removed.
+
+    """
+    number_of_atoms = len(allatomtypes)
+    desired_indices = [_i for _i in list(range(number_of_atoms)) if (_i not in undesired_indices)] # The indices we want to keep.
+    allatomtypes_trim = [value for (_i, value) in enumerate(allatomtypes) if (_i in desired_indices)]
+    fcoords_trim = fcoords[desired_indices]
+
+    return allatomtypes_trim, fcoords_trim
+
+
+def overlap_removal(cif_path, new_cif_path):
+    """
+    Reads a cif file, removes overlapping atoms, and writes the cif to the provided path.
+    For a new CIF, recommended to remove symmetry (either with Vesta or with get_primitive), then run overlap_removal, then run solvent_removal.
+
+    Parameters
+    ----------
+    cif_path : str
         The path of the cif file to be read.
-    new_cit_path : str
+    new_cif_path : str
         The path to which the modified cif file will be written.
+
+    Returns
+    -------
+    None
+
+    """
+
+    # Much of this code parallels that in the beginning of the MOF_descriptors.get_MOF_descriptors function
+
+    # Loading the cif and getting information about the crystal cell.
+    cpar, allatomtypes, fcoords = readcif(cif_path)
+    allatomtypes, fcoords = remove_duplicate_atoms(allatomtypes, fcoords)
+    cell_v = mkcell(cpar)
+    cart_coords = fractional2cart(fcoords, cell_v)
+    # if len(cart_coords) > 2000: # Don't deal with large cifs because of computational resources required for their treatment.
+    #     raise Exception("Too large of a cif file")
+
+    # Assuming that the cif does not have graph information of the structure.
+    distance_mat = compute_distance_matrix3(cell_v,cart_coords)
+    adj_matrix, overlap_atoms = compute_adj_matrix(distance_mat, allatomtypes, handle_overlap=True)
+
+    # Dealing with the case of overlapping atoms.
+    if len(overlap_atoms) != 0:
+        print('Dealing with overlap')
+        allatomtypes, fcoords = remove_undesired_atoms(overlap_atoms, allatomtypes, fcoords)
+
+    # Writing the cif files
+    write_cif(new_cif_path,cpar,fcoords,allatomtypes)
+
+def solvent_removal(cif_path, new_cif_path, wiggle_room=1):
+    """
+    Reads a cif file, removes floating solvent and overlapping atoms, and writes the cif to the provided path.
+    Assumes cif has P1 symmetry.
+
+    Parameters
+    ----------
+    cif_path : str
+        The path of the cif file to be read.
+    new_cif_path : str
+        The path to which the modified cif file will be written.
+    wiggle_room : float
+        A multiplier that allows for more or less strict bond distance cutoffs.
+        Useful for some trouble CIFs with long bonds.
 
     Returns
     -------
@@ -1022,13 +1189,13 @@ def solvent_removal(cif_path, new_cif_path):
     cpar, allatomtypes, fcoords = readcif(cif_path)
     cell_v = mkcell(cpar)
     cart_coords = fractional2cart(fcoords, cell_v)
-    if len(cart_coords) > 2000: # Don't deal with large cifs because of computational resources required for their treatment.
-        raise Exception("Too large of a cif file")
+    # if len(cart_coords) > 2000: # Don't deal with large cifs because of computational resources required for their treatment.
+    #     raise Exception("Too large of a cif file")
 
     # Assuming that the cif does not have graph information of the structure.
     distance_mat = compute_distance_matrix3(cell_v,cart_coords)
     try:
-        adj_matrix=compute_adj_matrix(distance_mat,allatomtypes)
+        adj_matrix, _ = compute_adj_matrix(distance_mat, allatomtypes, wiggle_room=wiggle_room, handle_overlap=False)
     except NotImplementedError:
         raise Exception("Failed due to atomic overlap")
 
@@ -1039,6 +1206,9 @@ def solvent_removal(cif_path, new_cif_path):
 
     # Finding the connected components
     n_components, labels_components = sparse.csgraph.connected_components(csgraph=adj_matrix, directed=False, return_labels=True)
+    print(f'n_components: {n_components}')
+    print(f'labels_components: {labels_components}')
+    print(f'len is {len(labels_components)}')
     metal_list = set([at for at in molcif.findMetal(transition_metals_only=False)]) # the atom indices of the metals
     if not len(metal_list) > 0:
         raise Exception("No metal in the structure.")
@@ -1049,14 +1219,10 @@ def solvent_removal(cif_path, new_cif_path):
         inds_in_comp = [i for i in range(len(labels_components)) if labels_components[i]==comp]
         if not set(inds_in_comp) & metal_list: # In the context of sets, & is the intersection. If the intersection is null, the (&) expression is False; the `not` would then make it True.
             # If this if statement is entered, there is an entire connected component that has no metals in it. No connections to any metal. I.e. solvent.
-
             solvent_indices.extend(inds_in_comp)
 
     # Removing the atoms corresponding to the solvent.
-    number_of_atoms = len(allatomtypes)
-    nonsolvent_indices = [_i for _i in list(range(number_of_atoms)) if (_i not in solvent_indices)] # The indices we want to keep.
-    allatomtypes = [value for (_i, value) in enumerate(allatomtypes) if (_i in nonsolvent_indices)]
-    fcoords = fcoords[nonsolvent_indices]
+    allatomtypes, fcoords = remove_undesired_atoms(solvent_indices, allatomtypes, fcoords)
 
     # print(f'The solvent indices are {solvent_indices}')
 

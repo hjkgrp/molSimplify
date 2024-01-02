@@ -150,6 +150,8 @@ def startgen(argv, flag, gui, inputfile_str=None, write_files=True):
             args.core = [core]
             args.substrate = [sub]
             args.tsgen = True
+    if args.custom_data_dir is not None:
+        globs.custom_path = args.custom_data_dir
 
     # if not args.postp and not args.dbsearch and not args.dbfinger and not args.drawmode
     # and not (args.slab_gen or args.place_on_slab) and not (args.chain) and not (args.correlate):
@@ -206,7 +208,7 @@ def startgen(argv, flag, gui, inputfile_str=None, write_files=True):
             args.gui = gui
             args.core = cc
             if (args.lig or args.coord or args.lignum or args.ligocc):  # constraints given?
-                args, emsg = constrgen(rundir, args, globs)
+                args, emsg = constrgen(rundir, args)
                 if emsg:
                     del args
                     return emsg
@@ -250,7 +252,7 @@ def startgen(argv, flag, gui, inputfile_str=None, write_files=True):
             print('building an equilibrium complex')
         for cc in corests:
             args.core = cc
-            emsg = multigenruns(rundir, args, globs, write_files=write_files)
+            emsg = multigenruns(rundir, args, write_files=write_files)
             if emsg:
                 print(emsg)
                 del args

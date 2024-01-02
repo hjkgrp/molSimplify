@@ -1,29 +1,34 @@
-name: mols_test
 channels:
-     - hjkgroup
-     - psi4
-     - conda-forge
-     - anaconda
-     - pytorch
-     - theochem
-     - defaults
+  - conda-forge
 dependencies:
-     - python=3.7
-     - openbabel
-     - xtb
-     - psi4
-     - tensorflow
-     - keras
-     - pytorch
-       #- torchvision, optional
-     - pyqt
-     - pip
-     - qt
-     - scikit-learn
-     - pandas
-     - scipy
-       #- gpy # in pip the spelling is GPy, optional
-       #- hyperopt # optional
-     - pymongo
-     - iodata
-     - libffi
+  - openbabel
+  - tensorflow-base
+  - scikit-learn
+  - pyyaml
+  - pandas
+  - scipy
+  - libffi
+  - importlib_resources
+  - pip
+  - pip:
+    - pytest
+    - pytest-resource-path
+
+  # Optional
+  # GUI / plotting
+  # - pyqt
+  # - qt
+  - matplotlib
+  # Database
+  - pymongo
+  # PDB interaction
+  - beautifulsoup4
+  # Machine learning
+  #- pytorch::pytorch
+  #- hyperopt
+  # QM interfaces
+  - theochem::iodata
+  - xtb
+  #- psi4::psi4
+  # molscontrol
+  - scikit-image

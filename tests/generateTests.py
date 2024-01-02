@@ -67,7 +67,7 @@ def test_TESTNAME(tmpdir):
 
 def writeNoffTest(name):
     testfile = "test_"+name+".py"
-    
+
     content = '''
 def test_TESTNAME_No_FF(tmpdir):
     testName="TESTNAME"

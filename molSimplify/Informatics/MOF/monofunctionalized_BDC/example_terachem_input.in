@@ -1,0 +1,25 @@
+levelshiftvalb 0.25
+levelshiftvala 0.25
+run minimize
+scf diis+a
+coordinates UFF-BDC-SO3H.xyz
+levelshift yes
+spinmult 1
+scrdir ./scr
+basis lacvps_ecp
+timings yes
+charge 0
+method b3lyp
+precision dynamic
+dftgrid 1
+dynamicgrid yes
+maxit 500
+gpus 1
+dispersion d3
+new_minimizer yes
+nbo yes
+### props ####
+ml_prop yes
+poptype mulliken
+bond_order_list yes
+end

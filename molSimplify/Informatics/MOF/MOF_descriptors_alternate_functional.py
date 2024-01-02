@@ -1,13 +1,12 @@
 from molSimplify.Scripts.cellbuilder_tools import *
 from molSimplify.Classes.mol3D import mol3D
-from molSimplify.Informatics.autocorrelation import*
-from molSimplify.Informatics.misc_descriptors import*
-from molSimplify.Informatics.graph_analyze import*
+from molSimplify.Informatics.autocorrelation import *
+from molSimplify.Informatics.misc_descriptors import *
+from molSimplify.Informatics.graph_analyze import *
 from molSimplify.Informatics.RACassemble import *
 import os
 import numpy as np
 import pandas as pd
-from scipy.spatial import distance
 from scipy import sparse
 import itertools
 from molSimplify.Informatics.MOF.PBC_functions import *
@@ -172,11 +171,12 @@ def make_MOF_SBU_RACs(SBUlist, SBU_subgraph, molcif, depth, name,cell,anchoring_
                 if j == 0:
                     lc_names = descriptor_names
         averaged_lc_descriptors = np.mean(np.array(lc_descriptor_list), axis=0)
-        lc_descriptors.to_csv(sbu_descriptor_path+'/lc_descriptors.csv',index=False)
+        if sbupath:
+            lc_descriptors.to_csv(sbu_descriptor_path+'/lc_descriptors.csv', index=False)
         descriptors = []
         descriptor_names = []
-        SBU_mol_cart_coords=np.array([atom.coords() for atom in  SBU_mol.atoms])
-        SBU_mol_atom_labels=[atom.sym for atom in  SBU_mol.atoms]
+        SBU_mol_cart_coords = np.array([atom.coords() for atom in SBU_mol.atoms])
+        SBU_mol_atom_labels = [atom.sym for atom in SBU_mol.atoms]
         SBU_mol_adj_mat = np.array(SBU_mol.graph)
         ###### WRITE THE SBU MOL TO THE PLACE
         if sbupath and not os.path.exists(sbupath+"/"+str(name)+str(i)+'.xyz'):
@@ -206,7 +206,8 @@ def make_MOF_SBU_RACs(SBUlist, SBU_subgraph, molcif, depth, name,cell,anchoring_
         descriptor_list.append(descriptors)
         if i == 0:
             names = descriptor_names
-    sbu_descriptors.to_csv(sbu_descriptor_path+'/sbu_descriptors.csv',index=False)
+    if sbupath:
+        sbu_descriptors.to_csv(sbu_descriptor_path+'/sbu_descriptors.csv', index=False)
     averaged_SBU_descriptors = np.mean(np.array(descriptor_list), axis=0)
     return names, averaged_SBU_descriptors, lc_names, averaged_lc_descriptors
 
@@ -260,7 +261,8 @@ def make_MOF_linker_RACs(linkerlist, linker_subgraphlist, molcif, depth, name, c
         descriptor_list.append(lig_full)
     #### We dump the standard lc descriptors without averaging or summing so that the user
     #### can make the modifications that they want. By default we take the average ones.
-    linker_descriptors.to_csv(linker_descriptor_path+'/linker_descriptors.csv', index=False)
+    if linkerpath:
+        linker_descriptors.to_csv(linker_descriptor_path+'/linker_descriptors.csv', index=False)
     averaged_ligand_descriptors = np.mean(np.array(descriptor_list), axis=0)
     return colnames, averaged_ligand_descriptors
 
@@ -314,7 +316,7 @@ def get_MOF_descriptors(data, depth, path=False, xyzpath = False):
         return full_names, full_descriptors
     distance_mat = compute_distance_matrix2(cell_v,cart_coords)
     try:
-        adj_matrix=compute_adj_matrix(distance_mat,allatomtypes)
+        adj_matrix, _ = compute_adj_matrix(distance_mat,allatomtypes)
     except NotImplementedError:
         full_names = [0]
         full_descriptors = [0]

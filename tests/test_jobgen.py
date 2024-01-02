@@ -41,7 +41,7 @@ def test_sgejobgen(tmpdir):
                  'module load openmp\n'
                  'export OMP_NUM_THREADS=2\n'
                  'terachem terachem_input > $SGE_O_WORKDIR/opttest.out\n\n'
-                 'sleep 30')
+                 'sleep 30\n')
     assert lines == lines_ref
 
 
@@ -80,5 +80,5 @@ def test_slurmjobgen(tmpdir):
                  '#SBATCH --partition=testqueue\n'
                  '#SBATCH --nodes=1\n'
                  '#SBATCH --ntasks-per-node=1\n'
-                 'qchem qch.inp 1 > qch.out')
+                 'qchem qch.inp 1 > qch.out\n')
     assert lines == lines_ref

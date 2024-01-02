@@ -319,8 +319,8 @@ def match_lig_list(file_in, file_init_geo, catoms_arr,
         init_mol_trunc.writexyz('init_trunc_tmp.xyz')
         my_mol_trunc.writexyz('mymol_trunc_tmp.xyz')
         liglist_init, ligdents_init, ligcons_init = ligand_breakdown(
-            init_mol_trunc)
-        liglist, ligdents, ligcons = ligand_breakdown(my_mol_trunc)
+            init_mol_trunc, BondedOct=BondedOct)
+        liglist, ligdents, ligcons = ligand_breakdown(my_mol_trunc, BondedOct=BondedOct)
         liglist_atom = [[my_mol_trunc.getAtom(x).symbol() for x in ele]
                         for ele in liglist]
         liglist_init_atom = [[init_mol_trunc.getAtom(x).symbol() for x in ele]
@@ -335,7 +335,6 @@ def match_lig_list(file_in, file_init_geo, catoms_arr,
         if debug:
             print('Just inherit the ligand list from init structure.')
         liglist_init, ligdents_init, ligcons_init = ligand_breakdown(init_mol,
-                                                                     flag_loose=flag_loose,
                                                                      BondedOct=BondedOct)
         # _elapsed = (time.clock() - _start)
         # print('time on lig_breakdoen:', _elapsed)

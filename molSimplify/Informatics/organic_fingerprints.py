@@ -21,6 +21,8 @@ def get_morgan(mol, morgan_radius=4):
         smiles = mol.get_smiles(use_mol2=True)
     elif isinstance(mol, str):
         smiles = mol
+    else:
+        raise ValueError("First argument not a smiles string or mol3D")
     m = Chem.MolFromSmiles(smiles)
     # empty bit dictionary that gets populated
     # Morgan FPs should be compared with tanimoto similarity
@@ -35,6 +37,8 @@ def get_substructure_smiles(mol, atomID, radius):
         smiles = mol.get_smiles(use_mol2=True)
     elif isinstance(mol, str):
         smiles = mol
+    else:
+        raise ValueError("First argument not a smiles string or mol3D")
     m = Chem.MolFromSmiles(smiles)
     if radius > 0:
         environment_morgan = Chem.FindAtomEnvironmentOfRadiusN(m, radius, atomID)

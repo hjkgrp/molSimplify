@@ -96,7 +96,7 @@ def obtain_jobinfo(xyzfile, frame=-1, txt=False):
     init_mol = read_geometry_to_mol(xyzfile, frame=frame, txt=txt)
     natoms = init_mol.natoms
     metal_ind = init_mol.findMetal()[0]
-    liglist, ligdents, ligcons = ligand_breakdown(init_mol, flag_loose=False, BondedOct=False)
+    liglist, ligdents, ligcons = ligand_breakdown(init_mol, BondedOct=False)
     # print(liglist)
     # print(ligdents)
     # print(ligcons)

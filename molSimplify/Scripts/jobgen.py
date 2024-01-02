@@ -82,7 +82,7 @@ def sgejobgen(args, jobdirs):
                 for option in multi_option[1:]:
                     args.joption += ["-" + option]
             for jopt in args.joption:
-                output.append('# '+jopt+'\n')
+                output.append(f'# {jopt.strip()}\n')
         if args.modules:
             for mod in args.modules:
                 output.append('module load '+mod+'\n')
@@ -103,8 +103,8 @@ def sgejobgen(args, jobdirs):
                         tc = True
             if not tc:
                 output.append(
-                    'terachem terachem_input > $SGE_O_WORKDIR/opttest.out')
-            output.append('\n\nsleep 30')
+                    'terachem terachem_input > $SGE_O_WORKDIR/opttest.out\n')
+            output.append('\nsleep 30\n')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
             qch = False
@@ -115,10 +115,10 @@ def sgejobgen(args, jobdirs):
                     if 'qchem' in jc:
                         qch = True
             if not gm and 'gam' in args.qccode.lower():
-                output.append('rungms gam.inp '+cpus + ' > gam.out')
+                output.append('rungms gam.inp '+cpus + ' > gam.out\n')
             elif not qch and 'qch' in args.qccode.lower():
-                output.append('qchem qch.inp '+cpus + ' > qch.out')
-            output.append('\n\nsleep 30')
+                output.append('qchem qch.inp '+cpus + ' > qch.out\n')
+            output.append('\nsleep 30\n')
         elif args.qccode and ('orc' in args.qccode.lower() or 'molc' in args.qccode.lower()):
             orc = False
             molc = False
@@ -129,10 +129,10 @@ def sgejobgen(args, jobdirs):
                     if 'molcas' in jc:
                         molc = True
             if not orc and 'orca' in args.qccode.lower():
-                output.append('orca orca.in > orca.out')
+                output.append('orca orca.in > orca.out\n')
             elif not molc and 'molc' in args.qccode.lower():
-                output.append('pymolcas molcas.input -f')
-            output.append('\n\nsleep 30')
+                output.append('pymolcas molcas.input -f\n')
+            output.append('\nsleep 30\n')
         else:
             print(
                 'Not supported QC code requested. Please input execution command manually')
@@ -213,7 +213,7 @@ def slurmjobgen(args, jobdirs):
                     if 'terachem' in jc:
                         tc = True
             if not tc:
-                output.append('terachem terachem_input > tc.out')
+                output.append('terachem terachem_input > tc.out\n')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
             qch = False
@@ -224,9 +224,9 @@ def slurmjobgen(args, jobdirs):
                     if 'qchem' in jc:
                         qch = True
             if not gm and 'gam' in args.qccode.lower():
-                output.append('rungms gam.inp '+cpus + ' > gam.out')
+                output.append('rungms gam.inp '+cpus + ' > gam.out\n')
             elif not qch and 'qch' in args.qccode.lower():
-                output.append('qchem qch.inp '+cpus + ' > qch.out')
+                output.append('qchem qch.inp '+cpus + ' > qch.out\n')
         elif args.qccode and ('orc' in args.qccode.lower() or 'molc' in args.qccode.lower()):
             orc = False
             molc = False
@@ -237,9 +237,9 @@ def slurmjobgen(args, jobdirs):
                     if 'molcas' in jc:
                         molc = True
             if not orc and 'orca' in args.qccode.lower():
-                output.append('orca orca.in > orca.out')
+                output.append('orca orca.in > orca.out\n')
             elif not molc and 'molc' in args.qccode.lower():
-                output.append('pymolcas molcas.input -f')
+                output.append('pymolcas molcas.input -f\n')
         else:
             print(
                 'No supported QC code requested. Please input execution command manually')

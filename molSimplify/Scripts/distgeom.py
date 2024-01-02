@@ -16,7 +16,10 @@
 
 import numpy as np
 import numpy
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 from scipy import optimize
 from math import sqrt, cos
 
@@ -525,6 +528,8 @@ def findshape(args, master_ligand) -> Dict:
             break
         else:
             bind += 1*int(args.ligocc[i])*int(lig.denticity)
+    else:
+        raise ValueError("master_ligand not in args.lig")
 
     metal_coords = np.array(core[0])
     ligating_coords = []

@@ -1,0 +1,5 @@
+# molSimplify input file generated from CLI input
+-slab_gen
+-cif_path ./pd_test_tutorial_2.cif
+-slab_size [10,10,5]
+-freeze 1

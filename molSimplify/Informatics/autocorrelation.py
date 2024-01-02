@@ -1,4 +1,5 @@
 import numpy as np
+from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign
 from molSimplify.Scripts.geometry import distance
 from molSimplify.Classes.globalvars import globalvars
@@ -214,7 +215,7 @@ def summetric(mol, prop_vec, orig, d, oct=True, catoms=None):
     return (result_vector)
 
 
-def deltametric(mol, prop_vec, orig, d, oct=True, catoms=None):
+def deltametric(mol: mol3D, prop_vec, orig, d: int, oct=True, catoms=None):
     # # this function returns the deltametric
     # # over the whole molecule
     # Inputs:
@@ -367,8 +368,8 @@ def deltametric_catoms(mol, prop_vec, orig, d, oct=True, catoms=None):
     return (result_vector)
 
 
-def full_autocorrelation(mol, prop, d, oct=oct, modifier=False, use_dist=False):
-    w = construct_property_vector(mol, prop, oct=oct, modifier=modifier)
+def full_autocorrelation(mol, prop, d, oct=oct, modifier=False, use_dist=False, transition_metals_only=True):
+    w = construct_property_vector(mol, prop, oct=oct, modifier=modifier, transition_metals_only=transition_metals_only)
     index_set = list(range(0, mol.natoms))
     autocorrelation_vector = np.zeros(d + 1)
     for centers in index_set:
@@ -386,21 +387,21 @@ def full_autocorrelation_derivative(mol, prop, d, oct=oct, modifier=False):
 
 
 def atom_only_autocorrelation(mol, prop, d, atomIdx, oct=True):
-    # atomIdx must b either a list of indcies
+    # atomIdx must be either a list of indicies
     # or a single index
     w = construct_property_vector(mol, prop, oct)
     autocorrelation_vector = np.zeros(d + 1)
-    if hasattr(atomIdx, "__len__"):
+    if hasattr(atomIdx, "__len__"): # Indicative of a list of indices
         for elements in atomIdx:
             autocorrelation_vector += autocorrelation(mol, w, elements, d, oct=oct)
-        autocorrelation_vector = np.divide(autocorrelation_vector, len(atomIdx))
-    else:
+        autocorrelation_vector = np.divide(autocorrelation_vector, len(atomIdx)) # averaging
+    else: # Single index
         autocorrelation_vector += autocorrelation(mol, w, atomIdx, d, oct=oct)
     return (autocorrelation_vector)
 
 
 def atom_only_autocorrelation_derivative(mol, prop, d, atomIdx, oct=True):
-    # atomIdx must b either a list of indcies
+    # atomIdx must b either a list of indicies
     # or a single index
     w = construct_property_vector(mol, prop, oct)
     autocorrelation_derivative_mat = np.zeros((d + 1, mol.natoms))
@@ -467,7 +468,7 @@ def multiatom_only_autocorrelation(mol, prop, d, oct=True, catoms=None,
 
 
 def atom_only_ratiometric(mol, prop_num, prop_den, d, atomIdx, oct=True):
-    # atomIdx must b either a list of indcies
+    # atomIdx must b either a list of indicies
     # or a single index
     w_num = construct_property_vector(mol, prop_num, oct)
     w_den = construct_property_vector(mol, prop_den, oct)
@@ -482,7 +483,7 @@ def atom_only_ratiometric(mol, prop_num, prop_den, d, atomIdx, oct=True):
 
 
 def atom_only_summetric(mol, prop, d, atomIdx, oct=True):
-    # atomIdx must b either a list of indcies
+    # atomIdx must b either a list of indicies
     # or a single index
     w = construct_property_vector(mol, prop, oct)
     autocorrelation_vector = np.zeros(d + 1)
@@ -496,7 +497,7 @@ def atom_only_summetric(mol, prop, d, atomIdx, oct=True):
 
 
 def atom_only_deltametric(mol, prop, d, atomIdx, oct=True, modifier=False):
-    # atomIdx must b either a list of indcies
+    # atomIdx must b either a list of indicies
     # or a single index
     w = construct_property_vector(mol, prop, oct=oct, modifier=modifier)
 
@@ -511,7 +512,7 @@ def atom_only_deltametric(mol, prop, d, atomIdx, oct=True, modifier=False):
 
 
 def atom_only_deltametric_derivative(mol, prop, d, atomIdx, oct=True, modifier=False):
-    # atomIdx must b either a list of indcies
+    # atomIdx must b either a list of indicies
     # or a single index
     w = construct_property_vector(mol, prop, oct=oct, modifier=modifier)
 
@@ -631,7 +632,7 @@ def layer_density_in_3D(mol, prop_vec, orig, d, oct=True):
     return result_vector
 
 
-def construct_property_vector(mol, prop, oct=True, modifier=False):
+def construct_property_vector(mol: mol3D, prop: str, oct=True, modifier=False, transition_metals_only=True):
     # # assigns the value of property
     # # for atom i (zero index) in mol
     # # to position i in returned vector
@@ -726,7 +727,7 @@ def construct_property_vector(mol, prop, oct=True, modifier=False):
         done = True
     elif prop == 'num_bonds':
         for i, atom in enumerate(mol.getAtoms()):
-            if not atom.ismetal():
+            if not atom.ismetal(transition_metals_only):
                 w[i] = globs.bondsdict()[atom.symbol()]
             else:
                 w[i] = len(mol.getBondedAtomsSmart(i, oct=oct))
@@ -773,7 +774,7 @@ def find_ligand_autocorrelations_oct(mol, prop, loud, depth, name=False,
     # # with types: eq/ax_ligand_list list of mol3D
     # #             eq/ax_con_int_list list of list/tuple of int e.g,  [[1,2] [1,2]]
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list,
          eq_natoms_list, ax_con_int_list, eq_con_int_list,
          ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
@@ -839,7 +840,7 @@ def find_ligand_autocorrelation_derivatives_oct(mol, prop, loud, depth, name=Fal
     # # with types: eq/ax_ligand_list list of mol3D
     # #             eq/ax_con_int_list list of list/tuple of int e.g,  [[1,2] [1,2]]
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
          eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
             mol, liglist, ligdents, ligcons, loud, name=False)
@@ -979,7 +980,7 @@ def find_ligand_deltametrics_oct(mol, prop, loud, depth, name=False, oct=True, c
     # # and returns deltametrics for
     # # the axial an equatorial ligands
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
          eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
             mol, liglist, ligdents, ligcons, loud, name=False)
@@ -1022,7 +1023,7 @@ def find_ligand_deltametric_derivatives_oct(mol, prop, loud, depth, name=False, 
     # # and returns deltametrics for
     # # the axial an equatorial ligands
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
          eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
             mol, liglist, ligdents, ligcons, loud, name=False)
@@ -1062,7 +1063,7 @@ def find_mc_eq_ax_deltametrics_oct(mol, prop, loud, depth, name=False, oct=True,
                                    func=deltametric_catoms):
     # For octahedral complexes only.
     # Calculate mc/ax, mc/eq deltametrics.
-    liglist, ligdents, ligcons = ligand_breakdown(mol)
+    liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
     (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
      eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
         mol, liglist, ligdents, ligcons, loud, name=False)
@@ -1080,7 +1081,7 @@ def find_mc_eq_ax_autocorrelation_oct(mol, prop, loud, depth, name=False, oct=Tr
                                       func=autocorrelation_catoms, modifier=False):
     # For octahedral complexes only.
     # Calculate mc/ax, mc/eq deltametrics.
-    liglist, ligdents, ligcons = ligand_breakdown(mol)
+    liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
     (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
      eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
         mol, liglist, ligdents, ligcons, loud, name=False)
@@ -1750,7 +1751,7 @@ def generate_full_complex_autocorrelations(mol, loud,
 def generate_full_complex_coulomb_autocorrelations(mol, loud,
                                                    depth=3, oct=True,
                                                    flag_name=False, modifier=False,
-                                                   use_dist=False):
+                                                   use_dist=False, transition_metals_only=True):
     result = list()
     colnames = []
     # allowed_strings = ['ident', 'topology', 'bondvalence', 'valenceelectron', 'bondvalence_devi', 'bodavrg', 'bodstd',
@@ -1761,7 +1762,8 @@ def generate_full_complex_coulomb_autocorrelations(mol, loud,
     for ii, properties in enumerate(allowed_strings):
         metal_ac = full_autocorrelation(mol, properties, depth,
                                         oct=oct, modifier=modifier,
-                                        use_dist=use_dist)
+                                        use_dist=use_dist,
+                                        transition_metals_only=transition_metals_only)
         this_colnames = []
         for i in range(0, depth + 1):
             this_colnames.append(labels_strings[ii] + '-' + str(i))
@@ -1807,7 +1809,7 @@ def generate_atomonly_autocorrelations(mol, atomIdx, loud, depth=4, oct=True, Nu
     # # in one single atom only
     # Inputs:
     #       mol - mol3D class
-    #       atomIdx - int, index of atom3D class
+    #       atomIdx - int, index of atom3D class; or list of indices
     #       loud - bool, print output
     result = list()
     colnames = []

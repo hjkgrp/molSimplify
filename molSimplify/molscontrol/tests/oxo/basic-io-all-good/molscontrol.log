@@ -17,16 +17,16 @@ root - INFO - Tracking files initialization completes.
 root - INFO - 0 step feature obtained.
 root - INFO - At step 1, decision is not activated.
 root - INFO - At step 2.
-root - INFO - Predicts: {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642} 
-root - INFO - LSE: {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084} 
+root - INFO - Predicts: {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}
+root - INFO - LSE: {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084})])
 root - INFO - This calculation seems good for now at step 2
 root - INFO - At step 3, decision is not activated.
 root - INFO - At step 4, decision is not activated.
 root - INFO - At step 5.
-root - INFO - Predicts: {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386} 
-root - INFO - LSE: {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465} 
+root - INFO - Predicts: {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}
+root - INFO - LSE: {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465})])
 root - INFO - This calculation seems good for now at step 5
@@ -35,8 +35,8 @@ root - INFO - At step 7, decision is not activated.
 root - INFO - At step 8, decision is not activated.
 root - INFO - At step 9, decision is not activated.
 root - INFO - At step 10.
-root - INFO - Predicts: {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175} 
-root - INFO - LSE: {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884} 
+root - INFO - Predicts: {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175}
+root - INFO - LSE: {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}), (10, {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}), (10, {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884})])
 root - INFO - This calculation seems good for now at step 10
@@ -45,8 +45,8 @@ root - INFO - At step 12, decision is not activated.
 root - INFO - At step 13, decision is not activated.
 root - INFO - At step 14, decision is not activated.
 root - INFO - At step 15.
-root - INFO - Predicts: {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674} 
-root - INFO - LSE: {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291} 
+root - INFO - Predicts: {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674}
+root - INFO - LSE: {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}), (10, {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175}), (15, {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}), (10, {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884}), (15, {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291})])
 root - INFO - This calculation seems good for now at step 15
@@ -56,8 +56,8 @@ root - INFO - At step 18, decision is not activated.
 root - INFO - At step 19, decision is not activated.
 tensorflow - WARNING - 5 out of the last 5 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f4cac4676a8> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
 root - INFO - At step 20.
-root - INFO - Predicts: {'geo_flag': 0.95740354, 'ss_flag': 0.9949442, 'metal_spin_flag': 0.9974952} 
-root - INFO - LSE: {'geo_flag': 0.1508712882164795, 'ss_flag': 0.0026799137392996787, 'metal_spin_flag': 0.0026799137392996787} 
+root - INFO - Predicts: {'geo_flag': 0.95740354, 'ss_flag': 0.9949442, 'metal_spin_flag': 0.9974952}
+root - INFO - LSE: {'geo_flag': 0.1508712882164795, 'ss_flag': 0.0026799137392996787, 'metal_spin_flag': 0.0026799137392996787}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}), (10, {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175}), (15, {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674}), (20, {'geo_flag': 0.95740354, 'ss_flag': 0.9949442, 'metal_spin_flag': 0.9974952})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}), (10, {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884}), (15, {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291}), (20, {'geo_flag': 0.1508712882164795, 'ss_flag': 0.0026799137392996787, 'metal_spin_flag': 0.0026799137392996787})])
 root - INFO - This calculation seems good for now at step 20
@@ -72,8 +72,8 @@ root - INFO - At step 28, decision is not activated.
 root - INFO - At step 29, decision is not activated.
 tensorflow - WARNING - 6 out of the last 6 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f4cac42f730> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
 root - INFO - At step 30.
-root - INFO - Predicts: {'geo_flag': 0.67223006, 'ss_flag': 0.996958, 'metal_spin_flag': 0.99859166} 
-root - INFO - LSE: {'geo_flag': 0.41341810329814077, 'ss_flag': 0.003157361482884086, 'metal_spin_flag': 0.003157361482884086} 
+root - INFO - Predicts: {'geo_flag': 0.67223006, 'ss_flag': 0.996958, 'metal_spin_flag': 0.99859166}
+root - INFO - LSE: {'geo_flag': 0.41341810329814077, 'ss_flag': 0.003157361482884086, 'metal_spin_flag': 0.003157361482884086}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}), (10, {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175}), (15, {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674}), (20, {'geo_flag': 0.95740354, 'ss_flag': 0.9949442, 'metal_spin_flag': 0.9974952}), (30, {'geo_flag': 0.67223006, 'ss_flag': 0.996958, 'metal_spin_flag': 0.99859166})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}), (10, {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884}), (15, {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291}), (20, {'geo_flag': 0.1508712882164795, 'ss_flag': 0.0026799137392996787, 'metal_spin_flag': 0.0026799137392996787}), (30, {'geo_flag': 0.41341810329814077, 'ss_flag': 0.003157361482884086, 'metal_spin_flag': 0.003157361482884086})])
 root - INFO - This calculation seems good for now at step 30
@@ -88,8 +88,8 @@ root - INFO - At step 38, decision is not activated.
 root - INFO - At step 39, decision is not activated.
 tensorflow - WARNING - 7 out of the last 7 calls to <function Model.make_predict_function.<locals>.predict_function at 0x7f4cac461ae8> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings could be due to (1) creating @tf.function repeatedly in a loop, (2) passing tensors with different shapes, (3) passing Python objects instead of tensors. For (1), please define your @tf.function outside of the loop. For (2), @tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. For (3), please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for  more details.
 root - INFO - At step 40.
-root - INFO - Predicts: {'geo_flag': 0.46511674, 'ss_flag': 0.99353147, 'metal_spin_flag': 0.99389386} 
-root - INFO - LSE: {'geo_flag': 0.5926912826429314, 'ss_flag': 0.003603526633947479, 'metal_spin_flag': 0.003603526633947479} 
+root - INFO - Predicts: {'geo_flag': 0.46511674, 'ss_flag': 0.99353147, 'metal_spin_flag': 0.99389386}
+root - INFO - LSE: {'geo_flag': 0.5926912826429314, 'ss_flag': 0.003603526633947479, 'metal_spin_flag': 0.003603526633947479}
 root - INFO - Prediction summary, OrderedDict([(2, {'geo_flag': 0.6952892, 'ss_flag': 0.9916359, 'metal_spin_flag': 0.9946642}), (5, {'geo_flag': 0.77112246, 'ss_flag': 0.99257493, 'metal_spin_flag': 0.98704386}), (10, {'geo_flag': 0.88686615, 'ss_flag': 0.99371177, 'metal_spin_flag': 0.99703175}), (15, {'geo_flag': 0.94310737, 'ss_flag': 0.9915557, 'metal_spin_flag': 0.99785674}), (20, {'geo_flag': 0.95740354, 'ss_flag': 0.9949442, 'metal_spin_flag': 0.9974952}), (30, {'geo_flag': 0.67223006, 'ss_flag': 0.996958, 'metal_spin_flag': 0.99859166}), (40, {'geo_flag': 0.46511674, 'ss_flag': 0.99353147, 'metal_spin_flag': 0.99389386})])
 root - INFO - LSE summary, OrderedDict([(2, {'geo_flag': 0.5377866117456626, 'ss_flag': 0.09610954556953258, 'metal_spin_flag': 0.0036309188928467084}), (5, {'geo_flag': 0.46625724280014436, 'ss_flag': 0.05421723110085437, 'metal_spin_flag': 0.0030185107450018465}), (10, {'geo_flag': 0.37094219380888993, 'ss_flag': 0.0031018135564837884, 'metal_spin_flag': 0.0031018135564837884}), (15, {'geo_flag': 0.2817767105891211, 'ss_flag': 0.00310485491386291, 'metal_spin_flag': 0.00310485491386291}), (20, {'geo_flag': 0.1508712882164795, 'ss_flag': 0.0026799137392996787, 'metal_spin_flag': 0.0026799137392996787}), (30, {'geo_flag': 0.41341810329814077, 'ss_flag': 0.003157361482884086, 'metal_spin_flag': 0.003157361482884086}), (40, {'geo_flag': 0.5926912826429314, 'ss_flag': 0.003603526633947479, 'metal_spin_flag': 0.003603526633947479})])
 root - INFO - This calculation seems good for now at step 40

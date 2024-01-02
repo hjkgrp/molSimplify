@@ -8,7 +8,7 @@ from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.models import model_from_json
 from tensorflow.keras import backend as K
 
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from sklearn.utils import shuffle
 from molSimplify.python_nn.clf_analysis_tool import (dist_neighbor,
                                                      get_entropy)
@@ -102,7 +102,7 @@ def ensemble_maker(predictor, num=10):
 
 def ensemble_uq(predictor, descriptors=False, descriptor_names=False, suffix=False):
     key = get_key(predictor, suffix)
-    base_path = resource_filename(Requirement.parse("molSimplify"), "molSimplify/tf_nn/" + key)
+    base_path = str(resource_files("molSimplify.tf_nn").joinpath(f'{key}.csv'))
     base_path = base_path + 'ensemble_models'
     if not os.path.exists(base_path):
         print('Ensemble models do not exist now, training...')
@@ -204,7 +204,7 @@ def mc_dropout_uq(predictor, descriptors=False, descriptor_names=False, num=500)
 
 def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_names=False, entropy=False):
     key = get_key(predictor, suffix=False)
-    base_path = resource_filename(Requirement.parse("molSimplify"), "molSimplify/tf_nn/" + key)
+    base_path = str(resource_files("molSimplify.tf_nn").joinpath(f'{key}.csv'))
     base_path = base_path + 'ensemble_models'
     if not os.path.exists(base_path):
         print('Ensemble models do not exist now, training...')

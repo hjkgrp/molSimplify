@@ -1,7 +1,7 @@
 Installation
 ============
 
-Regardless of install method, we recommend using anaconda to manage virtual environments. If you want a simple install, you can download our pre-installed docker image, which has an out-of-the-box copy of molSimplify. We recommend installation via source for more advanced users. 
+Regardless of install method, we recommend using anaconda to manage virtual environments. If you want a simple install, you can download our pre-installed docker image, which has an out-of-the-box copy of molSimplify. We recommend installation via source for more advanced users.
 
 
 Installing from Source

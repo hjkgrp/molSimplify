@@ -2,7 +2,6 @@ import pytest
 import numpy as np
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.atom3D import atom3D
-from pkg_resources import resource_filename, Requirement
 
 
 def test_adding_and_deleting_atoms():
@@ -122,11 +121,8 @@ def test_mutating_atoms():
     ('trigonal_prismatic', 6, 'trigonal prismatic'),
     # ('pentagonal_bipyramidal', 7, 'pentagonal bipyramidal')
     ])
-def test_get_geometry_type(name, coordination_number, geometry_str):
-    xyz_file = resource_filename(
-        Requirement.parse("molSimplify"),
-        f"tests/refs/geometry_type/{name}.xyz"
-    )
+def test_get_geometry_type(resource_path_root, name, coordination_number, geometry_str):
+    xyz_file = resource_path_root / "inputs" / "geometry_type" / f"{name}.xyz"
     mol = mol3D()
     mol.readfromxyz(xyz_file)
 
@@ -137,19 +133,52 @@ def test_get_geometry_type(name, coordination_number, geometry_str):
     assert geo_report['aromatic'] is False
 
 
-def test_get_geometry_type_catoms_arr():
-    xyz_file = resource_filename(
-        Requirement.parse("molSimplify"),
-        "tests/refs/geometry_type/octahedral.xyz"
-    )
+def test_get_geometry_type_catoms_arr(resource_path_root):
+    xyz_file = resource_path_root / "inputs" / "geometry_type" / "octahedral.xyz"
     mol = mol3D()
     mol.readfromxyz(xyz_file)
 
     with pytest.raises(ValueError):
-        geo_report = mol.get_geometry_type(num_coord=6, catoms_arr=[1], debug=True)
+        mol.get_geometry_type(num_coord=6, catoms_arr=[1], debug=True)
 
     geo_report = mol.get_geometry_type(num_coord=6, catoms_arr=[1, 4, 7, 10, 13, 16], debug=True)
 
     assert geo_report['geometry'] == 'octahedral'
     assert geo_report['allconnect'] is False
     assert geo_report['aromatic'] is False
+
+
+def test_readfromxyzfile(resource_path_root):
+    xyz_file = resource_path_root / "inputs" / "cr3_f6_optimization.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+
+    atoms_ref = [
+        ("Cr", [-0.060052, -0.000019, -0.000023]),
+        ("F", [1.802823, -0.010399, -0.004515]),
+        ("F", [-0.070170, 1.865178, 0.0035660]),
+        ("F", [-1.922959, 0.010197, 0.0049120]),
+        ("F", [-0.049552, -1.865205, -0.0038600]),
+        ("F", [-0.064742, 0.003876, 1.8531400]),
+        ("F", [-0.055253, -0.003594, -1.8531790]),
+    ]
+
+    for atom, ref in zip(mol.atoms, atoms_ref):
+        assert (atom.symbol(), atom.coords()) == ref
+
+    # Test read_final_optim_step
+    mol = mol3D()
+    mol.readfromxyz(xyz_file, read_final_optim_step=True)
+
+    atoms_ref = [
+        ("Cr", [-0.0599865612, 0.0000165451, 0.0000028031]),
+        ("F", [1.8820549261, 0.0000076116, 0.0000163815]),
+        ("F", [-0.0600064919, 1.9420510001, -0.0000022958]),
+        ("F", [-2.0019508544, -0.0000130345, -0.0000067108]),
+        ("F", [-0.0599967119, -1.9420284092, 0.0000133671]),
+        ("F", [-0.0600235008, 0.0000085354, 1.9418467918]),
+        ("F", [-0.0599958059, -0.0000082485, -1.9418293370]),
+    ]
+
+    for atom, ref in zip(mol.atoms, atoms_ref):
+        assert (atom.symbol(), atom.coords()) == ref

@@ -8,7 +8,10 @@
 import re
 
 import numpy
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 import copy
 from math import sqrt, pi
 from molSimplify.Classes.globalvars import globalvars
@@ -138,7 +141,7 @@ def import_from_cif(fst, return_extra_cif_info=False):
                         ''.join(c for c in linesplit[1] if c not in '()').rstrip('.'))
     # create cell vectors
     print(('cell vectors: ', 'alpha, beta, gamma = ' + str(alpha) +
-           ', ' + str(beta) + ' ,' + str(gamma)))
+           ', ' + str(beta) + ', ' + str(gamma)))
     try:
         cell_vector.append([A, 0, 0])
         cell_vector.append([B*numpy.cos((gamma*pi)/180),
@@ -224,7 +227,7 @@ def get_basis_coefficients(point, basis):
     # for an arbitrary point in a given (complete)
     # basis set
     coefficients = numpy.linalg.solve(
-        numpy.transpose(numpy.asmatrix(basis)), point)
+        numpy.transpose(numpy.asarray(basis)), point)
     return coefficients
 ###################################
 

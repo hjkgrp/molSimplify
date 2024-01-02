@@ -1,0 +1,8 @@
+-dbsearch True
+-dbcatoms 1 # index of connecting atom in SMARTS query, see below
+-dbbase chembl_33_minimal # name of your database file without the file extension
+-dbfname simres.smi # results file name, default is simres.smi
+-dbatoms <15 # atom filter
+-dbsmarts [#7D1,#7D2;!+]
+-dballowedels H,C,N,F,Cl,Br,I # allowed element filter
+-dbmaxsmartsmatches 1 # max. SMARTS matches filter

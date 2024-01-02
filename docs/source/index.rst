@@ -6,7 +6,7 @@ Welcome to molSimplify's documentation!
 
 
 .. toctree::
-   :maxdepth: 2 
+   :maxdepth: 2
    :caption: General Information
 
    Installation
@@ -30,7 +30,6 @@ Welcome to molSimplify's documentation!
 | ``Ligands``: database of ligands which are used in molSimplify (if your ligand is not found here, there is a tutorial for adding to the ligand database)
 | - ``ligands.dict``: contains mappings between ligand name and corresponding structure
 | ``Scripts``: codes to write and measure geometries, and write input files
-| ``job_manager``: automated large-scale job management scripts
 | ``molscontrol``: dynamic classifier files
 | ``python_nn``: bond length information for the very first bond length NN (2017 Chemical Science)
 | ``sklearn_models``: models for static classification of whether a geometry is good or bad
@@ -58,4 +57,3 @@ Welcome to molSimplify's documentation!
    Report an Issue <https://github.com/hjkgrp/molSimplify/issues>
    Visit Our Research Group Website <https://hjkgrp.mit.edu>
    Visit Our Interactive Site <https://molsimplify.mit.edu>
-

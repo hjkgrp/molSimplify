@@ -17,4 +17,4 @@ Molecular Revised Autocorrelations
 Revised Autocorrelations for MOFs
 ---------------------------------
 
-Documentation for MOFs is coming soon!
+Documentation for RACs coming soon!

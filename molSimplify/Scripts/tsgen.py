@@ -104,7 +104,6 @@ def substplaceff_mode3(core, substr, substreact, compreact, cpoint, args, connec
     substr.alignmol(substr.getAtom(substreact), atom3D('H', cpoint))
     # perform rotations
     Bcoords = core.getAtomCoords(compreact)
-    adjsidx = substr.getBondedAtoms(substreact)[0]
     if substr.natoms > 1:
         # align ligand center of symmetry
         substr = align_lig_centersym(Bcoords, substr, substreact, core, False)
@@ -180,6 +179,7 @@ def substplaceff_mode1(core, substr, substreact, compreact, cpoint, ligalignpt, 
 
 def tsgen(mode, args, rootdir, core, substr, compreact, substreact, globs):
     emsg = False
+    ts3D = mol3D()
     this_diag = run_diag()
     strfiles = []
     adjsidx = substr.getBondedAtoms(substreact)[0]

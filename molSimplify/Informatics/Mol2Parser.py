@@ -4,7 +4,7 @@ import scipy as sp
 class Mol2Parser:
     ##### This parser takes in a mol2 file and extracts info.
     ##### Currently contains methods for connectivity.
-    
+
     def __init__(self, mol2path):
         self.mol2path = mol2path
         with open(self.mol2path) as f:

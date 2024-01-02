@@ -1,0 +1,3 @@
+-dbbase chembl_33_minimal
+-dbfname simres.smi # dbdissim looks for a file with this name
+-dbdissim 10 # number of dissimilar results desired

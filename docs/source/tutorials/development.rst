@@ -39,7 +39,7 @@ Python projects (including molSimplify) follow the recommendations outlined in
 Linter
 ------
 
-The easiest way to ensure your contributions conform to 
+The easiest way to ensure your contributions conform to
 `PEP8 <https://peps.python.org/pep-0008/>`_ is to install a linter such as
 `flake8 <https://flake8.pycqa.org>`_ for your IDE of choice.
 
@@ -58,9 +58,8 @@ Pre-commit hooks
 
 In order to automate the process of code lintering molSimplify also provides a
 configuration file for a `pre-commit <https://pre-commit.com/>`_ hook. After
-`installing the pre-commit package <https://pre-commit.com/#install>`_ 
+`installing the pre-commit package <https://pre-commit.com/#install>`_
 (using pip, conda, or your package manager of choice) the configuration file
 can be installed using the command::
 
     pre-commit install
-

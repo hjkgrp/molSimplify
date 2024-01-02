@@ -111,6 +111,7 @@ def cut_cell_to_index(unit_cell, cell_vector, miller_index):
             zero_indices.append(i)
 
     print(('nz ind', non_zero_indices))
+    plane_normal = numpy.zeros(3)
     if len(non_zero_indices) == 3:
         # zint = 1/(miller_index[2]*cell_vector[2][2])
         # yint = 1/(miller_index[1]*cell_vector[1][1])
@@ -334,6 +335,7 @@ def choose_nearest_neighbour(target_site, avail_sites_dict, occupied_sites_dict,
     else:
         emsg = ('error: no free site is possible')
         print(emsg)
+        return None
     if debug:
         print(('**** final choice  = ' +
                str(avail_sites_dict[nn_site]) + ' at ' + str(score)))
@@ -401,6 +403,7 @@ def choose_best_site(avail_sites_dict, occupied_sites_dict, centroid, super_cell
     else:
         emsg = ('error: no free site is possible')
         print(emsg)
+        return None
     print(('choosing site ' + str(target_site) + ' at  ' +
            str(avail_sites_dict[target_site]) + ' score: ' + str(score) + ' oc sites ' + str(occupied_sites_dict) + '\n'))
     return target_site
@@ -455,6 +458,7 @@ def align_payload_to_multi_site(payload, surface_coord_list, cand_list, bind_dis
     elif len(cand_list) == 4:
         pass
         # coplanar_flag = checkplanar(new_payload.getAtom(cand_list[0]),new_payload.getAtom(cand_list[1]),new_payload.getAtom(cand_list[2]),new_payload.getAtom(cand_list[3]).coords())
+    new_u = numpy.zeros(3)
     if collinear_flag:  # there is a single line defining the axis - align this with
         line_slope = vecdiff(new_payload.getAtom(
             cand_list[0]).coords(), new_payload.getAtom(cand_list[1]).coords())
@@ -809,6 +813,7 @@ def molecule_placement_supervisor(super_cell, super_cell_vector, target_molecule
         method = 'center'
     print('\n')
     print(('the method is', method))
+    max_sites = 1
     if (method == 'alignpair'):  # get all vaccancies
         avail_sites_dict = dict()
         occupied_sites_dict = dict()
@@ -1546,6 +1551,9 @@ def slab_module_supervisor(args, rootdir):
         if slab_gen:
             print(
                 '\n\n ************************ starting placement ***************** \n\n')
+            # Whoever started this obviously has not finished this part of the implementation:
+            # Variables needed in the next few lines, such as new_dup_vector are not assigned...
+            raise NotImplementedError()
         if not slab_gen:
             print(
                 '\n\n ************************ placement on existing slab  ***************** \n\n')

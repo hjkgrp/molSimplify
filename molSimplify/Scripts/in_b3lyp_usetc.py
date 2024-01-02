@@ -11,7 +11,6 @@ import os
 import numpy as np
 import shutil
 import iodata
-from os.path import expanduser
 from molden2psi4wfn import tcmolden2psi4wfn_ao_mapping
 
 
@@ -51,86 +50,92 @@ def get_molecule(xyzfile, charge, spin):
     return mol
 
 
-home = expanduser("~")
-# psi4_scr = home + '/psi4_scr/'
-psi4_scr = './'
-if not os.path.isdir(psi4_scr):
-    os.makedirs(psi4_scr)
-# ---argument parsing---
-parser = argparse.ArgumentParser(description='psi4 dft calculations.')
-parser.add_argument('-c', action="store", type=int, dest='charge')
-parser.add_argument('-spin', action="store", type=int, dest='spin')
-parser.add_argument('-xyz', action="store", type=str, dest='xyzfile')
-parser.add_argument('-molden', action="store", type=str, dest='moldenfile')
-parser.add_argument('-nthread', action="store", type=int, default=4, dest='num_threads')
-parser.add_argument('-memory', action="store", type=str, default='12000 MB', dest='memory')
-parser.add_argument('-ref', action="store", type=str, default='uks', dest='reference')
-args = parser.parse_args()
-moldenfile = args.moldenfile
-xyzfile = args.xyzfile
-charge, spin = args.charge, args.spin
-psi4.set_memory(args.memory)
-psi4.set_num_threads(args.num_threads)
+def main():
+    # from os.path import expanduser
+    # home = expanduser("~")
+    # psi4_scr = home + '/psi4_scr/'
+    psi4_scr = './'
+    if not os.path.isdir(psi4_scr):
+        os.makedirs(psi4_scr)
+    # ---argument parsing---
+    parser = argparse.ArgumentParser(description='psi4 dft calculations.')
+    parser.add_argument('-c', action="store", type=int, dest='charge')
+    parser.add_argument('-spin', action="store", type=int, dest='spin')
+    parser.add_argument('-xyz', action="store", type=str, dest='xyzfile')
+    parser.add_argument('-molden', action="store", type=str, dest='moldenfile')
+    parser.add_argument('-nthread', action="store", type=int, default=4, dest='num_threads')
+    parser.add_argument('-memory', action="store", type=str, default='12000 MB', dest='memory')
+    parser.add_argument('-ref', action="store", type=str, default='uks', dest='reference')
+    args = parser.parse_args()
+    moldenfile = args.moldenfile
+    xyzfile = args.xyzfile
+    charge, spin = args.charge, args.spin
+    psi4.set_memory(args.memory)
+    psi4.set_num_threads(args.num_threads)
 
-# ---basic setup---
-filename = "output"
-psi4.core.set_output_file(filename + '.dat', False)
-psi4.qcdb.libmintsbasisset.basishorde['LACVPS'] = lacvps
-psi4.set_options({
-    'reference': args.reference,
-    "puream": False,
-    "DF_SCF_GUESS": False,
-    "scf_type": "df",
-    "dft_pruning_scheme": "robust",
-    "basis": "lacvps",
-    "DFT_BASIS_TOLERANCE": 1e-10,
-    "INTS_TOLERANCE": 1e-10,
-    "PRINT_MOS": False,
-    "dft_spherical_points": 590,
-    "dft_radial_points": 99,
-    "guess": "read", })
+    # ---basic setup---
+    filename = "output"
+    psi4.core.set_output_file(filename + '.dat', False)
+    psi4.qcdb.libmintsbasisset.basishorde['LACVPS'] = lacvps
+    psi4.set_options({
+        'reference': args.reference,
+        "puream": False,
+        "DF_SCF_GUESS": False,
+        "scf_type": "df",
+        "dft_pruning_scheme": "robust",
+        "basis": "lacvps",
+        "DFT_BASIS_TOLERANCE": 1e-10,
+        "INTS_TOLERANCE": 1e-10,
+        "PRINT_MOS": False,
+        "dft_spherical_points": 590,
+        "dft_radial_points": 99,
+        "guess": "read", })
 
-# ----1step scf---
-print("1step scf...")
-mol = get_molecule(xyzfile, charge, spin)
-psi4.set_options({
-    "maxiter": 5,
-    "D_CONVERGENCE": 1e5,
-    "E_CONVERGENCE": 1e5,
-    "fail_on_maxiter": False})
-e, wfn = psi4.energy('b3lyp', molecule=mol, return_wfn=True)
-wfn.to_file("wfn-1step.180")
+    # ----1step scf---
+    print("1step scf...")
+    mol = get_molecule(xyzfile, charge, spin)
+    psi4.set_options({
+        "maxiter": 5,
+        "D_CONVERGENCE": 1e5,
+        "E_CONVERGENCE": 1e5,
+        "fail_on_maxiter": False})
+    e, wfn = psi4.energy('b3lyp', molecule=mol, return_wfn=True)
+    wfn.to_file("wfn-1step.180")
 
-# -----conversion---
-print("molden2psi4wfn conversion...")
-d_molden = iodata.molden.load_molden(moldenfile)
-restricted = True if any(x in args.reference for x in ["r", "R"]) else False
-Ca, Cb, mapping = tcmolden2psi4wfn_ao_mapping(d_molden, restricted=restricted)
-wfn_minimal_np = np.load("wfn-1step.180.npy", allow_pickle=True)
-wfn_minimal_np[()]['matrix']["Ca"] = Ca
-if not restricted:
-    wfn_minimal_np[()]['matrix']["Cb"] = Cb
-else:
-    wfn_minimal_np[()]['matrix']["Cb"] = Ca
-np.save("wfn-1step-tc.180.npy", wfn_minimal_np)
+    # -----conversion---
+    print("molden2psi4wfn conversion...")
+    d_molden = iodata.molden.load_molden(moldenfile)
+    restricted = True if any(x in args.reference for x in ["r", "R"]) else False
+    Ca, Cb, mapping = tcmolden2psi4wfn_ao_mapping(d_molden, restricted=restricted)
+    wfn_minimal_np = np.load("wfn-1step.180.npy", allow_pickle=True)
+    wfn_minimal_np[()]['matrix']["Ca"] = Ca
+    if not restricted:
+        wfn_minimal_np[()]['matrix']["Cb"] = Cb
+    else:
+        wfn_minimal_np[()]['matrix']["Cb"] = Ca
+    np.save("wfn-1step-tc.180.npy", wfn_minimal_np)
 
-# ----copy wfn file to the right place with a right name---
-print("wfn copying...")
-pid = str(os.getpid())
-targetfile = psi4_scr + filename + '.default.' + pid + '.180.npy'
-shutil.copyfile("wfn-1step-tc.180.npy", targetfile)
+    # ----copy wfn file to the right place with a right name---
+    print("wfn copying...")
+    pid = str(os.getpid())
+    targetfile = psi4_scr + filename + '.default.' + pid + '.180.npy'
+    shutil.copyfile("wfn-1step-tc.180.npy", targetfile)
 
-# ---final scf---
-print("final scf...")
-psi4.set_options({
-        'SOSCF': False,
-        "SOSCF_MAX_ITER": 40,
-        })
-psi4.set_options({
-    "maxiter": 250,
-    "D_CONVERGENCE": 1e-6,
-    "E_CONVERGENCE": 1e-6,
-    "fail_on_maxiter": True})
-e, wfn = psi4.energy('b3lyp', molecule=mol, return_wfn=True)
-wfn.to_file("wfn.180")
-psi4.molden(wfn, "geo.molden")
+    # ---final scf---
+    print("final scf...")
+    psi4.set_options({
+            'SOSCF': False,
+            "SOSCF_MAX_ITER": 40,
+            })
+    psi4.set_options({
+        "maxiter": 250,
+        "D_CONVERGENCE": 1e-6,
+        "E_CONVERGENCE": 1e-6,
+        "fail_on_maxiter": True})
+    e, wfn = psi4.energy('b3lyp', molecule=mol, return_wfn=True)
+    wfn.to_file("wfn.180")
+    psi4.molden(wfn, "geo.molden")
+
+
+if __name__ == "__main__":
+    main()

@@ -11,7 +11,7 @@
 import csv
 
 import numpy as np
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from molSimplify.utils.decorators import deprecated
 from typing import List
 
@@ -91,8 +91,7 @@ def simple_network_builder_pybrain(layers: List[int], partial_path: str):
 
 def csv_loader(path: str) -> List[float]:
     # print('in csv loader')
-    path_to_file = resource_filename(Requirement.parse("molSimplify"),
-                                     "molSimplify/python_nn/" + path)
+    path_to_file = resource_files("molSimplify.python_nn").joinpath(path.strip("/"))
     with open(path_to_file, 'r') as csvfile:
         csv_lines = csv.reader(csvfile, delimiter=',')
         ret_list = list()
@@ -104,17 +103,14 @@ def csv_loader(path: str) -> List[float]:
 
 def matrix_loader(path, rownames=False):
     # loads matrix with rowname option
+    path_to_file = resource_files("molSimplify.python_nn").joinpath(path.strip("/"))
     if rownames:
-        path_to_file = resource_filename(Requirement.parse("molSimplify"),
-                                         "molSimplify/python_nn/" + path)
         with open(path_to_file, "r") as f:
             csv_lines = list(csv.reader(f))
             row_names = [row[0] for row in csv_lines]
             mat = [row[1:] for row in csv_lines]
         return mat, row_names
     else:
-        path_to_file = resource_filename(Requirement.parse("molSimplify"),
-                                         "molSimplify/python_nn/" + path)
         with open(path_to_file, 'r') as csvfile:
             csv_lines = csv.reader(csvfile, delimiter=',')
             mat = [a for a in csv_lines]
@@ -123,7 +119,6 @@ def matrix_loader(path, rownames=False):
 
 # n = network_builder([25,50,51],"nn_split")
 def simple_splitting_ann(excitation):
-    # path_to_file = resource_filename(Requirement.parse("molSimplify"), "molSimplify/python_nn/" + "ms_split")
     # print('path to ANN data: ',path_to_file)
     n = simple_network_builder([25, 50, 50], "ms_split")
     excitation, sp_center, sp_shift = excitation_standardizer(excitation, 'split')
@@ -140,7 +135,6 @@ def simple_splitting_ann(excitation):
 
 
 def simple_slope_ann(slope_excitation):
-    # path_to_file = resource_filename(Requirement.parse("molSimplify"), "molSimplify/python_nn/" + "ms_slope")
     # print('path to ANN data: ',path_to_file)
     n = simple_network_builder([24, 50, 50], "ms_slope")  # no alpha value
     # print(slope_excitation)

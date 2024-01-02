@@ -1,7 +1,0 @@
--core zncat
--ccatoms 4,5
--lig ammonia, water
--ligocc 1,1
--replig true
--oxstate II
--spin 1

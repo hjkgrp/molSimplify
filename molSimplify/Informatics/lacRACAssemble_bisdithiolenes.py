@@ -114,7 +114,7 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
             from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
         else:
             from molSimplify.Classes.ligand import ligand_assign as ligand_assign
-        liglist, ligdents, ligcons = ligand_breakdown(this_complex)
+        liglist, ligdents, ligcons = ligand_breakdown(this_complex, BondedOct=True) # Complex is assumed to be octahedral
         if sum(ligdents) == 6:
             (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list,
              ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list,

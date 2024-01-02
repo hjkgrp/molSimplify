@@ -6,3 +6,5 @@ Number of spaces matter in .mol files
 
 In the file ligands.dict, the third to last column (groups) is an artifact, and as far as I can tell it does not matter what you have in that column. But you still need to have that column in order to preserve the order of arguments when they are read by the function `getlicores`
 The other columns do matter.
+
+To use the ligand-specific force field option in ligands.dict, use `-ffoption L` when calling molSimplify from the command line.

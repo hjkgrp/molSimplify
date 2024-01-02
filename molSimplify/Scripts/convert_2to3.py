@@ -10,9 +10,14 @@ def run_bash(filein):
     print(('ll:', ll))
 
 
-basedir = '../'
-for dirpath, dir, files in os.walk(basedir):
-    for f in sorted(files):
-        if f.split(".")[-1] == 'py':
-            run_bash(dirpath + '/' + f)
-print("Done.")
+def main():
+    basedir = '../'
+    for dirpath, dir, files in os.walk(basedir):
+        for f in sorted(files):
+            if f.split(".")[-1] == 'py':
+                run_bash(dirpath + '/' + f)
+    print("Done.")
+
+
+if __name__ == "__main__":
+    main()

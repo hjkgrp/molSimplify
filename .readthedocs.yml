@@ -1,15 +1,16 @@
 version: 2
 
-conda:
-  environment: docs/environment.yaml
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.7"
 
 python:
-  version: 3.7
   install:
     - method: pip
       path: .
       extra_requirements:
-          - rtd
+          - docs
 
 sphinx:
   builder: html

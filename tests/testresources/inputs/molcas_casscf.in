@@ -1,0 +1,21 @@
+# Input file generated from molSimplify at 10/29/2018 12:56
+-ffoption ba
+-distort 0
+-coord 6
+-nconfs 1
+-core Fe
+-ligocc 6
+-geometry oct
+-spin 5
+-bcharge 0
+-charge 2
+-calccharge True
+-jsched sge
+-oxstate II
+-lig water
+-smicat 0
+-ff uff
+-keepHs True
+-qccode MOLCAS
+-method CASSCF
+-runtyp energy

@@ -1,12 +1,18 @@
+ci:
+    autofix_commit_msg: '[pre-commit.ci] auto fixes from pre-commit hooks'
+    autofix_prs: true
+    autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+    autoupdate_schedule: monthly
+
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.3.0
+    rev: v4.5.0
     hooks:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
 -   repo: https://github.com/pycqa/flake8
-    rev: '3.8.4'
+    rev: '6.1.0'
     hooks:
     -   id: flake8
         args: ['--select=E9,F63,F7,F82', '--exclude=fragment_classes.py,frag_functionalizer.py,bridge_functionalizer.py']

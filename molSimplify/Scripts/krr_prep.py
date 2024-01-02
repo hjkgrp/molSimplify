@@ -13,7 +13,7 @@ from math import exp
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pandas as pd
-from pkg_resources import (resource_filename, Requirement)
+from importlib_resources import files as resource_files
 
 
 import numpy as np
@@ -692,8 +692,7 @@ def krr_model_predict(core3D, spin, mligcatom):
     if globs.custom_path:  # test if a custom path is used:
         fpath = str(globs.custom_path).rstrip('/') + "/python_krr"
     else:
-        fpath = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/python_krr")
+        fpath = str(resource_files("molSimplify").joinpath("python_krr"))
     # load model
     f_model = fpath + '/hat_krr_model.pkl'
     with open(f_model, 'rb') as f:
@@ -915,10 +914,8 @@ def invoke_KRR_from_mol3d_dQ(mol, charge):
         y_norm_train_csv = str(globs.custom_path).rstrip(
             '/') + "/python_krr/y_norm_train_TS.csv"
     else:
-        X_norm_train_csv = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/python_krr/X_norm_train_TS.csv")
-        y_norm_train_csv = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/python_krr/y_norm_train_TS.csv")
+        X_norm_train_csv = resource_files("molSimplify.python_krr").joinpath("X_norm_train_TS.csv")
+        y_norm_train_csv = resource_files("molSimplify.python_krr").joinpath("y_norm_train_TS.csv")
     with open(X_norm_train_csv, 'r') as f:
         for line in csv.reader(f):
             X_norm_train.append([float(i) for i in line])

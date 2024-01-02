@@ -1,6 +1,9 @@
 name: Linter
 
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches: ["master", "main"]
 
 jobs:
   flake8:
@@ -59,8 +62,8 @@ jobs:
         pip install mypy types-setuptools types-PyYAML types-requests
     - name: Typecheck with mypy
       run: |
-        # Ignore Informatics, job_manager, and molscontrol for now
-        mypy --ignore-missing-imports --exclude '(Informatics|job_manager|molscontrol)' molSimplify
+        # Exclude parts of Informatics for now
+        mypy --ignore-missing-imports --exclude '(frag_functionalizer.py|bridge_functionalizer.py|macrocycle_synthesis.py)' molSimplify
 
     - name: Report Status
       # Slack notifications only on the main repo

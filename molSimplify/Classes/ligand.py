@@ -169,7 +169,10 @@ class ligand:
         if self.master_mol.bo_dict:
             save_bo_dict = self.master_mol.get_bo_dict_from_inds(this_mol2_inds)
             this_mol2.bo_dict = save_bo_dict
-        lig_mol_graph_det = this_mol2.get_mol_graph_det()
+        try:
+            lig_mol_graph_det = this_mol2.get_mol_graph_det()
+        except:
+            lig_mol_graph_det = None
         lig_mol2_string = this_mol2.writemol2('ligand', writestring=True)
         self.mol2string = lig_mol2_string
         self.lig_mol_graph_det = lig_mol_graph_det
@@ -258,15 +261,13 @@ class ligand:
         return percent_buried
 
 
-def ligand_breakdown(mol, flag_loose=False, BondedOct=False, silent=True):
+def ligand_breakdown(mol, BondedOct=False, silent=True, transition_metals_only=True):
     """Extract axial and equatorial components of a octahedral complex.
 
     Parameters
     ----------
         mol : mol3D
             mol3D class instance for the complex.
-        flag_loose : bool, optional
-            Use loose flags to determine bonding. Default is False.
         BondedOct : bool, optional
             Enforce octahedral bonding. Default is False.
         silent : bool, optional
@@ -274,18 +275,18 @@ def ligand_breakdown(mol, flag_loose=False, BondedOct=False, silent=True):
 
     Returns
     -------
-        liglist : list
-            List of ligands
-        ligdents : list
-            List of ligand denticities
-        ligcons : list
-            List of ligand connection indices (in mol)
+        liglist : list of list of int
+            List of ligands. Length is the number of ligands. Each inner list contains the global indices of a ligand
+        ligdents : list of int
+            List of ligand denticities. Length is the number of ligands
+        ligcons : list of list of int
+            List of ligand connection indices (in mol). Length is the number of ligands
 
     """
     # this function takes an octahedral
     # complex and returns ligands
-    metal_index = mol.findMetal()[0]
-    bondedatoms = mol.getBondedAtomsSmart(metal_index, oct=True)
+    metal_index = mol.findMetal(transition_metals_only=transition_metals_only)[0]
+    bondedatoms = mol.getBondedAtomsSmart(metal_index, oct=BondedOct)
     # print('!!!!!boundatoms', bondedatoms)
     # print('from get oct' + str(bondedatoms))
     # print('***\n')
@@ -365,6 +366,7 @@ def ligand_assign(mol, liglist, ligdents, ligcons, loud=False, name=False, eq_sy
     valid = True
     # loud = False
     pentadentate = False
+    hexadentate = False
     built_ligand_list = list()
     lig_natoms_list = list()
     unique_ligands = list()
@@ -561,20 +563,18 @@ def ligand_assign(mol, liglist, ligdents, ligcons, loud=False, name=False, eq_sy
                 combo_list = []
                 for i, combo in enumerate(point_combos):
                     combo_list.append(list(combo))
-                    A = []
-                    b = []
-                    for point_num in combo:
+                    A = np.zeros((4, 3))
+                    b = np.zeros(4)
+                    for point_i, point_num in enumerate(combo):
                         coordlist = pentadentate_coord_list[point_num]
-                        A.append([coordlist[0], coordlist[1], 1])
-                        b.append(coordlist[2])
+                        A[point_i, :] = [coordlist[0], coordlist[1], 1]
+                        b[point_i] = coordlist[2]
                     # #### This code builds the best fit plane between 4 points,
                     # #### Then calculates the variance of the 4 points with respect to the plane
                     # #### The 4 that have the least variance are flagged as the eq plane.
-                    mat_b = np.matrix(b).T
-                    mat_A = np.matrix(A)
                     try:
-                        fit = (mat_A.T * mat_A).I * mat_A.T * mat_b
-                        errors = np.squeeze(np.array(mat_b - mat_A * fit))
+                        fit = np.linalg.pinv(A.T @ A) @ A.T @ b
+                        errors = b - A @ fit
                         error_var = np.var(errors)
                         error_list.append(error_var)
                     except np.linalg.LinAlgError:
@@ -647,20 +647,18 @@ def ligand_assign(mol, liglist, ligdents, ligcons, loud=False, name=False, eq_sy
             fitlist = []
             for i, combo in enumerate(point_combos):
                 combo_list.append(combo)
-                A = []
-                b = []
-                for point_num in combo:
+                A = np.zeros((4, 3))
+                b = np.zeros(4)
+                for point_i, point_num in enumerate(combo):
                     coordlist = hexadentate_coord_list[point_num]
-                    A.append([coordlist[0], coordlist[1], 1])
-                    b.append(coordlist[2])
+                    A[point_i, :] = [coordlist[0], coordlist[1], 1]
+                    b[point_i] = coordlist[2]
                 # #### This code builds the best fit plane between 4 points,
                 # #### Then calculates the variance of the 4 points with respect to the plane
                 # #### The 4 that have the least variance are flagged as the eq plane.
-                mat_b = np.matrix(b).T
-                mat_A = np.matrix(A)
-                fit = (mat_A.T * mat_A).I * mat_A.T * mat_b
+                fit = np.linalg.pinv(A.T @ A) @ A.T @ b
                 fitlist.append(fit)
-                errors = np.squeeze(np.array(mat_b - mat_A * fit))
+                errors = b - A @ fit
                 error_var = np.var(errors)
                 error_list.append(error_var)
             if loud:
@@ -954,24 +952,22 @@ def ligand_assign_consistent(mol, liglist, ligdents, ligcons, loud=False,
         combo_list.append(combo)
         if loud:
             print(('combo', combo))
-        A = []
-        b = []
+        A = np.zeros((4, 3))
+        b = np.zeros(4)
         mw_plane = 0
         mw_lig_cons = 0
-        for point_num in combo:
+        for point_i, point_num in enumerate(combo):
             coordlist = flat_coord_list[point_num]
             mw_plane += flat_lig_mol_weights[point_num]
             mw_lig_cons += lig_con_weights[point_num]
-            A.append([coordlist[0], coordlist[1], 1])
-            b.append(coordlist[2])
-        mat_b = np.matrix(b).T
-        mat_A = np.matrix(A)
+            A[point_i, :] = [coordlist[0], coordlist[1], 1]
+            b[point_i] = coordlist[2]
         mw_plane_list.append(mw_plane)
         mw_plane_lig_con_list.append(mw_lig_cons)
         try:
-            fit = (mat_A.T * mat_A).I * mat_A.T * mat_b
+            fit = np.linalg.pinv(A.T @ A) @ A.T @ b
             fitlist.append(fit)
-            errors = np.squeeze(np.array(mat_b - mat_A * fit))
+            errors = b - A @ fit
             error_var = np.var(errors)
             error_list.append(error_var)
         except np.linalg.LinAlgError:
@@ -1973,7 +1969,7 @@ def get_lig_symmetry(mol, loud=False, htol=3):
             ligand symmetry plane
 
     """
-    liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True, flag_loose=True)
+    liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True)
     ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, \
         ax_con_int_list, eq_con_int_list, ax_con_list, \
         eq_con_list, built_ligand_list = ligand_assign_consistent(mol, liglist, ligdents, ligcons, loud=loud)

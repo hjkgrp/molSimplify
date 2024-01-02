@@ -1,0 +1,12 @@
+-core fe
+-oxstate II
+-geometry oct
+-coord 6
+-lig imidazole
+-ligocc 6
+-ligloc true
+-keepHs true
+-spin 1
+-ff XTB
+-ffoption BA
+-jobdir gen

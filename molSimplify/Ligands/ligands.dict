@@ -1,4 +1,4 @@
-# ligand name, ligand structure file, abbreviation (unique), connection atoms, groups, force field (BA:always,B:before only,A:after only,N:no), formal charge
+# ligand name, ligand structure file, abbreviation (unique), connection atoms, groups, force field (BA:before and after,B:before only,A:after only,N:no), formal charge
 # if connecting atoms
 12crown4:12crown4.mol,12crown4,6 9 0 3,build tetradentate,N,0
 Hpyrrole:Hpyrrole.mol,Hpyrl,0,build organic,BA,-1
@@ -253,5 +253,5 @@ uthiol:uthiol.mol,uthil,0,build functionalize small,N,0
 uthiolme2:uthiolme2.mol,uthilme2,0,build functionalize small,N,0
 valine:valine.mol,Val,3,build functionalize aminoacid,BA,0
 valineB:valine.mol,Val,3 17,build functionalize aminoacid,BA,0
-water:water.mol,wat,0,build small,N,0
+water:water.mol,wat,0,build small,BA,0
 x:x.mol,x,0,all small,N,0

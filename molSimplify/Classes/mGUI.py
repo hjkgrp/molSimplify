@@ -39,17 +39,19 @@ import unicodedata
 import glob
 import tempfile
 import re
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 import xml.etree.ElementTree as ET
 
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 
 # Main GUI class
 
 
 class mGUI():
     getgeoms()
-    ### constructor of gui ###
 
     def __init__(self, app):
         # build gui
@@ -69,7 +71,7 @@ class mGUI():
         ### build main GUI ###
         ######################
         '''
-        ### check for configuration file ###
+        # ## check for configuration file ###
         cwd = os.getcwd()
         globs = globalvars()  # global variables
         globs.rundir = os.path.join(cwd, 'Runs')
@@ -80,13 +82,18 @@ class mGUI():
 #        if not configfile:
 #            self.wwindow = mQMainWindow()
 #            self.wwindow.resize(0.5,0.5)
-#            QMessageBox.information(self.wwindow,'Setup',"It looks like the configuration file '~/.molSimplify' does not exist!Please follow the next steps to configure the file.")
-#            QMessageBox.information(self.wwindow,'Installation directory',"Please select the top installation directory for the program.")
+#            QMessageBox.information(self.wwindow, 'Setup', 'It looks like the '
+#                                    'configuration file "~/.molSimplify" does '
+#                                    'not exist!Please follow the next steps to '
+#                                    'configure the file.')
+#            QMessageBox.information(self.wwindow, 'Installation directory',
+#                                    "Please select the top installation "
+#                                    "directory for the program.")
 #            instdir = QFileDialog.getExistingDirectory(self.wwindow, "Select Directory")
 #            f = open(homedir+'/.molSimplify','w')
 #            if len(instdir) > 1:
 #                f.write("INSTALLDIR="+instdir+'\n')
-        ### end set-up configuration file ###
+        # ## end set-up configuration file ###
         # main window widget
         self.wmwindow = mQMainWindow()
         self.wmwindow.show()
@@ -97,9 +104,9 @@ class mGUI():
         p = QPalette()
         p.setColor(QPalette.Background, Qt.white)
         self.wmwindow.setPalette(p)
-        ### main grid layout ###
+        # ## main grid layout ###
         self.grid = QGridLayout()
-        ### stacked layouts ###
+        # ## stacked layouts ###
         self.sgrid = QStackedLayout()
         self.sgrid.setStackingMode(1)
         self.sgrid.addWidget(self.wmain)
@@ -109,7 +116,7 @@ class mGUI():
         self.grid.setRowMinimumHeight(3, 15)
         self.grid.setRowMinimumHeight(4, 50)
         ####################################
-        ### create menubar and callbacks ###
+        # ## create menubar and callbacks ###
         menubar = self.wmwindow.menuBar()
         menu0 = menubar.addMenu('&File')
         menu1 = menubar.addMenu('&Load')
@@ -134,22 +141,21 @@ class mGUI():
         helpAction.setStatusTip('Show program information')
         helpAction.triggered.connect(self.qshowhelp)
         menu2.addAction(helpAction)
-        ### place title top ###
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/logo.png")
+        # ## place title top ###
+        f = resource_files("molSimplify").joinpath("icons/logo.png")
         clogo = mQPixmap(f)
         self.grid.addWidget(clogo, 2, 8, 1, 10)
         self.txtdev = mQLabel('Developed by Kulik group @ MIT', '', 'c', 16)
         self.grid.addWidget(self.txtdev, 19, 8, 2, 10)
-        ###################################################
-        ###################################################
-        ########## STRUCTURE GENERATION INPUTS ############
-        ###################################################
-        ###################################################
-        ### title ###
+        # ##################################################
+        # ##################################################
+        # ######### STRUCTURE GENERATION INPUTS ############
+        # ##################################################
+        # ##################################################
+        # ## title ###
         self.txtgpar = mQLabel('Structure specification', '', 'c', 20)
         self.grid.addWidget(self.txtgpar, 4, 0, 2, 14)
-        ### core structure specification ###
+        # ## core structure specification ###
         ctip = 'Core of structure'
         self.rtcore = mQLabel('Core:', ctip, 'C', 12)
         f = QFont("Helvetica", 14, 75)
@@ -158,14 +164,14 @@ class mGUI():
         cores = list(sorted(getmcores()))
         self.etcore = mQLineEditL('', ctip, 'l', 12, cores)
         self.grid.addWidget(self.etcore, 7, 3, 1, 3)
-        ### Connection atoms for core ###
+        # ## Connection atoms for core ###
         ctip = 'Specify connection atoms for core if using SMILES or custom cores (default: 1)'
         self.rtccat = mQLabel('Core connections:', ctip, 'C', 12)
         self.rtccat.setWordWrap(True)
         self.grid.addWidget(self.rtccat, 7, 6, 1, 2)
         self.etccat = mQLineEdit('', ctip, 'l', 12)
         self.grid.addWidget(self.etccat, 7, 8, 1, 2)
-        ### replace option ###
+        # ## replace option ###
         ctip = 'Replace ligand at specified connection point'
         self.replig = mQCheckBox('replace', ctip, 12)
         self.grid.addWidget(self.replig, 7, 10, 1, 4)
@@ -194,9 +200,9 @@ class mGUI():
         self.butvg = mQPushButton('View\ngeometry', ctip, 12)
         self.butvg.clicked.connect(self.viewgeom)
         self.grid.addWidget(self.butvg, 8, 9, 1, 2)
-        #############################################
-        ################## LIGANDS ##################
-        ### ligands tables ###
+        # ############################################
+        # ################# LIGANDS ##################
+        # ## ligands tables ###
         ctip0 = 'Ligand(s) to be used'
         self.rtligh = mQLabel('Ligand', ctip0, 'c', 12)  # ligand header
         f = QFont("Helvetica", 12, 75)
@@ -235,7 +241,7 @@ class mGUI():
         self.grid.addWidget(self.nameligh, 9, 10, 1, 1)
         self.grid.addWidget(self.ligfalign, 13, 15, 1, 2)
         self.grid.addWidget(self.ligfloc, 13, 17, 1, 2)
-        ## ligands ##
+        # ligands #
         licores = list(sorted(getlicores()))
         self.lig = []
         self.ligocc = []
@@ -246,28 +252,28 @@ class mGUI():
         self.lignam = []
         self.ligadd = []
         for ii in range(0, 8):
-            ## ligands ##
+            # ligands #
             self.lig.append(mQLineEditL('', ctip0, 'l', 12, licores))
             self.grid.addWidget(self.lig[ii], 10+ii, 0, 1, 2)  # add to layout
-            ## occurrences ##
+            # occurrences #
             self.ligocc.append(mQSpinBox(ctip1))
             self.grid.addWidget(self.ligocc[ii], 10+ii, 2, 1, 2)
-            ## connections ##
+            # connections #
             self.ligconn.append(mQLineEdit('', ctip2, 'l', 12))
             self.grid.addWidget(self.ligconn[ii], 10+ii, 4, 1, 2)
-            ## keep Hydrogens ##
+            # keep Hydrogens #
             self.ligH.append(mQComboBox(['yes', 'no'], ctip3, 12))
             self.grid.addWidget(self.ligH[ii], 10+ii, 6, 1, 1)
-            ## ML bond lengths ##
+            # ML bond lengths #
             self.ligML.append(mQLineEdit('', ctip4, 'l', 12))
             self.grid.addWidget(self.ligML[ii], 10+ii, 7, 1, 2)
-            ## custom angles ##
+            # custom angles #
             self.ligan.append(mQLineEdit('', ctip5, 'l', 12))
             self.grid.addWidget(self.ligan[ii], 10+ii, 9, 1, 1)
-            ## ligand names ##
+            # ligand names #
             self.lignam.append(mQLineEdit('', ctip6, 'l', 12))
             self.grid.addWidget(self.lignam[ii], 10+ii, 10, 1, 1)
-            ## ligand buttons ##
+            # ligand buttons #
             if ii < 7:
                 ctip = 'Add new ligand.'
                 self.ligadd.append(mQPushButton('+', ctip, 12))
@@ -293,26 +299,26 @@ class mGUI():
         self.ligadd[5].clicked.connect(self.addlig5)  # callback
         self.ligadd[6].clicked.connect(self.addlig6)  # callback
         #############################################
-        ## List molecules  ##
+        # List molecules  #
         ctip = 'Generate 2D ligand representation.'
         self.butList = mQPushButton('List molecules', ctip, 12)
         self.butList.clicked.connect(self.listmols)
         self.grid.addWidget(self.butList, 18, 3, 1, 2)
-        ## Draw ligand button ##
+        # Draw ligand button #
         ctip = 'Generate 2D ligand representation.'
         self.butDrl = mQPushButton('Draw ligands', ctip, 12)
         self.butDrl.clicked.connect(self.drawligs_svg)
         self.grid.addWidget(self.butDrl, 18, 1, 1, 2)
-        ## Local database button ##
+        # Local database button #
         ctip = 'Add core/ligand/binding species to local database.'
         self.butADB = mQPushButton('Add to local DB', ctip, 12)
         self.butADB.clicked.connect(self.enableDB)
         self.grid.addWidget(self.butADB, 18, 5, 1, 3)
-        ##################################################
-        ##################################################
-        ########### GENERAL PARAMETERS INPUTS ############
-        ##################################################
-        ##################################################
+        # #################################################
+        # #################################################
+        # ########## GENERAL PARAMETERS INPUTS ############
+        # #################################################
+        # #################################################
         self.txtgp = mQLabel('General parameters', '', 'c', 20)
         self.grid.addWidget(self.txtgp, 4, 13, 2, 8)
         # random generation
@@ -356,8 +362,7 @@ class mGUI():
         if globs.custom_path:
             f = globs.custom_path + "/Ligands/ligands.dict"
         else:
-            f = resource_filename(Requirement.parse(
-                "molSimplify"), "molSimplify/Ligands/ligands.dict")
+            f = str(resource_files("molSimplify").joinpath("Ligands/ligands.dict"))
         qcav0 = getligroups(readdict(f))
         qcav = [_f for _f in qcav0.split(' ') if _f]
         self.etliggrp = mQComboBox(qcav, ctip, 12)
@@ -422,7 +427,7 @@ class mGUI():
         self.sdist.valueChanged.connect(self.sliderChanged)
         self.grid.addWidget(self.distper, 12, 17, 1, 1)
         self.grid.addWidget(self.sdist, 12, 18, 1, 1)
-        ### jobs dir ###
+        # jobs dir #
         ctip = 'Top directory for job folders.'
         self.rtrdir = mQLabel('Jobs dir:', ctip, 'Cr', 12)
         self.grid.addWidget(self.rtrdir, 14, 15, 1, 1)
@@ -449,16 +454,16 @@ class mGUI():
         self.butPost = mQPushButton('Post-process', ctip, 16)
         self.butPost.clicked.connect(self.setupp)
         self.grid.addWidget(self.butPost, 17, 17, 2, 2)
-        ## Search DB button ##
+        # Search DB button #
         ctip = 'Search for ligands in chemical databases.'
         self.searchDB = mQPushButton('Search DB', ctip, 16)
         self.searchDB.clicked.connect(self.searchDBW)
         self.grid.addWidget(self.searchDB, 17, 20, 2, 2)
-        ###################################################
-        ###################################################
-        ########### ADDITIONAL MOLECULE INPUTS ############
-        ###################################################
-        ###################################################
+        # ##################################################
+        # ##################################################
+        # ########## ADDITIONAL MOLECULE INPUTS ############
+        # ##################################################
+        # ##################################################
         # generate edit texts for additional molecule
         self.txtamol = mQLabel('Additional molecule', '', 'c', 20)
         self.txtamol.setDisabled(True)
@@ -520,7 +525,8 @@ class mGUI():
         self.grid.addWidget(self.etplacemin, 11, 21, 1, 1)
         self.grid.addWidget(self.etplacemax, 11, 22, 1, 1)
         # mask for atom/center of mass reference
-        ctip = 'Reference atoms in extra molecules to be used for placement(e.g. 1,2 or 1-6 or COM or Fe) Default COM (center mass)'
+        ctip = ('Reference atoms in extra molecules to be used for placement '
+                '(e.g. 1,2 or 1-6 or COM or Fe) Default COM (center mass)')
         # self.rtmaskbind = mQLabel('Reference:',ctip,'r',14)
         self.etmaskbind = mQLineEdit('COM', ctip, 'l', 12)
         # self.rtmaskbind.setDisabled(True)
@@ -584,20 +590,20 @@ class mGUI():
         self.butQ = mQPushButton('Quit', ctip, 14)
         self.butQ.clicked.connect(self.qexit)
         self.grid.addWidget(self.butQ, 17, 23, 1, 1)
-        ################################################
-        ################################################
-        ################################################
-        ##########################
-        ### information window ###
-        ##########################
+        # ###############################################
+        # ###############################################
+        # ###############################################
+        # #########################
+        # ## information window ###
+        # #########################
         self.iWind = QWidget()
         self.iWind.setWindowTitle('Running')
         self.iWtxt = mQTextEdit('Program started..', 'l', 14)
         self.iWtxt.setParent(self.iWind)
         self.sgrid.addWidget(self.iWind)
-        #######################################
-        ### create terachem-qc input window ###
-        #######################################
+        # ######################################
+        # ## create terachem-qc input window ###
+        # ######################################
         self.qctWindow = QWidget()  # TC QC window
         self.qctgrid = QGridLayout()
         self.qctWindow.setWindowTitle('Terachem Input')
@@ -605,8 +611,7 @@ class mGUI():
         self.qctWindow.setPalette(p)  # set background color
         self.qctWindow.setLayout(self.qctgrid)  # set layout
 
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/petachem.png")
+        f = resource_files("molSimplify").joinpath("icons/petachem.png")
         c0 = mQPixmap(f)
         self.qctgrid.addWidget(c0, 0, 2, 1, 1)
         # top text
@@ -676,9 +681,9 @@ class mGUI():
         if glob.glob(str(globs.custom_path)+'/Data/.tcdefinput.inp'):
             loadfrominputtc(self, str(globs.custom_path) +
                             '/Data/.tcdefinput.inp')
-        #####################################
-        ### create gamess-qc input window ###
-        #######################################
+        # ####################################
+        # ## create gamess-qc input window ###
+        # ######################################
         self.qcgWindow = QWidget()  # TC QC window
         self.qcggrid = QGridLayout()
         self.qcgWindow.setWindowTitle('GAMESS Input')
@@ -780,9 +785,9 @@ class mGUI():
         # load defaults if existing
         if glob.glob(str(globs.custom_path)+'/Data/.gamdefinput.inp'):
             loadfrominputgam(self, str(globs.custom_path))
-        #######################################
-        #### create Qchem-qc input window #####
-        #######################################
+        # ######################################
+        # ### create Qchem-qc input window #####
+        # ######################################
         self.qcQWindow = QWidget()  # TC QC window
         self.qcQgrid = QGridLayout()
         self.qcQWindow.setWindowTitle('QChem Input')
@@ -859,19 +864,17 @@ class mGUI():
         if glob.glob(str(globs.custom_path)+'/Data/.qchdefinput.inp'):
             loadfrominputqch(self, str(globs.custom_path) +
                              '/Data/.qchdefinput.inp')
-        #####################################
-        ### create jobscript input window ###
-        #####################################
+        # ####################################
+        # ## create jobscript input window ###
+        # ####################################
         self.jWindow = QWidget()  # jobscript window
         self.jgrid = QGridLayout()
         self.jWindow.setWindowTitle('Jobscript parameters')
         self.sgrid.addWidget(self.jWindow)  # add to stacked grid
         self.jWindow.setPalette(p)  # set background color
         self.jWindow.setLayout(self.jgrid)  # set layout
-        f1 = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/sge.png")
-        f2 = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/slurm.png")
+        f1 = resource_files("molSimplify").joinpath("icons/sge.png")
+        f2 = resource_files("molSimplify").joinpath("icons/slurm.png")
         c1 = mQPixmap(f1)
         c2 = mQPixmap(f2)
         self.jgrid.addWidget(c1, 1, 2, 1, 1)
@@ -951,9 +954,9 @@ class mGUI():
         # load defaults if existing
         if glob.glob(str(globs.custom_path)+'/Data/.jobdefinput.inp'):
             loadfrominputjob(self, str(globs.custom_path)+'/Data/.jobdefinput.inp')
-        ##########################################
-        ### create local DB interaction window ###
-        ##########################################
+        # #########################################
+        # ## create local DB interaction window ###
+        # #########################################
         self.DBWindow = QWidget()  # DB Window
         self.DBlgrid = QGridLayout()
         self.sgrid.addWidget(self.DBWindow)
@@ -1042,9 +1045,9 @@ class mGUI():
         self.butDBRet = mQPushButton('Return', ctip, 14)
         self.butDBRet.clicked.connect(self.qretmain)
         self.DBlgrid.addWidget(self.butDBRet, 9, 3, 1, 1)
-        #############################################
-        ### create chemical DB interaction window ###
-        #############################################
+        # ############################################
+        # ## create chemical DB interaction window ###
+        # ############################################
         self.cDBWindow = QWidget()  # DB Window
         self.cDBgrid = QGridLayout()
         self.sgrid.addWidget(self.cDBWindow)
@@ -1173,8 +1176,7 @@ class mGUI():
         self.etcDBmw1 = mQLineEdit('', ctip, 'l', 14)
         self.cDBgrid.addWidget(self.etcDBmw1, 11, 8, 1, 1)
         # aspirin icon
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/chemdb.png")
+        f = resource_files("molSimplify").joinpath("icons/chemdb.png")
         c = mQPixmap(f)
         relresize(c, c, 0.4)
         self.cDBgrid.addWidget(c, 7, 0, 4, 2)
@@ -1193,9 +1195,9 @@ class mGUI():
         self.butcDBRet = mQPushButton('Return', ctip, 14)
         self.butcDBRet.clicked.connect(self.qretmain)
         self.cDBgrid.addWidget(self.butcDBRet, 11, 2, 1, 1)
-        ###########################
-        ### post-process window ###
-        ###########################
+        # ##########################
+        # ## post-process window ###
+        # ##########################
         self.pWindow = QWidget()  # Post Window
         self.pgrid = QGridLayout()
         self.sgrid.addWidget(self.pWindow)
@@ -1263,14 +1265,13 @@ class mGUI():
         self.butpret.clicked.connect(self.qretmain)
         self.pgrid.addWidget(self.butpret, 7, 3, 1, 2)
         # c1p = mPic(self.pWindow,globs.installdir+'/icons/wft1.png',0.04,0.7,0.2)
-        f = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/wft3.png")
+        f = resource_files("molSimplify").joinpath("icons/wft3.png")
         c3p = mQPixmap(f)
         self.pgrid.addWidget(c3p, 3, 0, 4, 1)
         # c2p = mPic(self.pWindow,globs.installdir+'/icons/wft2.png',0.04,0.035,0.2)
-        ##################################
-        ### create add geometry window ###
-        ##################################
+        # #################################
+        # ## create add geometry window ###
+        # #################################
         self.geWindow = QWidget()  # Geometry window
         self.gegrid = QGridLayout()
         self.sgrid.addWidget(self.geWindow)
@@ -1327,9 +1328,9 @@ class mGUI():
         self.butgRet = mQPushButton('Return', ctip, 14)
         self.butgRet.clicked.connect(self.qretmain)
         self.gegrid.addWidget(self.butgRet, 7, 1, 1, 1)
-        ################################
-        ### create ligands 2D window ###
-        ################################
+        # ###############################
+        # ## create ligands 2D window ###
+        # ###############################
         self.lwindow = QWidget()
         self.lwindow.setPalette(p)
         self.lgrid = QGridLayout()
@@ -1337,13 +1338,13 @@ class mGUI():
         # self.sgrid.addWidget(self.lwindow)
         self.lwindow.setWindowTitle('Ligands 2D')
         self.c1p = QWidget()
-        ####################
-        ####################
-        ####################
-        ### Run main GUI ###
-        ####################
-        ####################
-        ####################
+        # ###################
+        # ###################
+        # ###################
+        # ## Run main GUI ###
+        # ###################
+        # ###################
+        # ###################
         self.wmain.setLayout(self.grid)
         self.wmwindow.setCentralWidget(self.wmain)
         self.sgrid.setCurrentWidget(self.wmain)
@@ -1362,7 +1363,7 @@ class mGUI():
         self.rtligh.setFont(f)
         # add to layout
         self.grid.addWidget(self.rtligh, 9, 0, 1, 2)
-        ## ligands ##
+        # ligands #
         licores = list(sorted(getlicores()))
         self.lig = []
         self.ligocc = []
@@ -1373,10 +1374,10 @@ class mGUI():
         self.lignam = []
         self.ligadd = []
         for ii in range(0, 8):
-            ## ligands ##
+            # ligands #
             self.lig.append(mQLineEditL('', ctip0, 'l', 12, licores))
             self.grid.addWidget(self.lig[ii], 10+ii, 0, 1, 2)  # add to layout
-            ## ligand buttons ##
+            # ligand buttons #
         #############################################
 
         '''
@@ -1384,9 +1385,9 @@ class mGUI():
         ### Callbacks for buttons ###
         #############################
         '''
-        ###################################
-        ###### Add new ligands input ######
-        ###################################
+        # ##################################
+        # ##### Add new ligands input ######
+        # ##################################
 
     def addlig0(self):
         idx = 0
@@ -1530,9 +1531,9 @@ class mGUI():
         else:
             self.etplacephi.setDisabled(False)
             self.etplacetheta.setDisabled(False)
-        ##############################
-        ### Local Database window ####
-        ##############################
+        # #############################
+        # ## Local Database window ####
+        # #############################
         # load molecule from file
 
     def qDBload(self):
@@ -1559,16 +1560,21 @@ class mGUI():
         globs = globalvars()
         if not globs.custom_path:  # this will be false unless set
             choice = QMessageBox.question(self.cDBWindow, 'Custom path needed',
-                                          'In order to add to the database, you need to select a local path for molSimplify to store data files. Would you like to configure it now?',
+                                          'In order to add to the database, you'
+                                          ' need to select a local path for '
+                                          'molSimplify to store data files. '
+                                          'Would you like to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
-                    self.cDBWindow, 'Custom path needed', "Please select a local, user-writable location.")
+                    self.cDBWindow, 'Custom path needed',
+                    "Please select a local, user-writable location.")
                 new_path = QFileDialog.getExistingDirectory(
                     self.cDBWindow, 'Select a writable directory.')
                 if len(new_path) > 0:
                     globs.add_custom_path(new_path)
-                    copy_to_custom_path()  # this funciton lives in scripts/io.py
+                    globs.custom_path = new_path
+                    copy_to_custom_path()  # this function lives in scripts/io.py
         # instdir = globs.installdir
         if self.lFFb.getState() and self.lFFa.getState():
             ffopt = 'BA'
@@ -1581,10 +1587,11 @@ class mGUI():
         if smictg == 'all':
             smictg = 'build functionalize'
         if smimol == '' or sminame == '':
-            choice = QMessageBox.warning(
+            _ = QMessageBox.warning(
                 self.DBWindow, 'Error', 'Please specify molecule and name!')
         else:
             # add to database
+            emsg = ''
             if 'ligand' in coption:
                 emsg = addtoldb(smimol, sminame, smident,
                                 smicat, smigrps, smictg, ffopt)
@@ -1593,9 +1600,9 @@ class mGUI():
             elif 'bind' in coption:
                 emsg = addtobdb(smimol, sminame)
             if emsg:
-                choice = QMessageBox.warning(self.DBWindow, 'Error', emsg)
+                _ = QMessageBox.warning(self.DBWindow, 'Error', emsg)
             else:
-                choice = QMessageBox.information(
+                _ = QMessageBox.information(
                     self.DBWindow, 'Add', 'Successfully added to the database!')
         self.update_ligands_binds()
         # callback for removal button, removes from db
@@ -1603,11 +1610,16 @@ class mGUI():
     def qdelDB(self):
         globs = globalvars()
         if not globs.custom_path:  # this will be false unless set
-            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed', 'In order to add to the database, you need to select a local path for molSimplify to store data files. Would you like to configure it now?',
+            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed',
+                                          'In order to add to the database, you'
+                                          ' need to select a local path for '
+                                          'molSimplify to store data files. '
+                                          'Would you like to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
-                    self.cDBWindow, 'Custom path needed', "Please select a local, user-writable location.")
+                    self.cDBWindow, 'Custom path needed',
+                    "Please select a local, user-writable location.")
                 new_path = QFileDialog.getExistingDirectory(
                     self.cDBWindow, 'Select a writable directory.')
                 if len(new_path) > 0:
@@ -1617,21 +1629,21 @@ class mGUI():
         coption = self.DBsel.currentIndex()
         sminame = self.etDBname.text()
         if sminame == '':
-            choice = QMessageBox.warning(
+            _ = QMessageBox.warning(
                 self.DBWindow, 'Error', 'Please specify name!')
         else:
             # remove from database
             emsg = removefromDB(sminame, int(coption))
             if emsg:
-                choice = QMessageBox.warning(self.DBWindow, 'Error', emsg)
+                _ = QMessageBox.warning(self.DBWindow, 'Error', emsg)
             else:
-                choice = QMessageBox.information(
+                _ = QMessageBox.information(
                     self.DBWindow, 'Remove', 'Removed from the database!')
         # db type change
 
     def dbchange(self):
         ci = self.DBsel.currentIndex()
-        if (ci == 1):
+        if ci == 1:
             self.rtDBsmident.setDisabled(False)
             self.DBdent.setDisabled(False)
             self.rtDBsmicat.setDisabled(False)
@@ -1640,7 +1652,7 @@ class mGUI():
             self.etDBgrps.setDisabled(False)
             self.lFFb.setDisabled(False)
             self.lFFa.setDisabled(False)
-        elif(ci == 0):
+        elif ci == 0:
             self.rtDBsmident.setDisabled(True)
             self.DBdent.setDisabled(True)
             self.rtDBsmicat.setDisabled(False)
@@ -1672,9 +1684,9 @@ class mGUI():
         if not emsg:
             QMessageBox.information(
                 self.pWindow, 'DONE', 'Your results are ready..')
-        #############################
-        #### Add geometry window ####
-        #############################
+        # ############################
+        # ### Add geometry window ####
+        # ############################
         # load molecule from file
 
     def qgeomload(self):
@@ -1699,7 +1711,11 @@ class mGUI():
     def qaddg(self):
         globs = globalvars()
         if not globs.custom_path:  # this will be false unless set
-            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed', 'In order to add to the database, you need to select a local path for molSimplify to store data files. Would you like to configure it now?',
+            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed',
+                                          'In order to add to the database, you'
+                                          ' need to select a local path for '
+                                          'molSimplify to store data files. '
+                                          'Would you like to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
@@ -1711,28 +1727,28 @@ class mGUI():
                     copy_to_custom_path()  # this funciton lives in scripts/io.py
         gname = self.etgname.text().lower()
         gname = gname.replace(' ', '_')
-        gshort = self.etgshort.text()
         gfile = self.etgf.text()
-        cfile = self.etgfc.text()
         if gname == '' or gfile == '':
-            choice = QMessageBox.warning(
+            _ = QMessageBox.warning(
                 self.geWindow, 'Error', 'Please specify name and xyz file!')
         elif not glob.glob(gfile):
-            choice = QMessageBox.warning(
+            _ = QMessageBox.warning(
                 self.geWindow, 'Error', 'XYZ file '+gfile+' does not exist!')
         else:
             globs = globalvars()
             if globs.custom_path:
                 f = globs.custom_path + "/Data/coordinations.dict"
             else:
-                f = resource_filename(Requirement.parse(
-                    "molSimplify"), "molSimplify/Data/coordinations.dict")
+                f = str(resource_files("molSimplify").joinpath("Data/coordinations.dict"))
             with open(f, 'r') as fl:
                 s = fl.read().splitlines()
             if gname.lower() in s:
-                choice = QMessageBox.warning(
+                _ = QMessageBox.warning(
                     self.geWindow, 'Add', 'Coordination '+gname+' already exists.')
             return
+
+            gshort = self.etgshort.text()
+            cfile = self.etgfc.text()
             # get geometry from xyz file
             with open(gfile, 'r') as f:
                 snew = f.read().splitlines()
@@ -1766,8 +1782,7 @@ class mGUI():
                 fl.write(xyzl)
             # write png file
             if glob.glob(cfile):
-                f = resource_filename(Requirement.parse(
-                    "molSimplify"), "molSimplify/icons/geoms/")
+                f = str(resource_files("molSimplify").joinpath("icons/geoms/"))
                 shutil.copy2(cfile, f+gshort+'.png')
             choice = QMessageBox.information(
                 self.geWindow, 'Add', 'Successfully added to the database!')
@@ -1777,7 +1792,11 @@ class mGUI():
     def qdelg(self):
         globs = globalvars()
         if not globs.custom_path:  # this will be false unless set
-            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed', 'In order to add to the database, you need to select a local path for molSimplify to store data files. Would you like to configure it now?',
+            choice = QMessageBox.question(self.cDBWindow, 'Custom path needed',
+                                          'In order to add to the database, you'
+                                          ' need to select a local path for '
+                                          'molSimplify to store data files. '
+                                          'Would you like to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
@@ -1793,18 +1812,17 @@ class mGUI():
         gname = gname.replace(' ', '_')
         gshort = self.etgshort.text()
         if gname == '' and gshort == '':
-            choice = QMessageBox.warning(
+            _ = QMessageBox.warning(
                 self.geWindow, 'Error', 'Please specify geometry name!')
         else:
             if globs.custom_path:
                 f = globs.custom_path + "/Data/coordinations.dict"
             else:
-                f = resource_filename(Requirement.parse(
-                    "molSimplify"), "molSimplify/Data/coordinations.dict")
+                f = str(resource_files("molSimplify").joinpath("Data/coordinations.dict"))
             with open(f, 'r') as fl:
                 s = fl.read()
             if gname.lower() not in s and gshort.lower() not in s:
-                choice = QMessageBox.warning(
+                _ = QMessageBox.warning(
                     self.geWindow, 'Remove', 'Coordination '+gname+' does not exist.')
                 return
             # remove entry from coordinations.dict
@@ -1819,19 +1837,18 @@ class mGUI():
             if globs.custom_path:
                 f = globs.custom_path + "/Data/coordinations.dict"
             else:
-                f = resource_filename(Requirement.parse(
-                    "molSimplify"), "molSimplify/Data/coordinations.dict")
+                f = str(resource_files("molSimplify").joinpath("Data/coordinations.dict"))
             with open(f, 'w') as fl:
                 fl.write(snew)
             # remove file
             if glob.glob(str(globs.custom_path)+'/Data/'+srem+'.dat'):
                 os.remove(str(globs.custom_path)+'/Data/'+srem+'.dat')
-            choice = QMessageBox.information(
+            _ = QMessageBox.information(
                 self.geWindow, 'Remove', 'Successfully removed from the database!')
         self.matchgeomcoord()
-    #############################
-    ### Chem Database window ####
-    #############################
+    # ############################
+    # ## Chem Database window ####
+    # ############################
     # load molecule from file
 
     def qcDBload(self):
@@ -1850,7 +1867,11 @@ class mGUI():
         mwfn = globs.multiwfn
         cdbdir = globs.chemdbdir
         if not os.path.isdir(globs.chemdbdir):
-            choice = QMessageBox.question(self.cDBWindow, 'Database setup', 'It looks like the Chemical Database directory is not configured or does not exist. Would you like to configure it now?',
+            choice = QMessageBox.question(self.cDBWindow, 'Database setup',
+                                          'It looks like the Chemical Database'
+                                          ' directory is not configured or '
+                                          'does not exist. Would you like '
+                                          'to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
@@ -1904,13 +1925,13 @@ class mGUI():
             self.DBdent.setDisabled(True)
             self.rtDBsmicat.setDisabled(True)
             self.etDBsmicat.setDisabled(True)
-        ####################
-        ### Main window ####
-        ####################
+        # ###################
+        # ## Main window ####
+        # ###################
         # run generation
 
     def runGUI(self):
-        ### collects all the info and passes it to molSimplify ###
+        # collects all the info and passes it to molSimplify #
         rdir = self.etrdir.text()
         if rdir[-1] == '/':
             rdir = rdir[:-1]
@@ -1924,7 +1945,8 @@ class mGUI():
                 return
         # check for extra molecule
         if self.chkM.getState() and self.etbind.currentText() == '':
-            emsg = 'You checked the extra molecule box but specified\nno extra molecule. No extra molecule will be generated.\n'
+            emsg = ('You checked the extra molecule box but specified\n'
+                    'no extra molecule. No extra molecule will be generated.\n')
             QMessageBox.warning(self.wmain, 'Warning', emsg)
         # get parameters
         grabguivars(self)
@@ -1961,7 +1983,7 @@ class mGUI():
 
     def drawligs_svg(self):
         """Draw the ligands entered into the GUI as SVGs in a pop-up window"""
-        ### collects all the info and passes it to molSimplify ###
+        # collects all the info and passes it to molSimplify #
         args = grabguivars(self)
         # processes ligand arguments
         if len(args['-lig']) < 1:
@@ -2043,8 +2065,7 @@ class mGUI():
     def viewgeom(self):
         # get geometry
         geom = self.dcoordg.currentText()
-        gfname = resource_filename(Requirement.parse(
-            "molSimplify"), "molSimplify/icons/geoms/" + geom + ".png")
+        gfname = str(resource_files("molSimplify").joinpath(f"icons/geoms/{geom}.png"))
         if glob.glob(gfname):
             rows = self.lgrid.rowCount()
             # Clear existing widgets in layout
@@ -2066,7 +2087,7 @@ class mGUI():
     # draw results from db search
 
     def drawres(self):
-        ### collects all the info and passes it to molSimplify ###
+        # collects all the info and passes it to molSimplify #
         rdir = self.etrdir.text()
         if rdir[-1] == '/':
             rdir = rdir[:-1]
@@ -2235,8 +2256,7 @@ class mGUI():
         # add to box
         for i, t in enumerate(qc):
             # File f is never actually used? RM 2022/02/17
-            f = resource_filename(Requirement.parse(  # noqa F841
-                "molSimplify"), "molSimplify/icons/geoms/" + t + ".png")
+            f = str(resource_files("molSimplify").joinpath(f"icons/geoms/{t}.png"))  # noqa F841
             self.dcoordg.addItem(QIcon(t), t)
         self.dcoordg.setIconSize(QSize(60, 60))
         # set default geometry
@@ -2297,9 +2317,9 @@ class mGUI():
             # self.rtmaskbind.setDisabled(True)
             self.etmaskbind.setDisabled(True)
             self.chsep.setDisabled(True)
-    #####################
-    #### QEt/g input ####
-    #####################
+    # ####################
+    # ### QEt/g input ####
+    # ####################
     # callback for QE input
 
     def qcinput(self):
@@ -2357,9 +2377,9 @@ class mGUI():
             self.butQc.setDisabled(True)
             self.chch.setDisabled(True)
             self.chkI.state = True
-    #########################
-    #### jobscript input ####
-    #########################
+    # ########################
+    # ### jobscript input ####
+    # ########################
     # enable Jobscript input
 
     def enablejinput(self):
@@ -2383,9 +2403,9 @@ class mGUI():
         if name[0] != '':
             with open(name[0], 'r') as f:
                 self.jWindow.molf = f.read()
-    ###############################
-    #### post-processing input ####
-    ###############################
+    # ##############################
+    # ### post-processing input ####
+    # ##############################
     # enable Post processing input
 
     def setupp(self):
@@ -2402,7 +2422,11 @@ class mGUI():
         mwfn = globs.multiwfn
         cdbdir = globs.chemdbdir
         if not os.path.isfile(globs.multiwfn[1:-1]):
-            choice = QMessageBox.question(self.pWindow, 'Multiwfn setup', 'It looks like the Multiwfn executable is not configured or does not exist. Would you like to configure it now?',
+            choice = QMessageBox.question(self.pWindow, 'Multiwfn setup',
+                                          'It looks like the Multiwfn '
+                                          'executable is not configured '
+                                          'or does not exist. Would you '
+                                          'like to configure it now?',
                                           QMessageBox.Yes, QMessageBox.No)
             if choice == QMessageBox.Yes:
                 QMessageBox.information(
@@ -2435,10 +2459,10 @@ class mGUI():
             self.pWindow, 'Select Directory')
         if len(name) > 0 and name[0] != '':
             self.etpdir.setText(name)
-    ###############################
-    ###### general callbacks ######
-    ###############################
-    ### exit application ###
+    # ##############################
+    # ##### general callbacks ######
+    # ##############################
+    # ## exit application ###
 
     def qexit(self):
         choice = QMessageBox.question(self.wmain, 'Exit', 'Are you sure you want to quit?',
@@ -2447,7 +2471,7 @@ class mGUI():
             sys.exit()
         else:
             pass
-    ### hide current widget ###
+    # hide current widget #
 
     def qhide(self):
         self.hide()
@@ -2455,7 +2479,7 @@ class mGUI():
 
     def qcloseligs(self):
         self.lwindow.hide()
-    ### return to main window ###
+    # return to main window #
 
     def qretmain(self):
         # hide all windows

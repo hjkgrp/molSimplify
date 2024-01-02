@@ -422,17 +422,22 @@ def slope_sign_check(X, y, name, prop, num_points):
     return kept_points_X, kept_points_y, removed_dict_list
 
 
-parser = argparse.ArgumentParser(description='Script to process some sensitivity data.')
-parser.add_argument('--data', dest='path_to_csv', action='store', type=str, required=True,
-                    help='Path to CSV containing raw data.')
-parser.add_argument('--writepath', dest='path_to_write', action='store', type=str, default=False,
-                    help='Path to dump processed data. Defaults to dumping in script directory.')
-parser.add_argument('--R2', dest='R2_cutoff', action='store', type=float, default=0.99,
-                    help='R2 check cutoff value for linearity. Default is 0.99.')
-parser.add_argument('--cutoff', dest='CV_tolerance', action='store', type=int, default=5,
-                    help='Heuristic cutoff for eliminating outliers. Defaults to 5 for SSE.')
-parser.add_argument('--num_points', dest='num_points', action='store', type=int, default=4,
-                    help='Minimum number of points to form the HFX line. Defaults to 4.')
-args = parser.parse_args()
-print(args)
-measure_sensitivity(args.path_to_csv, args.path_to_write, args.R2_cutoff, args.CV_tolerance, args.num_points)
+def main():
+    parser = argparse.ArgumentParser(description='Script to process some sensitivity data.')
+    parser.add_argument('--data', dest='path_to_csv', action='store', type=str, required=True,
+                        help='Path to CSV containing raw data.')
+    parser.add_argument('--writepath', dest='path_to_write', action='store', type=str, default=False,
+                        help='Path to dump processed data. Defaults to dumping in script directory.')
+    parser.add_argument('--R2', dest='R2_cutoff', action='store', type=float, default=0.99,
+                        help='R2 check cutoff value for linearity. Default is 0.99.')
+    parser.add_argument('--cutoff', dest='CV_tolerance', action='store', type=int, default=5,
+                        help='Heuristic cutoff for eliminating outliers. Defaults to 5 for SSE.')
+    parser.add_argument('--num_points', dest='num_points', action='store', type=int, default=4,
+                        help='Minimum number of points to form the HFX line. Defaults to 4.')
+    args = parser.parse_args()
+    print(args)
+    measure_sensitivity(args.path_to_csv, args.path_to_write, args.R2_cutoff, args.CV_tolerance, args.num_points)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,9 +1,0 @@
--core zncat
--ccatoms 4,5
--lig NCCCN
--smicat 1,5
--ligocc 1
--replig true
--oxstate II
--spin 1
--geometry tbp

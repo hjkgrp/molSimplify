@@ -204,7 +204,7 @@ class fragment:
                 left = smiles[alphabet_indices[0]:alphabet_indices[2]]
                 center = smiles[alphabet_indices[2]:]
                 right = ''
-            elif (coordination_atom_idx == 1):
+            else:  # (coordination_atom_idx == 1):
                 left = smiles[alphabet_indices[0]:alphabet_indices[1]]
                 center = smiles[alphabet_indices[1]:]
                 right = ''
@@ -345,7 +345,7 @@ class tetradentate:
                 left = smiles[alphabet_indices[0]:alphabet_indices[2]]
                 center = smiles[alphabet_indices[2]:]
                 right = ''
-            elif (coordination_atom_idx == 1):
+            else:  # (coordination_atom_idx == 1):
                 left = smiles[alphabet_indices[0]:alphabet_indices[1]]
                 center = smiles[alphabet_indices[1]:]
                 right = ''
@@ -398,6 +398,7 @@ class tetradentate:
                 # In this case, we have a planar monodentate fragment. Split the
                 # ligand into parts and analyze
                 print(frag[1][0], frag[2][0])
+                returnval = True
             else:
                 returnval = False
         return returnval

@@ -5,7 +5,6 @@ from molSimplify.Classes.ligand import ligand
 from molSimplify.Informatics.RACassemble import create_OHE
 from molSimplify.Informatics.lacRACAssemble import get_descriptor_vector
 from molSimplify.Scripts.io import lig_load
-from pkg_resources import resource_filename, Requirement
 
 
 @pytest.mark.parametrize('xyz_path, ref_path', [
@@ -16,17 +15,13 @@ from pkg_resources import resource_filename, Requirement
      'racs_Cr_acac_acac_bipy.pickle'),
     ('co_acac_en_water_hydrogensulfide.xyz',
      'racs_Co_acac_en_water_hydrogensulfide.pickle')])
-def test_Mn_water2_ammonia_furan2_ammonia(xyz_path, ref_path):
-    xyz_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        f'tests/refs/racs/{xyz_path}')
+def test_Mn_water2_ammonia_furan2_ammonia(resource_path_root, xyz_path, ref_path):
+    xyz_path = resource_path_root / "refs" / "racs" / xyz_path
     mol = mol3D()
     mol.readfromxyz(xyz_path)
     features = mol.get_features()
 
-    ref_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        f'tests/refs/racs/{ref_path}')
+    ref_path = resource_path_root / "refs" / "racs" / ref_path
     with open(ref_path, 'rb') as fin:
         ref_features = pickle.load(fin)
 
@@ -35,15 +30,11 @@ def test_Mn_water2_ammonia_furan2_ammonia(xyz_path, ref_path):
         assert abs(val - ref_features[key]) < 1e-4
 
 
-def test_six_pyridine_vs_three_bipy():
+def test_six_pyridine_vs_three_bipy(resource_path_root):
     """Up to depth 2 the atom centered racs features for pyr_6 and bipy_3
     should be the same"""
-    fe_pyr_6_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        'tests/refs/racs/fe_pyr_6.xyz')
-    fe_bipy_3_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        'tests/refs/racs/fe_bipy_3.xyz')
+    fe_pyr_6_path = resource_path_root / "refs" / "racs" / "fe_pyr_6.xyz"
+    fe_bipy_3_path = resource_path_root / "refs" / "racs" / "fe_bipy_3.xyz"
     fe_pyr_6 = mol3D()
     fe_pyr_6.readfromxyz(fe_pyr_6_path)
     fe_bipy_3 = mol3D()
@@ -65,13 +56,9 @@ def test_six_pyridine_vs_three_bipy():
 
 @pytest.mark.skip('Test fails because molSimplify averages the equatorial '
                   'plane differently for bidentates')
-def test_pyr_4_furan_2_vs_bipy_2_bifuran():
-    fe_pyr_4_furan_2_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        'tests/refs/racs/fe_pyr_4_furan_2.xyz')
-    fe_bipy_2_bifuran_path = resource_filename(
-        Requirement.parse('molSimplify'),
-        'tests/refs/racs/fe_bipy_2_bifuran.xyz')
+def test_pyr_4_furan_2_vs_bipy_2_bifuran(resource_path_root):
+    fe_pyr_4_furan_2_path = resource_path_root / "refs" / "racs" / "fe_pyr_4_furan_2.xyz"
+    fe_bipy_2_bifuran_path = resource_path_root / "refs" / "racs" / "fe_bipy_2_bifuran.xyz"
     fe_pyr_4_furan_2 = mol3D()
     fe_pyr_4_furan_2.readfromxyz(fe_pyr_4_furan_2_path)
     fe_bipy_2_bifuran = mol3D()

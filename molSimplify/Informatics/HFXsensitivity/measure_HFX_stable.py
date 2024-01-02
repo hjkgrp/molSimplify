@@ -33,7 +33,7 @@ def measure_sensitivity(path_to_csv, path_to_write=False, prop='SSE', R2_cutoff=
     raw_data = raw_data.sort_values(by=['complex_no_HFX','alpha'])
 
     ### This loops over unique ligand fields. Here, we keep track of things
-    ### by compiling two lists. One is data that is kept and turned into a 
+    ### by compiling two lists. One is data that is kept and turned into a
     ### sensitivity. The other is any point that is eliminated. We log eliminations
     ### into two categories. The first is 'whole', which means that the whole
     ### ligand field is eliminated. The second is 'point', which means a single
@@ -231,6 +231,7 @@ def measure_R2(X, y):
 
 def symmetry_class(complex_name):
     namelist = complex_name.split('_')
+    symmetry = 'unknown'
     if namelist[2] != namelist[4]:
         symmetry = 'cis'
     elif (namelist[2]==namelist[4]) and (namelist[2]==namelist[6]) and (namelist[2]==namelist[7]):
@@ -283,7 +284,7 @@ def slope_sign_check(X, y, name, prop, num_points):
         temp_y = y[i:i+2]
         reg.fit(temp_X,temp_y)
         coef_list.append(float(np.squeeze(reg.coef_)))
-    neg_count = len(list(filter(lambda x: (x < 0), coef_list))) 
+    neg_count = len(list(filter(lambda x: (x < 0), coef_list)))
     pos_count = len(list(filter(lambda x: (x >= 0), coef_list)))
     signchange = ((np.roll(np.sign(coef_list), 1) - np.sign(coef_list)) != 0).astype(int)
     signchange[0] = 0
@@ -297,7 +298,7 @@ def slope_sign_check(X, y, name, prop, num_points):
         sign_flag = signchange_list[0]
     diff_points = abs(neg_count-pos_count)
     remove_counter = 0
-    if ((neg_count == pos_count) or (diff_points>=1 and len(X)<num_points) or 
+    if ((neg_count == pos_count) or (diff_points>=1 and len(X)<num_points) or
             ((len(X)-num_points-min(neg_count,pos_count)-1)<0 and (not min(neg_count,pos_count)<=1)) or ((sign_flag>0.4) and (sign_flag<0.6)) or (num_changes_first>0 and num_changes_second>0)):
         for j, val in enumerate(elim_points_X):
             removed_dict_list.append({'complex_no_HFX':name,'alpha':int(np.squeeze(val)), str(prop):float(np.squeeze(elim_points_y[j])),'reason':'identified_slope_sign_change','elim_type':'point'})
@@ -325,19 +326,24 @@ def slope_sign_check(X, y, name, prop, num_points):
     return kept_points_X, kept_points_y, removed_dict_list
 
 
-parser = argparse.ArgumentParser(description='Script to process some sensitivity data.')
-parser.add_argument('--data', dest='path_to_csv', action='store', type=str, required=True,
-                    help='Path to CSV containing raw data.')
-parser.add_argument('--writepath', dest='path_to_write', action='store', type=str,default=False,
-                    help='Path to dump processed data. Defaults to dumping in script directory.')
-parser.add_argument('--prop', dest='prop', action='store', type=str, default='SSE',
-                    help='Name for the property as in the CSV. Should be "SSE" for spin splitting.')
-parser.add_argument('--R2', dest='R2_cutoff', action='store', type=float, default=0.99,
-                    help='R2 check cutoff value for linearity. Default is 0.99.')
-parser.add_argument('--cutoff', dest='CV_tolerance', action='store', type=int, default=5,
-                    help='Heuristic cutoff for eliminating outliers. Defaults to 5 for SSE.')
-parser.add_argument('--num_points', dest='num_points', action='store', type=int, default=4,
-                    help='Minimum number of points to form the HFX line. Defaults to 4.')
-args = parser.parse_args()
-print(args)
-measure_sensitivity(args.path_to_csv, args.path_to_write, args.prop, args.R2_cutoff, args.CV_tolerance, args.num_points)
+def main():
+    parser = argparse.ArgumentParser(description='Script to process some sensitivity data.')
+    parser.add_argument('--data', dest='path_to_csv', action='store', type=str, required=True,
+                        help='Path to CSV containing raw data.')
+    parser.add_argument('--writepath', dest='path_to_write', action='store', type=str,default=False,
+                        help='Path to dump processed data. Defaults to dumping in script directory.')
+    parser.add_argument('--prop', dest='prop', action='store', type=str, default='SSE',
+                        help='Name for the property as in the CSV. Should be "SSE" for spin splitting.')
+    parser.add_argument('--R2', dest='R2_cutoff', action='store', type=float, default=0.99,
+                        help='R2 check cutoff value for linearity. Default is 0.99.')
+    parser.add_argument('--cutoff', dest='CV_tolerance', action='store', type=int, default=5,
+                        help='Heuristic cutoff for eliminating outliers. Defaults to 5 for SSE.')
+    parser.add_argument('--num_points', dest='num_points', action='store', type=int, default=4,
+                        help='Minimum number of points to form the HFX line. Defaults to 4.')
+    args = parser.parse_args()
+    print(args)
+    measure_sensitivity(args.path_to_csv, args.path_to_write, args.prop, args.R2_cutoff, args.CV_tolerance, args.num_points)
+
+
+if __name__ == "__main__":
+    main()

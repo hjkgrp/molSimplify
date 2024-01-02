@@ -1,17 +1,13 @@
 import pytest
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Scripts.io import readdict, lig_load
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from os import listdir
 from os.path import isfile, join
 
 
-path_folder = resource_filename(
-    Requirement.parse("molSimplify"), "molSimplify/Ligands/"
-)
-path_dict = resource_filename(
-    Requirement.parse("molSimplify"), "molSimplify/Ligands/ligands.dict"
-)
+path_folder = resource_files("molSimplify").joinpath("Ligands")
+path_dict = resource_files("molSimplify").joinpath("Ligands/ligands.dict")
 lig_dict = readdict(path_dict)
 
 
@@ -21,7 +17,7 @@ def test_ligands_dict(lig_name):
     assert len(lig_dict[lig_name]) == 6
     lig, emsg = lig_load(lig_name)
     # Assert that the ligand could be loaded
-    assert type(lig) == mol3D
+    assert type(lig) is mol3D
     assert emsg == ''
     # Assert that the charge of the loaded ligand equals the
     # charge noted in ligands.dict
@@ -54,6 +50,7 @@ def test_ligands_dict(lig_name):
                 # Recheck that the sum of all charges is the same as the
                 # charge listed in ligands.dict
                 assert sum([int(s) for s in sp[4::2]]) == charge
+
 
 def test_no_repeats():
     # This test ensures no key is used more than once in ligands.dict.

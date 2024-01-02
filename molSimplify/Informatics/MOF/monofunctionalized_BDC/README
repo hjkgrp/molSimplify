@@ -1,0 +1,5 @@
+DFT-optimized functionalized BDC linkers
+
+The file index_information.py indicates which indices correspond to functional group atoms, which index corresponds to the carbon being functionalized, and which two indices correspond to the neighbor carbon atoms to the carbon being functionalized.
+
+The code assumes an sp2 carbon with two carbon neighbors is being functionalized. Like that of BDC.

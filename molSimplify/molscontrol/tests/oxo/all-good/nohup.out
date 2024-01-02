@@ -6,22 +6,22 @@ OMP: Info #156: KMP_AFFINITY: 16 available OS procs
 OMP: Info #157: KMP_AFFINITY: Uniform topology
 OMP: Info #179: KMP_AFFINITY: 2 packages x 4 cores/pkg x 2 threads/core (8 total cores)
 OMP: Info #214: KMP_AFFINITY: OS proc to physical thread map:
-OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 1 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 1 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 2 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 2 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 4 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 0 core 4 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 5 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 0 core 5 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 1 core 1 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 1 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 1 core 2 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 2 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 1 core 4 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 1 
-OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 1 core 5 thread 0 
-OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 5 thread 1 
+OMP: Info #171: KMP_AFFINITY: OS proc 0 maps to package 0 core 1 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 8 maps to package 0 core 1 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 1 maps to package 0 core 2 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 9 maps to package 0 core 2 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 2 maps to package 0 core 4 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 10 maps to package 0 core 4 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 3 maps to package 0 core 5 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 11 maps to package 0 core 5 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 4 maps to package 1 core 1 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 12 maps to package 1 core 1 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 5 maps to package 1 core 2 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 13 maps to package 1 core 2 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 6 maps to package 1 core 4 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 14 maps to package 1 core 4 thread 1
+OMP: Info #171: KMP_AFFINITY: OS proc 7 maps to package 1 core 5 thread 0
+OMP: Info #171: KMP_AFFINITY: OS proc 15 maps to package 1 core 5 thread 1
 OMP: Info #250: KMP_AFFINITY: pid 134855 tid 134855 thread 0 bound to OS proc set 0
 2020-07-26 16:12:50.918439: I tensorflow/core/platform/cpu_feature_guard.cc:145] This TensorFlow binary is optimized with Intel(R) MKL-DNN to use the following CPU instructions in performance critical operations:  SSE4.1 SSE4.2 AVX AVX2 AVX512F FMA
 To enable them in non-MKL-DNN operations, rebuild TensorFlow with the appropriate compiler flags.

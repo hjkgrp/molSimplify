@@ -12,8 +12,23 @@ import os
 import sys
 import re
 import unicodedata
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 import shutil
+import pathlib
+
+
+def initialize_custom_database(globs):
+    print('To add to database, you need to set a custom path. Please enter a writeable file path:')
+    # Strip double quotes from the string
+    raw_input = input('path=').replace('"', '')
+    # Resolve the path to get the absolute path and convert back to string
+    new_path = str(pathlib.Path(raw_input).resolve())
+    globs.add_custom_path(new_path)
+    globs.custom_path = new_path
+    copy_to_custom_path()
 
 
 # Add molecule to ligand database
@@ -29,10 +44,7 @@ def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt, smichg=No
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
 
     lipath = globs.custom_path + "/Ligands/ligands.dict"
     licores = readdict(lipath)
@@ -121,10 +133,7 @@ def addtocdb(smimol, sminame, smicat):
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     cpath = globs.custom_path + "/Cores/cores.dict"
     mcores = readdict(cpath)
     cores_folder = globs.custom_path + "/Cores/"
@@ -181,10 +190,7 @@ def addtocdb(smimol, sminame, smicat):
 def addtobdb(smimol, sminame):
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     bpath = globs.custom_path + "/Bind/bind.dict"
     bindcores = readdict(bpath)
     bind_folder = globs.custom_path + "/Bind/"
@@ -245,10 +251,7 @@ def removefromDB(sminame, ropt):
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     li_path = globs.custom_path + "/Ligands/ligands.dict"
     li_folder = globs.custom_path + "/Ligands/"
     core_path = globs.custom_path + "/Cores/cores.dict"

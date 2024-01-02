@@ -7,6 +7,7 @@
 
 
 import os
+import sys
 import re
 import shutil
 import string
@@ -14,7 +15,10 @@ try:
     import pymol
 except ImportError:
     pass
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 
 from molSimplify.Classes.globalvars import (amassdict,
                                             glob,
@@ -159,13 +163,13 @@ def getsimilar(smi, nmols, dbselect, finger, squery, args):
     print(('database set up :' + str(dbsdf) + ' || ' + str(dbfs)))
     print(('Finding results similar, comparing to ' + smi))
 
-    obab = 'babel'
+    obab = 'obabel'
     if dbfs and args.dbfs:
         com = obab + ' ' + dbfs + ' ' + 'simres.smi -d -xf' + \
             finger + ' -s"' + smi + '" -al' + nmols
     else:
         mybash(obab + ' -isdf ' + dbsdf + ' -osdf -O tmp.sdf -d')
-        com = obab + ' tmp.sdf simres.smi -xf' + finger + ' -s"' + smi + '"'
+        com = obab + ' tmp.sdf -O simres.smi -xf' + finger + ' -s"' + smi + '"'
     # perform search using bash commandline
     print('Performing substructure search:')
     print(('running:  ' + str(com)))
@@ -303,7 +307,7 @@ def checkels(fname, allowedels):
 #  @param outf Filename containing SMILES strings to be processed
 #  @param n Number of dissimilar molecules required
 def dissim(outf, n):
-    obab = 'babel'
+    obab = 'obabel'
 
     # clone hitlist file
     hit_list_path = "hitlist.smi"
@@ -314,7 +318,7 @@ def dissim(outf, n):
         f.writelines(smiles_list)
 
     # generate fs of original hit list
-    mybash(obab + ' -ismi ' + hit_list_path + ' -osdf tmp.sdf')
+    mybash(obab + ' -ismi ' + hit_list_path + ' -osdf -O tmp.sdf')
     mybash(obab + ' tmp.sdf -ofs')
     # number of hits
     numcpds = mybash('obabel tmp.sdf -onul')
@@ -397,7 +401,10 @@ def matchsmarts(smarts, outf, catoms, args):
         obConversion = openbabel.OBConversion()  # add
         obConversion.SetInAndOutFormats("smi", "smi")  # add
         # print('!!!s:', s)
-        max_atoms = int(float_from_str(args.dbatoms))
+        # Set practically infinite size limit
+        max_atoms = sys.maxsize
+        if args.dbatoms:  # Overwrite max_atoms if dbatoms is given
+            max_atoms = int(float_from_str(args.dbatoms))
         for i, mol in enumerate(s):
             obConversion.ReadString(moll, mol)  # add
             sm.Match(moll)
@@ -430,14 +437,12 @@ def dbsearch(rundir, args, globs):
     flag = False
 
     obab = 'obabel'
-    if args.gui:
-        from molSimplify.Classes.mWidgets import mQDialogWarn
-        from molSimplify.Classes.mWidgets import mQDialogInf
-    ### in any case do similarity search over indexed db ###
+    # in any case do similarity search over indexed db #
     outf = args.dbfname if args.dbfname else 'simres.smi'  # output file
     # convert to SMILES/SMARTS if file
     if not args.dbbase:
         if args.gui:
+            from molSimplify.Classes.mWidgets import mQDialogWarn
             qqb = mQDialogWarn('Warning', "No database file found within " +
                                globs.chemdbdir + '. Search not possible.')
             qqb.setParent(args.gui.DBWindow)
@@ -537,10 +542,11 @@ def dbsearch(rundir, args, globs):
         shutil.copy(plugin_path, 'plugindefines.txt')
         cmd = "sed -i '/nsmartsmatches/!b;n;c" + smistr + "' " + 'plugindefines.txt'
         mybash(cmd)
-    ### run substructure search ###
+    # run substructure search #
     nmols = '10000' if not args.dbnsearch else args.dbnsearch
     finger = 'FP2' if not args.dbfinger else args.dbfinger
     if int(nmols) > 3000 and args.gui:
+        from molSimplify.Classes.mWidgets import mQDialogInf
         qqb = mQDialogInf(
             'Warning', "Database search is going to take a few minutes. Please wait..OK?")
         qqb.setParent(args.gui.DBWindow)
@@ -549,13 +555,14 @@ def dbsearch(rundir, args, globs):
             smistr, nmols, args.dbbase, finger, squery, args)
         try:
             shutil.copy('simres.smi', outf)
-        except FileNotFoundError:
+        except (FileNotFoundError, shutil.SameFileError):
             pass
 
     if args.debug:
         print(('after similarity search, outf is ' + str(outputf)))
     if flag:
         if args.gui:
+            from molSimplify.Classes.mWidgets import mQDialogWarn
             qqb = mQDialogWarn('Warning', "No matches found in search..")
             qqb.setParent(args.gui.DBWindow)
         print("No matches found in search..")

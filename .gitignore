@@ -4,6 +4,7 @@ __pycache__/
 
 build/
 dist/
+.eggs
 
 # Unit test / coverage reports
 .tox/
@@ -21,6 +22,7 @@ molSimplify/Scripts/.DS_Store
 molSimplify/Informatics/.DS_Store
 molSimplify/Informatics/MOF/.DS_Store
 molSimplify/Informatics/.ipynb_checkpoints
+Runs/
 
 # vscode
 .vscode

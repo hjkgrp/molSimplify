@@ -1,0 +1,16 @@
+# file created with molSimplify
+levelshiftvalb 0.25
+levelshiftvala 0.25
+run energy
+scf diis+a
+maxit 500
+coordinates fe_oct_2_smi10_3_s_1_conf_1.xyz
+levelshift yes
+gpus 1
+spinmult 1
+scrdir ./scr
+basis lacvps_ecp
+timings yes
+charge 2
+method ub3lyp
+end

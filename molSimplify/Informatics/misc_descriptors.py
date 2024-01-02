@@ -18,7 +18,7 @@ def generate_all_ligand_misc(mol, loud, custom_ligand_dict=False, force_legacy=F
     else:
         colnames = ['dent', 'charge']
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
@@ -131,7 +131,7 @@ def generate_all_ligand_misc_dimers(mol, loud, custom_ligand_dict=False):
     colnames = ['dent', 'maxDEN', 'ki', 'tki', 'charge']
     if not custom_ligand_dict:
         raise ValueError('No custom_ligand_dict provided!')
-        #liglist, ligdents, ligcons = ligand_breakdown(mol)
+        #liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True)
         # ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
         #    mol, liglist, ligdents, ligcons, loud, name=False)
     else:

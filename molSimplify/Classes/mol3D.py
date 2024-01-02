@@ -11,10 +11,12 @@ import sys
 import tempfile
 import time
 import xml.etree.ElementTree as ET
-from math import sqrt
 import numpy as np
-import openbabel
-from typing import List
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
+from typing import List, Optional
 from scipy.spatial import ConvexHull
 from molSimplify.utils.decorators import deprecated
 
@@ -43,7 +45,7 @@ class mol3D:
     Example instantiation of an octahedral iron-ammonia complex from an XYZ file:
 
     >>> complex_mol = mol3D()
-    >>> complex_mol.readfromxyz('fe_nh3_6.xyz')
+    >>> complex_mol.readfromxyz('fe_nh3_6.xyz')  # doctest: +SKIP
 
     """
 
@@ -124,21 +126,9 @@ class mol3D:
         self.use_atom_specific_cutoffs = use_atom_specific_cutoffs
 
     def __repr__(self):
-        """
-        Returns all bound methods of the mol3D class.
+        return f"mol3D({self.make_formula(latex=False)})"
 
-        Returns
-        -------
-            method_string : string
-                String of methods available in mol3D class.
-        """
-
-        method_string = "\nClass mol3D has the following methods:\n"
-        for method in dir(self):
-            if callable(getattr(self, method)):
-                method_string += method + '\n'
-        return method_string
-
+    @deprecated("Preliminary testing showed this function is unreliable at best")
     def ACM(self, idx1, idx2, idx3, angle):
         """
         Performs angular movement on mol3D class. A submolecule is
@@ -154,8 +144,6 @@ class mol3D:
                 Index of anchor atom 2.
             angle : float
                 New bond angle in degrees.
-
-        >>> complex_mol.ACM(2, 1, 0, 180) # Make atom 2 form a 180 degree angle with atoms 1 and 0.
         """
 
         atidxs_to_move = self.findsubMol(idx1, idx2)
@@ -219,7 +207,7 @@ class mol3D:
             xyz = submol_to_move.getAtomCoords(i)
             self.atoms[atidx].__init__(Sym=asym, xyz=xyz)
 
-    def addAtom(self, atom: atom3D, index: int = None, auto_populate_BO_dict: bool = True):
+    def addAtom(self, atom: atom3D, index: Optional[int] = None, auto_populate_BO_dict: bool = True):
         """
         Adds an atom to the atoms attribute, which contains a list of
         atom3D class instances.
@@ -233,7 +221,8 @@ class mol3D:
             auto_populate_BO_dict : bool, optional
                 Populate bond order dictionary with newly added atom. Default is True.
 
-        >>> C_atom = atom3D('C',[1, 1, 1])
+        >>> complex_mol = mol3D()
+        >>> C_atom = atom3D('C', [1, 1, 1])
         >>> complex_mol.addAtom(C_atom) # Add carbon atom at cartesian position 1, 1, 1 to mol3D object.
         """
 
@@ -414,7 +403,7 @@ class mol3D:
 
     def count_specific_atoms(self, atom_types=['x', 'X']):
         """
-        Count the number of atoms, excluding certain atoms.
+        Count the number of atoms, including only certain atoms.
 
         Parameters
         ----------
@@ -486,7 +475,13 @@ class mol3D:
             d : float
                 Bond distance in angstroms.
 
-        >>> complex_mol.BCM(1, 0, 1.5) # Set distance between atoms 0 and 1 to be 1.5 angstroms. Move atom 1.
+        >>> complex_mol = mol3D()
+        >>> complex_mol.addAtom(atom3D('H', [0, 0, 0]))
+        >>> complex_mol.addAtom(atom3D('H', [0, 0, 1]))
+        >>> complex_mol.BCM(1, 0, 0.7) # Set distance between atoms 0 and 1 to be 1.5 angstroms. Move atom 1.
+        >>> complex_mol.coordsvect()
+        array([[0. , 0. , 0. ],
+               [0. , 0. , 0.7]])
         """
 
         bondv = self.getAtom(idx1).distancev(self.getAtom(idx2))  # 1 - 2
@@ -494,7 +489,7 @@ class mol3D:
         u = 0.0
         for u0 in bondv:
             u += (u0 * u0)
-        u = sqrt(u)
+        u = np.sqrt(u)
         dR = [i * (d / u - 1) for i in bondv]
         submolidxes = self.findsubMol(idx1, idx2)
         for submolidx in submolidxes:
@@ -704,9 +699,13 @@ class mol3D:
             #####
             obConversion.SetOutFormat('mol2')
             ss = obConversion.WriteString(OBMol)
-            # Update atom types from OBMol
-            lines = ss.split('ATOM\n')[1].split(
-                '@<TRIPOS>BOND')[0].split('\n')[:-1]
+            # Update atom types from OBMol.
+            if "UNITY_ATOM_ATTR" in ss:  # If this section is present, it will be before the @<TRIPOS>BOND section.
+                lines = ss.split('ATOM\n')[1].split(
+                    '@<TRIPOS>UNITY_ATOM_ATTR')[0].split('\n')[:-1]
+            else:
+                lines = ss.split('ATOM\n')[1].split(
+                    '@<TRIPOS>BOND')[0].split('\n')[:-1]
             for i, line in enumerate(lines):
                 if '.' in line.split()[5]:
                     self.atoms[i].name = line.split()[5].split('.')[1]
@@ -1251,8 +1250,8 @@ class mol3D:
 
         Parameters
         ----------
-            constraints : list, optional
-                List of atom indices to employ cartesian constraints before ffopt.
+            constraints : int, optional
+                Range of atom indices to employ cartesian constraints before ffopt.
             ff : str, optional
                 Force field to be used in openbabel. Default is UFF.
 
@@ -1266,6 +1265,41 @@ class mol3D:
         constr = openbabel.OBFFConstraints()
         if constraints:
             for catom in range(constraints):
+                # Openbabel uses a 1 index instead of a 0 index.
+                constr.AddAtomConstraint(catom+1)
+        self.convert2OBMol()
+        forcefield.Setup(self.OBMol, constr)
+        if self.OBMol.NumHvyAtoms() > 10:
+            forcefield.ConjugateGradients(200)
+        else:
+            forcefield.ConjugateGradients(50)
+        forcefield.GetCoordinates(self.OBMol)
+        en = forcefield.Energy()
+        self.convert2mol3D()
+        return en
+
+    def apply_ffopt_list_constraints(self, list_constraints=False, ff='uff'):
+        """
+        Apply forcefield optimization to a given mol3D class.
+        Differs from apply_ffopt in that one can specify constrained atoms as a list.
+
+        Parameters
+        ----------
+            list_constraints : list of int, optional
+                List of atom indices to employ cartesian constraints before ffopt.
+            ff : str, optional
+                Force field to be used in openbabel. Default is UFF.
+
+        Returns
+        -------
+            energy : float
+                Energy of the ffopt in kJ/mol.
+
+        """
+        forcefield = openbabel.OBForceField.FindForceField(ff)
+        constr = openbabel.OBFFConstraints()
+        if list_constraints:
+            for catom in list_constraints:
                 # Openbabel uses a 1 index instead of a 0 index.
                 constr.AddAtomConstraint(catom+1)
         self.convert2OBMol()
@@ -1576,7 +1610,7 @@ class mol3D:
                 nats.append(i)
         return nats
 
-    def getBondCutoff(self, atom, ratom):
+    def getBondCutoff(self, atom: atom3D, ratom: atom3D) -> float:
         """
         Get cutoff based on two atoms.
 
@@ -1599,15 +1633,15 @@ class mol3D:
             distance_max = min(2.75, distance_max)  # 2.75 by 07/22/2021
         if ratom.symbol() == "C" and not atom.symbol() == "H":
             distance_max = min(2.75, distance_max)  # 2.75 by 07/22/2021
-        if ratom.symbol() == "H" and atom.ismetal:
+        if ratom.symbol() == "H" and atom.ismetal():
             # tight cutoff for metal-H bonds
             distance_max = 1.1 * (atom.rad + ratom.rad)
-        if atom.symbol() == "H" and ratom.ismetal:
+        if atom.symbol() == "H" and ratom.ismetal():
             # tight cutoff for metal-H bonds
             distance_max = 1.1 * (atom.rad + ratom.rad)
         return distance_max
 
-    def getBondedAtoms(self, idx):
+    def getBondedAtoms(self, idx: int) -> List[int]:
         """
         Gets atoms bonded to a specific atom. This is determined based on
         element-specific distance cutoffs, rather than predefined valences.
@@ -1626,7 +1660,7 @@ class mol3D:
 
         """
 
-        if len(self.graph):
+        if len(self.graph):  # The graph exists.
             nats = list(np.nonzero(np.ravel(self.graph[idx]))[0])
         else:
             ratom = self.getAtom(idx)
@@ -2540,25 +2574,33 @@ class mol3D:
                 The directory to which generated reaction coordinate
                 geoemtries are written, if writegeo=True.
 
-        >>> complex_mol.RCAngle(2, 1, 0, 90, 180, 0.5, True, 'rc_geometries') # Generate reaction coordinate
-        >>>             # geometries using the given structure by changing the angle between atoms 2, 1,
-        >>>             # and 0 from 90 degrees to 180 degrees in intervals of 0.5 degrees, and write the
-        >>>             # generated geometries to 'rc_geometries' directory.
-        >>> complex_mol.RCAngle(2, 1, 0, 180, 90, -0.5) # Generate reaction coordinates
-        >>>             # with the given geometry by changing the angle between atoms 2, 1, and 0 from
-        >>>             # 180 degrees to 90 degrees in intervals of 0.5 degrees, and the generated
-        >>>             # geometries will not be written to a directory.
+        >>> complex_mol = mol3D()
+        >>> complex_mol.addAtom(atom3D('O', [0, 0, 0]))
+        >>> complex_mol.addAtom(atom3D('H', [0, 0, 1]))
+        >>> complex_mol.addAtom(atom3D('H', [0, 1, 0]))
+
+        Generate reaction coordinate geometries using the given structure by changing the angle between atoms 2, 1,
+        and 0 from 90 degrees to 160 degrees in intervals of 10 degrees
+        >>> complex_mol.RCAngle(2, 1, 0, 90, 160, 10)
+        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
+
+        Generate reaction coordinates with the given geometry by changing the angle between atoms 2, 1, and 0 from
+        160 degrees to 90 degrees in intervals of 10 degrees, and the generated geometries will not be written to
+        a directory.
+        >>> complex_mol.RCAngle(2, 1, 0, 160, 90, -10)
+        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
         """
         if writegeo:
             os.mkdir(dir_name)
-            temp_list = []
-            for ang_val in np.arange(anglei, anglef+angleint, angleint):
-                temp_angle = mol3D()
-                temp_angle.copymol3D(self)
-                temp_angle.ACM(idx1, idx2, idx3, ang_val)
-                temp_list.append(temp_angle)
+        temp_list = []
+        for ang_val in np.arange(anglei, anglef+angleint, angleint):
+            temp_angle = mol3D()
+            temp_angle.copymol3D(self)
+            temp_angle.ACM(idx1, idx2, idx3, ang_val)
+            temp_list.append(temp_angle)
+            if writegeo:
                 temp_angle.writexyz(str(dir_name)+"/rc_"+str(str("{:.4f}".format(ang_val)))+'.xyz')
-            return temp_list
+        return temp_list
 
     def RCDistance(self, idx1, idx2, disti, distf, distint=0.05, writegeo=False, dir_name='rc_distance_geometries'):
         """
@@ -2585,26 +2627,34 @@ class mol3D:
                 The directory to which generated reaction coordinate
                 geoemtries are written if writegeo=True.
 
-        >>> complex_mol.RCDistance(1, 0, 1.0, 3.0, 0.01, True, 'rc_geometries') # Generate reaction coordinate
-        >>>             # geometries using the given structure by changing the distance between atoms 1 and 0
-        >>>             # from 1.0 to 3.0 angstrom (atom 1 is moved) in intervals of 0.01 angstrom, and write
-        >>>             # the generated geometries to 'rc_geometries' directory.
-        >>> complex_mol.RCDistance(1, 0, 3.0, 1.0, -0.02) # Generate reaction coordinates
-        >>>             # geometries using the given structure by changing the distance between atoms 1 and 0
-        >>>             # from 3.0 to 1.0 angstrom (atom 1 is moved) in intervals of 0.02 angstrom, and
-        >>>             # the generated geometries will not be written to a directory.
+        >>> complex_mol = mol3D()
+        >>> complex_mol.addAtom(atom3D('H', [0, 0, 0]))
+        >>> complex_mol.addAtom(atom3D('H', [0, 0, 1]))
+
+        Generate reaction coordinate geometries using the given structure by changing the distance between atoms 1 and 0
+        from 1.0 to 3.0 angstrom (atom 1 is moved) in intervals of 0.5 angstrom
+        >>> complex_mol.RCDistance(1, 0, 1.0, 3.0, 0.5)
+        [mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2)]
+
+        Generate reaction coordinates
+        geometries using the given structure by changing the distance between atoms 1 and 0
+        from 3.0 to 1.0 angstrom (atom 1 is moved) in intervals of 0.2 angstrom, and
+        the generated geometries will not be written to a directory.
+        >>> complex_mol.RCDistance(1, 0, 3.0, 1.0, -0.25)
+        [mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2), mol3D(H2)]
         """
 
         if writegeo:
             os.mkdir(dir_name)
-            temp_list = []
-            for dist_val in np.arange(disti, distf+distint, distint):
-                temp_dist = mol3D()
-                temp_dist.copymol3D(self)
-                temp_dist.BCM(idx1, idx2, dist_val)
-                temp_list.append(temp_dist)
+        temp_list = []
+        for dist_val in np.arange(disti, distf+distint, distint):
+            temp_dist = mol3D()
+            temp_dist.copymol3D(self)
+            temp_dist.BCM(idx1, idx2, dist_val)
+            temp_list.append(temp_dist)
+            if writegeo:
                 temp_dist.writexyz(str(dir_name)+"/rc_"+str(str("{:.4f}".format(dist_val)))+'.xyz')
-            return temp_list
+        return temp_list
 
     def returnxyz(self):
         """
@@ -2623,7 +2673,7 @@ class mol3D:
             ss += "%s \t%f\t%f\t%f\n" % (atom.sym, xyz[0], xyz[1], xyz[2])
         return (ss)
 
-    def readfromxyz(self, filename, ligand_unique_id=False, read_final_optim_step=False):
+    def readfromxyz(self, filename: str, ligand_unique_id=False, read_final_optim_step=False):
         """
         Read XYZ into a mol3D class instance.
 
@@ -2644,39 +2694,35 @@ class mol3D:
         amassdict = globs.amass()
         self.graph = []
         self.xyzfile = filename
-        fname = filename.split('.xyz')[0]
-        with open(fname + '.xyz', 'r') as f:
+        with open(filename, 'r') as f:
             s = f.read().splitlines()
         try:
             atom_count = int(s[0])
         except ValueError:
             atom_count = 0
-        current_atom_counter = 0
         start = 2
         if read_final_optim_step:
-            start = - int(s[0])
-        for line in s[start:]:
+            start = len(s) - int(s[0])
+        for line in s[start:start+atom_count]:
             line_split = line.split()
             # If the split line has more than 4 elements, only elements 0 through 3 will be used.
             # this means that it should work with any XYZ file that also stores something like mulliken charge
             # Next, this looks for unique atom IDs in files
-            # print(line_split, 'linesplit')
-            if len(line_split) > 3:
-                current_atom_counter += 1
+            if len(line_split) > 0:
                 lm = re.search(r'\d+$', line_split[0])
                 # if the string ends in digits m will be a Match object, or None otherwise.
                 if line_split[0] in list(amassdict.keys()) or ligand_unique_id:
                     atom = atom3D(line_split[0], [float(line_split[1]), float(
                         line_split[2]), float(line_split[3])])
                 elif lm is not None:
+                    print(line_split)
                     symb = re.sub(r'\d+', '', line_split[0])
                     atom = atom3D(symb, [float(line_split[1]), float(line_split[2]), float(line_split[3])],
                                   name=line_split[0])
                 else:
                     print('cannot find atom type')
                     sys.exit()
-                if current_atom_counter <= atom_count:
-                    self.addAtom(atom)
+                self.addAtom(atom)
 
     def readfrommol2(self, filename, readstring=False, trunc_sym="X"):
         """
@@ -2887,7 +2933,7 @@ class mol3D:
                 rmsd = 0
             else:
                 rmsd /= Nat0
-            return sqrt(rmsd)
+            return np.sqrt(rmsd)
 
     def geo_rmsd(self, mol2):
         """
@@ -2929,7 +2975,7 @@ class mol3D:
                 rmsd = 0
             else:
                 rmsd /= Nat0
-            return sqrt(rmsd)
+            return np.sqrt(rmsd)
         else:
             raise ValueError("Number of atom does not match between two mols.")
 
@@ -3061,7 +3107,7 @@ class mol3D:
                 if (not atom0.sym == 'H') and (not atom1.sym == 'H'):
                     rmsd += (atom0.distance(atom1)) ** 2
             rmsd /= Nat0
-            return sqrt(rmsd)
+            return np.sqrt(rmsd)
 
     def maxatomdist_nonH(self, mol2):
         """
@@ -3619,6 +3665,8 @@ class mol3D:
             if atom.ismetal():
                 metal_atom = atom
                 break
+        else:
+            raise ValueError('No metal found.')
         metal_coord = metal_atom.coords()
         for atom1 in self.atoms:
             if atom1.sym == 'H':
@@ -3850,8 +3898,7 @@ class mol3D:
         return dict_catoms_shape, catoms_arr
 
     def match_lig_list(self, init_mol, catoms_arr=None,
-                       flag_loose=False, BondedOct=False,
-                       flag_lbd=True, debug=False, depth=3,
+                       BondedOct=False, flag_lbd=True, debug=False, depth=3,
                        check_whole=False, angle_ref=False):
         """
         Match the ligands of mol and init_mol by calling ligand_breakdown
@@ -3863,8 +3910,6 @@ class mol3D:
             catoms_arr : Nonetype, optional
                 Uses the catoms of the mol3D by default. User and overwrite this connection atom array by explicit input.
                 Default is Nonetype.
-            flag_loose : bool, optional
-                Flag for using loose cutoffs. Only used in Oct_inspection, not in geo_check. Default is False.
             BondedOct : bool, optional
                 Flag for bonding. Only used in Oct_inspection, not in geo_check. Default is False.
             flag_lbd : bool, optional
@@ -3910,8 +3955,8 @@ class mol3D:
                 self.init_mol_trunc.writexyz("init_trunc.xyz")
             # print("graph: ", self.init_mol_trunc.graph)
             liglist_init, ligdents_init, ligcons_init = ligand_breakdown(
-                self.init_mol_trunc)
-            liglist, ligdents, ligcons = ligand_breakdown(self.my_mol_trunc)
+                self.init_mol_trunc, BondedOct=BondedOct)
+            liglist, ligdents, ligcons = ligand_breakdown(self.my_mol_trunc, BondedOct=BondedOct)
             liglist_atom = [[self.my_mol_trunc.getAtom(x).symbol() for x in ele]
                             for ele in liglist]
             liglist_init_atom = [[self.init_mol_trunc.getAtom(x).symbol() for x in ele]
@@ -3926,7 +3971,6 @@ class mol3D:
             if debug:
                 print('Just inherit the ligand list from init structure.')
             liglist_init, ligdents_init, ligcons_init = ligand_breakdown(init_mol,
-                                                                         flag_loose=flag_loose,
                                                                          BondedOct=BondedOct)
             liglist, ligdents, ligcons = liglist_init[:
                                                       ], ligdents_init[:], ligcons_init[:]
@@ -3999,11 +4043,10 @@ class mol3D:
         return liglist_shifted, liglist_init, flag_match
 
     def ligand_comp_org(self, init_mol, catoms_arr=None,
-                        flag_deleteH=True, flag_loose=False,
-                        flag_lbd=True, debug=False, depth=3,
+                        flag_deleteH=True, flag_lbd=True, debug=False, depth=3,
                         BondedOct=False, angle_ref=False):
         """
-        Get the ligand distortion by comparing each individule ligands in init_mol and opt_mol.
+        Get the ligand distortion by comparing each individual ligands in init_mol and opt_mol.
 
         Parameters
         ----------
@@ -4014,8 +4057,6 @@ class mol3D:
                 Default is Nonetype.
             flag_deleteH : bool, optional,
                 Flag to delete Hs in ligand comparison. Default is True.
-            flag_loose : bool, optional
-                Flag for using loose cutoffs. Only used in Oct_inspection, not in geo_check. Default is False.
             BondedOct : bool, optional
                 Flag for bonding. Only used in Oct_inspection, not in geo_check. Default is False.
             flag_lbd : bool, optional
@@ -4038,7 +4079,6 @@ class mol3D:
         from molSimplify.Scripts.oct_check_mols import readfromtxt
         _, _, flag_match = self.match_lig_list(init_mol,
                                                catoms_arr=catoms_arr,
-                                               flag_loose=flag_loose,
                                                BondedOct=BondedOct,
                                                flag_lbd=flag_lbd,
                                                debug=debug,
@@ -4048,7 +4088,6 @@ class mol3D:
         # print("====whole molecule check finishes====")
         liglist, liglist_init, _ = self.match_lig_list(init_mol,
                                                        catoms_arr=catoms_arr,
-                                                       flag_loose=flag_loose,
                                                        BondedOct=BondedOct,
                                                        flag_lbd=flag_lbd,
                                                        debug=debug,
@@ -4328,7 +4367,7 @@ class mol3D:
     def IsOct(self, init_mol=None, dict_check=False,
               angle_ref=False, flag_catoms=False,
               catoms_arr=None, debug=False,
-              flag_loose=True, flag_lbd=True, BondedOct=True,
+              flag_lbd=True, BondedOct=True,
               skip=False, flag_deleteH=True,
               silent=False, use_atom_specific_cutoffs=True):
         """
@@ -4349,8 +4388,6 @@ class mol3D:
                 Default is Nonetype.
             debug : bool, optional
                 Flag for extra printout. Default is False.
-            flag_loose : bool, optional
-                Flag for using loose cutoffs. Only used in Oct_inspection, not in geo_check. Default is False.
             flag_lbd : bool, optional
                 Flag for using ligand breakdown on the optimized geometry. If False, assuming equivalent index to initial geo.
                 Default is True.
@@ -4417,7 +4454,6 @@ class mol3D:
                         init_mol.copymol3D(self)
                     if 'lig_distort' not in skip:
                         self.ligand_comp_org(init_mol=init_mol,
-                                             flag_loose=flag_loose,
                                              flag_lbd=flag_lbd,
                                              debug=debug,
                                              BondedOct=BondedOct,
@@ -4579,8 +4615,8 @@ class mol3D:
             return flag_oct, flag_list, dict_oct_info, catoms_arr
 
     def Oct_inspection(self, init_mol=None, catoms_arr=None, dict_check=False,
-                       std_not_use=[], angle_ref=False, flag_loose=True, flag_lbd=False,
-                       dict_check_loose=False, BondedOct=True, debug=False):
+                       angle_ref=False, flag_lbd=False, dict_check_loose=False,
+                       BondedOct=True, debug=False):
         """
         Used to track down the changing geo_check metrics in a DFT geometry optimization.
         Catoms_arr always specified.
@@ -4594,12 +4630,8 @@ class mol3D:
                 Default is Nonetype.
             dict_check : dict, optional
                 The cutoffs of each geo_check metrics we have. Default is False
-            std_not_use : list, optional
-                Geometry checks to skip. Default is False.
             angle_ref : bool, optional
                 Reference list of list for the expected angles (A-metal-B) of each connection atom.
-            flag_loose : bool, optional
-                Flag for using loose cutoffs. Only used in Oct_inspection, not in geo_check. Default is False.
             flag_lbd : bool, optional
                 Flag for using ligand breakdown on the optimized geometry. If False, assuming equivalent index to initial geo.
                 Default is True.
@@ -4660,18 +4692,17 @@ class mol3D:
                     raise ValueError(
                         "initial and current geometry does not match in atom ordering!")
                 dict_lig_distort = self.ligand_comp_org(init_mol=init_mol,
-                                                        flag_loose=flag_loose,
                                                         flag_lbd=flag_lbd,
                                                         catoms_arr=catoms_arr,
                                                         debug=debug,
                                                         BondedOct=BondedOct,
                                                         angle_ref=angle_ref)
-            if not dict_lig_distort['rmsd_max'] == 'lig_mismatch':
-                _, catoms_arr = self.oct_comp(angle_ref, catoms_arr, debug=debug)
-            else:
-                print("Warning: Potential issues about lig_mismatch.")
+                if not dict_lig_distort['rmsd_max'] == 'lig_mismatch':
+                    _, catoms_arr = self.oct_comp(angle_ref, catoms_arr, debug=debug)
+                else:
+                    print("Warning: Potential issues about lig_mismatch.")
 
-            # Unsure if still needed. RM 22/07/19
+            # Unsure if still needed. RM 2022/07/19
             _, _ = self.check_angle_linear(catoms_arr=catoms_arr)
             if debug:
                 self.print_geo_dict()
@@ -4690,8 +4721,7 @@ class mol3D:
         return flag_oct, flag_list, dict_oct_info, flag_oct_loose, flag_list_loose
 
     def Structure_inspection(self, init_mol=None, catoms_arr=None, num_coord=5, dict_check=False,
-                             std_not_use=[], angle_ref=False, flag_loose=True, flag_lbd=False,
-                             dict_check_loose=False, BondedOct=True, debug=False):
+                             angle_ref=False, flag_lbd=False, dict_check_loose=False, BondedOct=True, debug=False):
         """
         Used to track down the changing geo_check metrics in a DFT geometry optimization. Specifically
         for a square pyramidal structure. Catoms_arr always specified.
@@ -4707,12 +4737,8 @@ class mol3D:
                 The metal coordination number.
             dict_check : dict, optional
                 The cutoffs of each geo_check metrics we have. Default is False
-            std_not_use : list, optional
-                Geometry checks to skip. Default is False.
             angle_ref : bool, optional
                 Reference list of list for the expected angles (A-metal-B) of each connection atom.
-            flag_loose : bool, optional
-                Flag for using loose cutoffs. Only used in Oct_inspection, not in geo_check. Default is False.
             flag_lbd : bool, optional
                 Flag for using ligand breakdown on the optimized geometry. If False, assuming equivalent index to initial geo.
                 Default is True.
@@ -4773,18 +4799,17 @@ class mol3D:
                     raise ValueError(
                         "initial and current geometry does not match in atom ordering!")
                 dict_lig_distort = self.ligand_comp_org(init_mol=init_mol,
-                                                        flag_loose=flag_loose,
                                                         flag_lbd=flag_lbd,
                                                         catoms_arr=catoms_arr,
                                                         debug=debug,
                                                         BondedOct=BondedOct,
                                                         angle_ref=angle_ref)
-            if not dict_lig_distort['rmsd_max'] == 'lig_mismatch':
-                _, catoms_arr = self.oct_comp(angle_ref, catoms_arr, debug=debug)
-            else:
-                self.num_coord_metal = -1
-                print('!!!!!Should always match. WRONG!!!!!')
-            # Unsure if still needed. RM 22/07/19
+                if not dict_lig_distort['rmsd_max'] == 'lig_mismatch':
+                    _, catoms_arr = self.oct_comp(angle_ref, catoms_arr, debug=debug)
+                else:
+                    self.num_coord_metal = -1
+                    print('!!!!!Should always match. WRONG!!!!!')
+            # Unsure if still needed. RM 2022/07/19
             _, _ = self.check_angle_linear(catoms_arr=catoms_arr)
             if debug:
                 self.print_geo_dict()
@@ -4803,7 +4828,7 @@ class mol3D:
         return flag_oct, flag_list, dict_oct_info, flag_oct_loose, flag_list_loose
 
     def get_fcs(self, strict_cutoff=False, catom_list=None):
-        """ 
+        """
         Get first coordination shell of a transition metal complex.
 
         Parameters
@@ -4828,7 +4853,7 @@ class mol3D:
         return fcs
 
     def get_bo_dict_from_inds(self, inds):
-        """ 
+        """
         Recreate bo_dict with correct indices
 
         Parameters
@@ -4860,7 +4885,7 @@ class mol3D:
         return new_bo_dict
 
     def create_mol_with_inds(self, inds):
-        """ 
+        """
         Create molecule with indices.
 
         Parameters
@@ -4889,7 +4914,7 @@ class mol3D:
         return molnew
 
     def make_formula(self, latex=True):
-        """ 
+        """
         Get a chemical formula from the mol3D class instance.
 
         Parameters
@@ -4924,7 +4949,7 @@ class mol3D:
         return retstr
 
     def read_smiles(self, smiles, ff="mmff94", steps=2500):
-        """ 
+        """
         Read a smiles string and convert it to a mol3D class instance.
 
         Parameters
@@ -4966,9 +4991,9 @@ class mol3D:
         self.OBMol = OBMol
         self.convert2mol3D()
 
-    def get_smiles(self, canonicalize=False, use_mol2=False):
-        """ 
-        Read a smiles string and convert it to a mol3D class instance.
+    def get_smiles(self, canonicalize=False, use_mol2=False) -> str:
+        """
+        Returns the SMILES string representing the mol3D object.
 
         Parameters
         ----------
@@ -4999,7 +5024,7 @@ class mol3D:
         return smi
 
     def mols_symbols(self):
-        """ 
+        """
         Store symbols and their frequencies in symbols_dict attributes.
         """
         self.symbols_dict = {}
@@ -5010,7 +5035,7 @@ class mol3D:
                 self.symbols_dict[atom.symbol()] += 1
 
     def read_bonder_order(self, bofile):
-        """ 
+        """
         Get bond order information from file.
 
         Parameters
@@ -5054,7 +5079,7 @@ class mol3D:
                 self.bodavrg_dict.update({ii: np.mean(devi)})
 
     def read_charge(self, chargefile):
-        """ 
+        """
         Get charge information from file.
 
         Parameters
@@ -5075,7 +5100,7 @@ class mol3D:
             print(("chargefile does not exist.", chargefile))
 
     def get_mol_graph_det(self, oct=True, useBOMat=False):
-        """ 
+        """
         Get molecular graph determinant.
 
         Parameters
@@ -5142,14 +5167,16 @@ class mol3D:
             safedet = str(det)[0:12]
         return safedet
 
-    def get_symmetry_denticity(self, return_eq_catoms=False):
-        """ 
+    def get_symmetry_denticity(self, return_eq_catoms=False, BondedOct=False):
+        """
         Get symmetry class of molecule.
 
         Parameters
         ----------
             return_eq_catoms : bool, optional
                 Flag for if equatorial atoms should be returned. Default is False.
+            BondedOct : bool, optional
+                Flag for bonding. Only used in Oct_inspection, not in geo_check. Default is False.
 
         Returns
         -------
@@ -5170,7 +5197,8 @@ class mol3D:
 
         # self.writexyz("test.xyz")
         from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign_consistent, get_lig_symmetry
-        liglist, ligdents, ligcons = ligand_breakdown(self)
+        liglist, ligdents, ligcons = ligand_breakdown(self, BondedOct=BondedOct)
+        flat_eq_ligcons = []
         try:
             _, _, _, _, _, _, _, eq_con_list, _ = ligand_assign_consistent(
                 self, liglist, ligdents, ligcons)
@@ -5221,7 +5249,7 @@ class mol3D:
             return eqsym, maxdent, ligdents, homoleptic, ligsymmetry, eq_catoms
 
     def is_sandwich_compound(self):
-        """ 
+        """
         Evaluates whether a compound is a sandwich compound
 
         Returns
@@ -5483,7 +5511,7 @@ class mol3D:
         return results
 
     def getMLBondLengths(self):
-        """ 
+        """
         Outputs the metal-ligand bond lengths in the complex.
 
         Returns
@@ -5510,7 +5538,7 @@ class mol3D:
 
     @deprecated('Using this function might lead to inconsistent behavior.')
     def setAtoms(self, atoms):
-        """ 
+        """
         Set atoms of a mol3D class to atoms.
 
         Parameters
@@ -5522,7 +5550,7 @@ class mol3D:
         self.natoms = len(atoms)
 
     def setLoc(self, loc):
-        """ 
+        """
         Sets the conformation of an amino acid in the chain of a protein.
 
         Parameters

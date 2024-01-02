@@ -95,6 +95,7 @@ def view_structures(structures, w=400, h=400, columns=2,
     if len(mol3Ds) == 1:
         view_ats = py3Dmol.view(width=w, height=h)
         mol = mol3Ds[0]
+        label = False
         if isinstance(labels, str):
             label = labels
         elif isinstance(labels, list):
@@ -102,8 +103,7 @@ def view_structures(structures, w=400, h=400, columns=2,
         elif isinstance(labels, bool):
             if labels:
                 label = mol.make_formula(latex=False)
-            else:
-                label = False
+
         metal_atom_index = mol.findMetal()  # will be empty list if no metals
         coords = mol.coords()
         if metal_atom_index:  # Take advantage of empty list

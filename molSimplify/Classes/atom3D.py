@@ -23,7 +23,7 @@ class atom3D:
             partialcharge : int, optional
                 Charge assigned to atom when added to mol. Default is None.
     """
-    def __init__(self, Sym='C', xyz=None, name=False, partialcharge=None, Tfactor=0, greek='', occup=1.00, loc=''):
+    def __init__(self, Sym='C', xyz=None, name=False, partialcharge=None, Tfactor=0, greek='', occup=1.00, loc='', line=""):
 
         # Element symbol
         self.sym = Sym
@@ -49,8 +49,6 @@ class atom3D:
             self.name = name
         else:
             self.name = Sym
-        # flag for metal
-        self.metal = None
 
         # Coordinates
         if xyz is None:
@@ -74,6 +72,9 @@ class atom3D:
 
         # Conformation (only useful for proteins)
         self.loc = ""
+
+        # PDB line (only useful for proteins)
+        self.line = line
 
     def __repr__(self):
         """Returns all bound methods of the mol3D class..
@@ -143,7 +144,7 @@ class atom3D:
         dz = xyz[2]-point[2]
         return [dx, dy, dz]
 
-    def ismetal(self, transition_metals_only: bool = True) -> bool:
+    def ismetal(self, transition_metals_only=True):
         """ Identify whether an atom is a metal.
 
         Parameters
@@ -156,12 +157,7 @@ class atom3D:
             metal : bool
                 Bool for whether or not an atom is a metal.
         """
-        if self.metal is None:
-            if self.sym in globalvars().metalslist(transition_metals_only=transition_metals_only):
-                self.metal = True
-            else:
-                self.metal = False
-        return self.metal
+        return self.sym in globalvars().metalslist(transition_metals_only=transition_metals_only)
 
     def setcoords(self, xyz):
         """ Set coordinates of an atom3D class to a new location.
@@ -229,13 +225,3 @@ class atom3D:
                 Desired EDIA score of atom
         """
         self.EDIA = score
-        
-    def EDIA(self):
-        """ Retrieves the EDIA score of an individual atom3D.
-
-        Returns
-        ----------
-            EDIA : float
-                EDIA score of atom
-        """
-        return self.EDIA

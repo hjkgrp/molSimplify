@@ -1,7 +1,6 @@
 import pytest
 import shutil
 from argparse import Namespace
-from pkg_resources import resource_filename, Requirement
 from molSimplify.Scripts.qcgen import (tcgen, gamgen, qgen,
                                        mlpgen, ogen, molcgen)
 
@@ -10,7 +9,7 @@ from molSimplify.Scripts.qcgen import (tcgen, gamgen, qgen,
                          [(tcgen, 'terachem_input'), (gamgen, 'gam.inp'),
                           (qgen, 'qch.inp'), (mlpgen, 'FeH2O6.mop'),
                           (ogen, 'orca.in'), (molcgen, 'molcas.input')])
-def test_qcgen_defaults(gen_function, default_name, tmpdir):
+def test_qcgen_defaults(resource_path_root, gen_function, default_name, tmpdir):
     """Calls the gen_function with as little parameters as possible to
     test the default input file generated."""
     args = Namespace(jobdir=str(tmpdir), reportonly=None, spin=None,
@@ -20,23 +19,21 @@ def test_qcgen_defaults(gen_function, default_name, tmpdir):
                      correlation=None, unrestricted=None, bsep=None,
                      ngauss=None, ndfunc=None, npfunc=None, sysoption=None,
                      ctrloption=None, scfoption=None, statoption=None)
-    xyzfile = resource_filename(Requirement.parse(
-        'molSimplify'), 'tests/inputs/qcgen/FeH2O6.xyz')
+    xyzfile = resource_path_root / "inputs" / "qcgen" / "FeH2O6.xyz"
     # Copy xyz file to tmpdir
     shutil.copy(xyzfile, tmpdir / 'FeH2O6.xyz')
 
     jobdirs = gen_function(args, [str(tmpdir / 'FeH2O6')], 'B3LYP')
 
     sub_dir = tmpdir
-    ref_dir = f'tests/refs/qcgen/{gen_function.__name__}'
+    ref_dir = resource_path_root / "refs" / "qcgen" / f"{gen_function.__name__}"
     # These two generate a different subfolder structure...
     if gen_function is gamgen or gen_function is qgen:
         sub_dir = tmpdir / 'FeH2O6/B3LYP'
         ref_dir = f'{ref_dir}/FeH2O6/B3LYP'
     assert jobdirs[0] == sub_dir
 
-    ref_file = resource_filename(Requirement.parse(
-        'molSimplify'), f'{ref_dir}/{default_name}')
+    ref_file = resource_path_root / ref_dir / default_name
     with open(ref_file, 'r') as f:
         ref_lines = f.readlines()
 

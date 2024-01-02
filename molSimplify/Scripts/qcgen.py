@@ -1291,7 +1291,7 @@ def molcbasis(strfiles, basistyp):
     # collect elements by rows in the periodic table
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         for atom in temp.getAtoms():
             atno = atom.atno
             sym = atom.symbol()
@@ -1365,7 +1365,7 @@ def molcras2s(strfiles):
     ras2s = []
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         metal_ind = temp.findMetal()
         ras2 = 0
         for ind in metal_ind:
@@ -1399,7 +1399,7 @@ def molcnactels(strfiles, oxnum):
     nactels = []
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         metal_ind = temp.findMetal()
         nactel = 0
         for ind in metal_ind:
@@ -1432,7 +1432,7 @@ def molcfrozens(strfiles):
     for i in range(0, len(strfiles)):
         frozen = 0
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         for atom in temp.getAtoms():
             atno = atom.atno
             if atno > 2 and atno <= 10:

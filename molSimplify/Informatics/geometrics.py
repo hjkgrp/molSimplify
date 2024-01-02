@@ -1,7 +1,7 @@
 
 import numpy as np
 import json
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from molSimplify.Classes.mol3D import mol3D
 
 
@@ -17,7 +17,7 @@ def get_percentile_csd_geometrics(geometrics_csd, geodict, geotype, maxdent,
     metrics: list, a list of geometric considered.
     path2metric: str, the molSimplify path to load geometrics_csd if geometrics_csd is not specified
     '''
-    jsonpath = resource_filename(Requirement.parse("molSimplify"), path2metric)
+    jsonpath = resource_files("molSimplify").joinpath(path2metric)
     if not isinstance(geometrics_csd, dict):
         print("loading csd geometrics...")
         with open(jsonpath, "r") as f:

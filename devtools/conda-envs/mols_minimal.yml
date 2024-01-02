@@ -1,0 +1,15 @@
+channels:
+  - conda-forge
+dependencies:
+  - openbabel
+  - tensorflow-base
+  - scikit-learn
+  - pyyaml
+  - pandas
+  - scipy
+  - libffi
+  - importlib_resources
+  - pip
+  - pip:
+    - pytest
+    - pytest-resource-path
