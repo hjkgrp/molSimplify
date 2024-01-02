@@ -143,8 +143,11 @@ class textfile:
                 Path to file to read. Default is None.
         """
         if file_name:
-            with open(file_name, 'r') as fin:
-                self.lines = fin.readlines()
+            with open(file_name, 'r',errors='ignore') as fin:
+                try:
+                    self.lines = fin.readlines()
+                except:
+                    raise Exception(f'Error reading {file_name}')
             self.lines = [strip_new_line(i) for i in self.lines]
 
         else:

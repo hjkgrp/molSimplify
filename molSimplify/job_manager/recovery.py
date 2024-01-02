@@ -131,21 +131,24 @@ def save_run(outfile_path, rewrite_inscr=True, save_scr_flag=True):
     history = resub_history()
     history.read(outfile_path)
 
-    with open(outfile_path, 'r') as f:
+    with open(outfile_path, 'r',errors='ignore') as f:
         out_lines = f.readlines()
     history.outfiles.append(out_lines)
 
-    infile_path = outfile_path.rsplit('.', 1)[0] + '.in'
+    folder = os.path.dirname(outfile_path)
+    name = os.path.basename(folder)
+
+    infile_path = os.path.join(folder,name + '.in')
     with open(infile_path, 'r') as f:
         in_lines = f.readlines()
     history.infiles.append(in_lines)
 
-    jobscript_path = outfile_path.rsplit('.', 1)[0] + '_jobscript'
+    jobscript_path = os.path.join(folder,name + '_jobscript')
     with open(jobscript_path, 'r') as f:
         job_lines = f.readlines()
     history.jobscripts.append(job_lines)
 
-    xyz_path = outfile_path.rsplit('.', 1)[0] + '.xyz'
+    xyz_path = os.path.join(folder,name + '.xyz')
     with open(xyz_path, 'r') as f:
         xyz_lines = f.readlines()
     history.xyzs.append(xyz_lines)
@@ -212,13 +215,18 @@ def reset(outfile_path):
                     shutil.rmtree(folder)
 
         # rename outfile and jobscript files
-        shutil.move(outfile_path, outfile_path[:-4] + '.old')  # rename old out so it isn't found in .out searches
-        shutil.move(outfile_path[:-4] + '_jobscript', outfile_path[
-                                                      :-4] + '_oldjob')  # rename old jobscript so it isn't thought to be  job that hasn't started yet
-        move.append(outfile_path[:-4] + '.old')
-        move.append(outfile_path[:-4] + '.xyz')
-        move.append(outfile_path[:-4] + '.in')
-        move.append(outfile_path[:-4] + '_oldjob')
+
+        folder = os.path.dirname(outfile_path)
+        name = os.path.basename(folder)
+        basepath = os.path.join(folder,name)
+
+
+        shutil.move(outfile_path, basepath + '.old')  # rename old out so it isn't found in .out searches
+        shutil.move(basepath + '_jobscript', basepath + '_oldjob')  # rename old jobscript so it isn't thought to be  job that hasn't started yet
+        move.append(basepath + '.old')
+        move.append(basepath + '.xyz')
+        move.append(basepath + '.in')
+        move.append(basepath + '_oldjob')
         if os.path.isdir(os.path.join(os.path.split(outfile_path)[0], 'inscr')):
             move.append(os.path.join(os.path.split(outfile_path)[0], 'inscr'))
         move.extend(queue_output)
@@ -242,13 +250,13 @@ def reset(outfile_path):
         with open(outfile_path, 'w') as writer:
             for i in outfile:
                 writer.write(i)
-        with open(outfile_path.rsplit('.', 1)[0] + '.in', 'w') as writer:
+        with open(basepath + '.in', 'w') as writer:
             for i in infile:
                 writer.write(i)
-        with open(outfile_path.rsplit('.', 1)[0] + '.xyz', 'w') as writer:
+        with open(basepath + '.xyz', 'w') as writer:
             for i in xyz:
                 writer.write(i)
-        with open(outfile_path.rsplit('.', 1)[0] + '_jobscript', 'w') as writer:
+        with open(basepath+ '_jobscript', 'w') as writer:
             for i in jobscript:
                 writer.write(i)
 

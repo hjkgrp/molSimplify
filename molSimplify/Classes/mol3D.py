@@ -108,7 +108,8 @@ class mol3D:
         self.oneempty_angle_ref = self.globs.geo_check_dictionary()[
             "oneempty_angle_ref"]
         self.geo_dict = dict()
-        self.std_not_use = list()
+        # keys not to use in dict check
+        self.std_not_use = ['atom_dist_max']
 
         self.num_coord_metal = -1
         self.catoms = list()
@@ -976,7 +977,7 @@ class mol3D:
             self.bo_dict = save_bo_dict
         else:
             self.convert2OBMol()
-        print(atomIdx, 'from inside mol3d')
+        # print(atomIdx, 'from inside mol3d')
         self.OBMol.DeleteAtom(self.OBMol.GetAtom(atomIdx + 1))
         self.mass -= self.getAtom(atomIdx).mass
         self.natoms -= 1
@@ -2653,14 +2654,14 @@ class mol3D:
         current_atom_counter = 0
         start = 2
         if read_final_optim_step:
-            start = len(s) - int(s[0]) - 2
+            start = - int(s[0])
         for line in s[start:]:
             line_split = line.split()
             # If the split line has more than 4 elements, only elements 0 through 3 will be used.
             # this means that it should work with any XYZ file that also stores something like mulliken charge
             # Next, this looks for unique atom IDs in files
             # print(line_split, 'linesplit')
-            if len(line_split) > 0:
+            if len(line_split) > 3:
                 current_atom_counter += 1
                 lm = re.search(r'\d+$', line_split[0])
                 # if the string ends in digits m will be a Match object, or None otherwise.
@@ -4276,7 +4277,6 @@ class mol3D:
             print(('dict_oct_info', self.geo_dict))
         for ele in self.std_not_use:
             self.geo_dict[ele] = banned_sign
-        self.geo_dict['atom_dist_max'] = banned_sign
         flag_list = []
         for key, values in list(dict_check.items()):
             if isinstance(self.geo_dict[key], (int, float)):
@@ -4382,9 +4382,9 @@ class mol3D:
             angle_ref = self.oct_angle_ref
         if not skip:
             skip = list()
-        else:
-            print("Warning: your are skipping following geometry checks:")
-            print(skip)
+        # else:
+        #     print("Warning: your are skipping following geometry checks:")
+        #     print(skip)
         self.get_num_coord_metal(debug=debug)
         # Note that use this only when you wanna specify the metal connecting atoms.
         # This will change the attributes of mol3D.

@@ -875,7 +875,7 @@ def write_orca_jobscript(name, custom_line=None, time_limit='96:00:00', parallel
 def get_scf_progress(outfile):
     flag = False
     flag_linecheck = False
-    with open(outfile, 'r') as fo:
+    with open(outfile, 'r',errors='ignore') as fo:
         start = False
         for line in fo:
             ll = line.split()
@@ -889,7 +889,7 @@ def get_scf_progress(outfile):
                 flag = is_oscillate(energy_this_scf)
                 if flag:
                     break
-    with open(outfile, 'r') as fo:
+    with open(outfile, 'r',errors='ignore') as fo:
         for line in fo:
             if "WARNING: Final energy is higher than the lowest energy by" in line:
                 e = float(line.split()[-1].strip("."))
