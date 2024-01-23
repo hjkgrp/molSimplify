@@ -3033,4 +3033,3 @@ def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True) ->
     print(('\nIn folder '+rootdir+' generated 1 structure!'))
 
     return strfiles, emsg, this_diag
-
