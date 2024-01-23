@@ -266,6 +266,8 @@ def init_template(args, cpoints_required: int,
         # check if geometry is defined and overwrite
         if args.geometry in geomshorts:
             geom = args.geometry
+        elif  args.geometry in geomnames:
+            geom = geomshorts[geomnames.index(args.geometry)]
         else:
             emsg = "Requested geometry not available." + \
                 "Defaulting to "+geomgroups[coord-1][0]
@@ -3031,3 +3033,4 @@ def structgen(args, rootdir, ligands, ligoc, globs, sernum, write_files=True) ->
     print(('\nIn folder '+rootdir+' generated 1 structure!'))
 
     return strfiles, emsg, this_diag
+
