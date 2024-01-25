@@ -266,6 +266,8 @@ def init_template(args, cpoints_required: int,
         # check if geometry is defined and overwrite
         if args.geometry in geomshorts:
             geom = args.geometry
+        elif  args.geometry in geomnames:
+            geom = geomshorts[geomnames.index(args.geometry)]
         else:
             emsg = "Requested geometry not available." + \
                 "Defaulting to "+geomgroups[coord-1][0]
