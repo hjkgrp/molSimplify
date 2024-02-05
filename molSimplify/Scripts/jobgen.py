@@ -245,5 +245,5 @@ def slurmjobgen(args, jobdirs):
         else:
             print(
                 'No supported QC code requested. Please input execution command manually')
-        with open(job+'/'+jobname+'jobscript', 'w') as f:
+        with open(job+'/'+jobname+'_jobscript', 'w') as f:
             f.writelines(output)
