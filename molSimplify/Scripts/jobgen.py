@@ -8,7 +8,7 @@
 # Generates jobscripts for SGE queueing system
 #  @param args Namespace of arguments
 #  @param jobdirs Subdirectories for jobscript placement
-
+import os
 
 def sgejobgen(args, jobdirs):
     # consolidate lists
