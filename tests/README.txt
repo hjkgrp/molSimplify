@@ -1,5 +1,6 @@
 Instructions for Installing and Running Test Cases for molSimplify
       by Fang Liu  10/24/2017
+      edited by Chenru Duan 10/28/2021
 
 
 I.  The structure of the repo
@@ -25,11 +26,11 @@ I.  The structure of the repo
     |_ setup.py
 
     Reason for using this structure, please refer to: https://blog.ionelmc.ro/2014/05/25/python-packaging/#the-structure
-    Notice that pytest automatically find test cases by look at python files
+    Notice that pytest automatically finds test cases by looking at python files
     named with
           test_XXX.py  XXX_test.py
-    
-    Under this stracture, the test files MUST have unique names
+
+    Under this structure, the test files MUST have unique names
 
 II. Add a test case
   1. Name the test input and output files in a consistent way:
@@ -38,12 +39,12 @@ II. Add a test case
   2. Put yourTestCase.in under: tests/inputs/
      Put yourTestCase.xyz,  yourTestCase.report  under: tests/refs/
 
-  3. Create a test python script with the template shown below. 
+  3. Create a test python script with the template shown below.
      threshMLBL: the threshold for checking metal-ligand bondlength and defaults to 0.1 A
      threshLG: tolerance for RMSD comparison of Ligand Geometries, and defaults to 0.1 A.
-     threshOG: tolerance for RMSD comparison of Overal Geometries, and defaults to 2.0 A
-     If you are adding a small test cas (e.g. hexachloride), consider
-     reducing this parameter. Otherwise it is likely fine it is. 
+     threshOG: tolerance for RMSD comparison of Overall Geometries, and defaults to 2.0 A
+     If you are adding a small test case (e.g. hexachloride), consider
+     reducing this parameter. Otherwise it is likely fine the way it is.
 
 ############ test_yourTestCase.py  #########
 import helperFuncs as hp
@@ -63,8 +64,8 @@ def test_example_1(tmpdir):
 #############################################
 
 III. Run Test Cases
-  1. Tests will be automatically run by Travis. However, it's higly recomended
-     that one runs the tests locally before commiting or push to repository to
+  1. Tests will be automatically run by GitHub CI. However, it's highly recommended
+     that one runs the tests locally before committing or push to repository to
      avoid breaking things
 
   2. Here are some different ways to run the tests. Assume that the we are at the
@@ -76,13 +77,14 @@ III. Run Test Cases
 
      These will go through all test cases and report whether each is passed. If
      a test fails, pytest will automatically trace back to the function where
-     it breaks. Standard output of molSimplify will not be printed unless the 
+     it breaks. Standard output of molSimplify will not be printed unless the
      test fails (then the output will be captured by pytest)
 
-     If one wants to see all the stanford output on the screen, we can try:
+     If one wants to see all the standard output on the screen, we can try:
      (1) Run pytest without capture:
          pytest -s
 
-     (2) Manually run each test case under the tests/ directory
-         python test_yourTestCase.py
-
+     (2) Manually run test case under the tests/ directory
+         py.test -k <keyword-of-your-test>
+         For example, to run all the tests for generation of tetrahedral complexes, do:
+         py.test -k tetrahedral

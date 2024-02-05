@@ -1,0 +1,78 @@
+name: Linter
+
+on:
+  pull_request:
+  push:
+    branches: ["master", "main"]
+
+jobs:
+  flake8:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flake8
+    - name: Run flake8 for critical errors
+      run: |
+        # Fail the build for the following critical errors:
+        # E9** syntax, io, or indentation error
+        # F63* syntax error in assertion, comparison, or print
+        # F7** syntax error in loops or functions
+        # F82* undefined variables
+        # Currently still excluding some files in Informatics that import from rdkit!
+        flake8 molSimplify --count --select=E9,F63,F7,F82 --show-source --statistics --exclude=fragment_classes.py,frag_functionalizer.py,bridge_functionalizer.py
+    - name: Run full flake8 linter
+      run: |
+        # Will never fail the build because of the --exit-zero flag but gives a report of the "code quality"
+        flake8 molSimplify --count --statistics --max-complexity 15 --max-line-length=127 --exit-zero
+
+    - name: Report Status
+      # Slack notifications only on the main repo
+      if: ${{ github.event_name != 'pull_request' && github.repository == 'hjkgrp/molSimplify' && job.status == 'failure'}}
+      #uses: ravsamhq/notify-slack-action@v1
+      uses: 8398a7/action-slack@v3
+      with:
+        fields: message,commit,author,workflow,job,took
+        status: ${{ job.status }}
+      env:
+        SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK}}
+        MATRIX_CONTEXT: ${{ toJson(matrix) }} # required
+
+  mypy:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python 3.7
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.7
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install mypy types-setuptools types-PyYAML types-requests
+    - name: Typecheck with mypy
+      run: |
+        # Exclude parts of Informatics for now
+        mypy --ignore-missing-imports --exclude '(frag_functionalizer.py|bridge_functionalizer.py|macrocycle_synthesis.py)' molSimplify
+
+    - name: Report Status
+      # Slack notifications only on the main repo
+      if: ${{ github.event_name != 'pull_request' && github.repository == 'hjkgrp/molSimplify' && job.status == 'failure'}}
+      #uses: ravsamhq/notify-slack-action@v1
+      uses: 8398a7/action-slack@v3
+      with:
+        fields: message,commit,author,workflow,job,took
+        status: ${{ job.status }}
+      env:
+        SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK}}
+        MATRIX_CONTEXT: ${{ toJson(matrix) }} # required

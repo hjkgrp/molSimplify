@@ -1,0 +1,9 @@
+-dbsearch True
+-dbcatoms 1 4
+-dbbase chembl_33_minimal # Database name
+-dbfname simres.smi
+-dbhuman yes
+-dbvdent bidentate # denticity
+-dbvconns N,N # connecting atoms
+-dbvlinks 2 # number of linking carbon atoms
+-dbvhyb 3,3 # hybridization of connecting atoms (sp^n)

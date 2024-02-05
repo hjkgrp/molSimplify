@@ -1,1 +1,4 @@
 *.mol~
+*.mol2
+*.xyz
+ligands.dict

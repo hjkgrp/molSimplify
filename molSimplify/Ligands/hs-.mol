@@ -1,0 +1,9 @@
+HS- mercapto anion 13940211
+##CCCBDB 5172214:12
+Geometry Optimized at CCSD(T)=FULL/6-31G*
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.0802 S   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000   -1.2831 H   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0
+M  CHG  1   1  -1
+M  END

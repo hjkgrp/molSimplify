@@ -68,15 +68,13 @@ def radial(v):
 
 
 def calc(den, dV):
-    bohr_to_angstrom = 0.529177249
-    totpts = len(den)
-    I = 0  # initialize integral
+    integral = 0  # initialize integral
     # loop over all integrating cubes
     for dval in den:
         # Sum values
-        I += dval[0]
-    I = I*dV
-    return I
+        integral += dval[0]
+    integral = integral*dV
+    return integral
 
 # Calculate spreads and averages of density and ELF
 #  @param den Array of densities
@@ -130,17 +128,16 @@ def spreadcalc(den, ELF, totel, dV):
 
 
 def calcHELP(den, ELF, dV):
-    totpts = len(den)
     if len(den) != len(ELF):
         exit('ELF and den cube files have not the same dimensions..Exiting.')
-    I = 0  # initialize integral
+    integral = 0  # initialize integral
     # loop over all integrating cubes
     for i, dval in enumerate(den):
         if (dval[0] > 0.001 and ELF[i][0] >= 0.5):
             # Summ values
-            I += dval[0]
-    I = I*dV
-    return I
+            integral += dval[0]
+    integral = integral*dV
+    return integral
 
 # Parse cube file
 #  @param cubef Name of cube file
@@ -149,11 +146,9 @@ def calcHELP(den, ELF, dV):
 
 def parsecube(cubef):
     # open and read cube file
-    f = open(cubef, 'r')
-    s = f.read().splitlines()
-    f.close()
+    with open(cubef, 'r') as f:
+        s = f.read().splitlines()
     params = []
-    option = 0
     for i in range(2, 6):
         ss = [_f for _f in s[i].split(' ') if _f]
         for sss in ss:
@@ -199,14 +194,13 @@ def parsecube(cubef):
                 break
     # read density values
     den = [[0.0 for x in range(5)] for x in range(n1*n2*n3)]
-    lines_per_block = int(math.ceil(n3/6.0))
     offset = 6+natoms
     summing = 0
     fmax = 0
     # get wfc values
     sv = ''
-    for l in range(offset, len(s)):
-        sv += '  '.join(s[l].split('\n'))
+    for li in range(offset, len(s)):
+        sv += '  '.join(s[li].split('\n'))
     val = [_f for _f in sv.split(' ') if _f]
     for i in range(0, n1):
         for j in range(0, n2):
@@ -260,24 +254,22 @@ def cubespin(cubefTOT, cubefSPIN):
     denA = denT  # assign by reference
     denB = denS  # assign by reference
     j = 0
-    f = open('denalpha.cub', 'w')
-    f.write(pre)
-    for i in range(0, len(denA)):
-        f.write("%.5e" % denA[i][0] + '  ')
-        j += 1
-        if (j % 6 == 0 or (i+1) % n == 0):
-            f.write('\n')
-            j = 0
-    f.close()
-    f = open('denbeta.cub', 'w')
-    f.write(pre)
-    for i in range(0, len(denB)):
-        f.write("%.5e" % denB[i][0] + '  ')
-        j += 1
-        if (j % 6 == 0 or (i+1) % n == 0):
-            f.write('\n')
-            j = 0
-    f.close()
+    with open('denalpha.cub', 'w') as f:
+        f.write(pre)
+        for i in range(0, len(denA)):
+            f.write("%.5e" % denA[i][0] + '  ')
+            j += 1
+            if (j % 6 == 0 or (i+1) % n == 0):
+                f.write('\n')
+                j = 0
+    with open('denbeta.cub', 'w') as f:
+        f.write(pre)
+        for i in range(0, len(denB)):
+            f.write("%.5e" % denB[i][0] + '  ')
+            j += 1
+            if (j % 6 == 0 or (i+1) % n == 0):
+                f.write('\n')
+                j = 0
 
 # Parse density cube file
 #  @param inputf Density cube file
@@ -285,9 +277,8 @@ def cubespin(cubefTOT, cubefSPIN):
 
 
 def readden(inputf):
-    f = open(inputf, 'r')
-    s = f.read().splitlines()
-    f.close()
+    with open(inputf, 'r') as f:
+        s = f.read().splitlines()
     params = []
     for i in range(2, 6):
         ss = [_f for _f in s[i].split(' ') if _f]
@@ -313,7 +304,6 @@ def readden(inputf):
             atoms[i-6][j] = float(sss)
     # read density values
     den = [[0.0 for x in range(5)] for x in range(n1*n2*n3)]
-    lines_per_block = int(math.ceil(n3/6.0))
     offset = 6+natoms
     summing = 0
     fmax = 0
@@ -322,8 +312,8 @@ def readden(inputf):
         pre += s[i] + '\n'
     # get wfc values
     sv = ''
-    for l in range(offset, len(s)):
-        sv += '  '.join(s[l].split('\n'))
+    for li in range(offset, len(s)):
+        sv += '  '.join(s[li].split('\n'))
     val = [_f for _f in sv.split(' ') if _f]
     for i in range(0, n1):
         for j in range(0, n2):
@@ -358,8 +348,6 @@ def getcubes(molf, folder, gui, flog):
         "##################### Generating cube files ######################\n")
     print("##################### Generating cube files ######################\n")
     # loop over folders
-    resf = []
-    txt = []
     for numi, resf in enumerate(molf):
         resd = os.path.relpath(resf, folder)
         resd = resd.split('.molden')[0]
@@ -373,34 +361,31 @@ def getcubes(molf, folder, gui, flog):
         #################################################
         ### generate density cube ###
         inputtxt = '5\n1\n3\n2\n'
-        f = open('input1', 'w')
-        f.write(inputtxt)
-        f.close()
+        with open('input1', 'w') as f:
+            f.write(inputtxt)
         com = Multiwfn+' ' + "'" + resf + "'"+' < input1'
         if not glob.glob(cubedir+resd+'-density.cub'):
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
             if glob.glob('density.cub'):
                 os.rename('density.cub', cubedir+resd+'-density.cub')
         #################################################
         inputtxt = '5\n9\n3\n2\n'  # generate ELF
-        f = open('input1', 'w')
-        f.write(inputtxt)
-        f.close()
+        with open('input1', 'w') as f:
+            f.write(inputtxt)
         com = Multiwfn+' ' + "'" + resf + "'"+' < input1'
         if not glob.glob(cubedir+resd+'-ELF.cub'):
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
             if glob.glob('ELF.cub'):
                 os.rename('ELF.cub', cubedir+resd+'-ELF.cub')
         #################################################
         inputtxt = '5\n5\n3\n2\n'  # generate spin density
-        f = open('input1', 'w')
-        f.write(inputtxt)
-        f.close()
+        with open('input1', 'w') as f:
+            f.write(inputtxt)
         com = Multiwfn+' ' + "'" + resf + "'" + ' < input1'
         if not glob.glob(cubedir+resd+'-spindensity.cub'):
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
             if glob.glob('spindensity.cub'):
                 os.rename('spindensity.cub', cubedir+resd+'-spindensity.cub')
@@ -420,8 +405,6 @@ def getcubes(molf, folder, gui, flog):
 
 
 def getwfnprops(molf, folder, gui, flog):
-    globs = globalvars()
-    Multiwfn = globs.multiwfn
     # analyze results
     flog.write(
         "##################### Getting wavefunction properties ######################\n")
@@ -449,22 +432,18 @@ def getwfnprops(molf, folder, gui, flog):
             denf = cubedir+resd+'-density.cub'
             elff = cubedir+resd+'-ELF.cub'
             HELPpop, totel, svars = wfncalc(denf, elff)  # calculate HELP
-            f = open(outfile1, 'w')
-            f.write('HELP: '+str(HELPpop)+' '+str(100*HELPpop/totel)+' %\n')
-            f.close()
-            f = open(outfile2, 'w')
-            f.write('Rav: '+str(svars[0])+' RSD: ' +
-                    str(svars[1])+' RSk: '+str(svars[2]))
-            f.write(' ELFav: '+str(svars[3])+' ELF_SD: ' +
-                    str(svars[4])+' ELF_Sk: '+str(svars[5])+'\n')
-            f.close()
+            with open(outfile1, 'w') as f:
+                f.write('HELP: '+str(HELPpop)+' '+str(100*HELPpop/totel)+' %\n')
+            with open(outfile2, 'w') as f:
+                f.write('Rav: '+str(svars[0])+' RSD: ' +
+                        str(svars[1])+' RSk: '+str(svars[2]))
+                f.write(' ELFav: '+str(svars[3])+' ELF_SD: ' +
+                        str(svars[4])+' ELF_Sk: '+str(svars[5])+'\n')
         #################################################
-        f = open(outfile1, 'r')
-        sf = f.read()
-        f.close()
-        f = open(outfile2, 'r')
-        sff = f.read()
-        f.close()
+        with open(outfile1, 'r') as f:
+            sf = f.read()
+        with open(outfile2, 'r') as f:
+            sff = f.read()
         HELPpop = float([_f for _f in sf.split(None) if _f][1])
         HELPper = float([_f for _f in sf.split(None) if _f][-2])
         sf = [_f for _f in sff.split(None) if _f]
@@ -476,9 +455,8 @@ def getwfnprops(molf, folder, gui, flog):
         txt.append(resdp.ljust(50)+"{:10.3f}".format(HELPpop).ljust(10)+' ('+"{:4.2f}".format(HELPper)+'%)' +
                    sr[0].ljust(10)+sr[1].ljust(10)+sr[2].ljust(10)+sr[3].ljust(10)+sr[4].ljust(11)+sr[5].ljust(10)+'\n')
     text = sorted(txt)
-    f = open(folder+'/wfnprops.txt', 'w')
-    f.write(header+''.join(text))
-    f.close()
+    with open(folder+'/wfnprops.txt', 'w') as f:
+        f.write(header+''.join(text))
 
 # Calculate charges from molden file
 #  @param molf Input molden file
@@ -501,9 +479,8 @@ def getcharges(molf, folder, gui, flog):
         resdp = resd
         resd = resd.replace('/', '_')
         # get metal index in molden file
-        f = open(resf, 'r')
-        ss = f.read()
-        f.close()
+        with open(resf, 'r') as f:
+            ss = f.read()
         ss = find_between(ss, 'Atoms', 'GTO')
         ss = ss.splitlines()
         midx = 0  # default
@@ -512,7 +489,6 @@ def getcharges(molf, folder, gui, flog):
             for met in metals:
                 if len(sll) > 1 and met in sll[0]:
                     midx = int(sll[1])-1
-                    fmet = sll[0]
                     break
         #################################################
         outfile1 = folder+'/Charge_files/'+resd+'-chH.txt'
@@ -524,18 +500,13 @@ def getcharges(molf, folder, gui, flog):
         # Run multiwfn
         if not glob.glob(outfile1):
             inputtxt = '7\n1\n1\n'  # Hirschfeld
-            f = open('input1', 'w')
-            f.write(inputtxt)
-            f.close()
+            with open('input1', 'w') as f:
+                f.write(inputtxt)
             com = Multiwfn+' ' + "'" + resf + "'" + " < input1 > '"+outfile1+"'"
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
-        f = open(outfile1, 'r')
-        ss = f.read()
-        f.close()
-        # get total charge
-        schl = [line for line in ss.splitlines() if 'Net charge:' in line]
-        tcharge = [_f for _f in schl[0] if _f].split(None)[2]
+        with open(outfile1, 'r') as f:
+            ss = f.read()
         s = find_between(ss, ' of atom     1', 'Atomic dipole')
         hirsch = 'NA'
         if len(s.splitlines()) > midx+1:
@@ -547,15 +518,13 @@ def getcharges(molf, folder, gui, flog):
         outfile2 = folder+'/Charge_files/'+resd+'-chV.txt'
         if not glob.glob(outfile2):
             inputtxt = '7\n2\n1\n'  # VDD
-            f = open('input1', 'w')
-            f.write(inputtxt)
-            f.close()
+            with open('input1', 'w') as f:
+                f.write(inputtxt)
             com = Multiwfn+' '+"'" + resf + "'" + " < input1 > '"+outfile2+"'"
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
-        f = open(outfile2, 'r')
-        ss = f.read()
-        f.close()
+        with open(outfile2, 'r') as f:
+            ss = f.read()
         s = find_between(ss, 'VDD charge', 'dipole')
         vdd = 'NA'
         if len(s.splitlines()) > midx+1:
@@ -567,15 +536,13 @@ def getcharges(molf, folder, gui, flog):
         outfile3 = folder+'/Charge_files/'+resd+'-chM.txt'
         if not glob.glob(outfile3):
             inputtxt = '7\n5\n1\n'  # Mulliken
-            f = open('input1', 'w')
-            f.write(inputtxt)
-            f.close()
+            with open('input1', 'w') as f:
+                f.write(inputtxt)
             com = Multiwfn+' ' + "'" + resf + "'" + " < input1 > '"+outfile3+"'"
-            tt = mybash(com)
+            _ = mybash(com)
             os.remove('input1')
-        f = open(outfile3, 'r')
-        ss = f.read()
-        f.close()
+        with open(outfile3, 'r') as f:
+            ss = f.read()
         s = find_between(ss, 'Population of atoms', 'Total net')
         mull = 'NA'
         if len(s.splitlines()) > midx+2:
@@ -586,10 +553,8 @@ def getcharges(molf, folder, gui, flog):
         txt.append(resdp.ljust(60)+hirsch.ljust(10) +
                    vdd.ljust(10)+mull.ljust(10)+'\n')
     text = sorted(txt)
-    f = open(folder+'/charges.txt', 'w')
-    f.write(header+''.join(text))
-    f.close()
-    f.close()
+    with open(folder+'/charges.txt', 'w') as f:
+        f.write(header+''.join(text))
 
 # Calculate delocalization indices from molden file
 #  @param molf Input molden file
@@ -625,22 +590,20 @@ def deloc(molf, folder, gui, flog):
             gui.iWtxt.setText('Processing '+resd+'\n'+gui.iWtxt.toPlainText())
             gui.app.processEvents()
         # get coordinates of metal
-        f = open(resf, 'r')
-        sm = f.read().splitlines()
-        f.close()
+        with open(resf, 'r') as f:
+            sm = f.read().splitlines()
         # get indices of heavy elements
         found = False
         for met in metals:
-            if (found == False):
+            if not found:
                 ml = [line for line in sm if met in line]
-            if len(ml) > 0 and found == False:
+            if len(ml) > 0 and not found:
                 if 'Title' in ml[0] and len(ml) > 1:
                     mlll = ml[1].split(None)
                 else:
                     mlll = ml[0].split(None)
                 if len(mlll) > 2:
                     found = True
-                    fmet = met
         if len(ml) == 0:
             print(
                 'WARNING:No metal found, defaulting to 1st atom for relative properties..')
@@ -654,9 +617,8 @@ def deloc(molf, folder, gui, flog):
         # Run multiwfn
         if not glob.glob(outfile):
             inputtxt = '17\n1\n1\n2\n4\n'
-            f = open('input0', 'w')
-            f.write(inputtxt)
-            f.close()
+            with open('input0', 'w') as f:
+                f.write(inputtxt)
             com = Multiwfn+' ' + "'" + resf + "'" + " < input0 > '"+outfile+"'"
             tt = mybash(com)
             print(tt)
@@ -665,21 +627,19 @@ def deloc(molf, folder, gui, flog):
             if 'Segmentation' in tt or 'core dumped' in tt:
                 skipc = True
             # read outputfile and check
-            f = open(outfile, 'r')
-            ssf = f.read()
-            f.close()
+            with open(outfile, 'r') as f:
+                ssf = f.read()
             # if error redo
             if ('Note: There are attractors having very low ' in ssf or 'Hint' in ssf):
                 inputtxt = '17\n1\n1\n2\n3\n4\n'
-                f = open('input0', 'w')
-                f.write(inputtxt)
-                f.close()
+                with open('input0', 'w') as f:
+                    f.write(inputtxt)
                 tt = mybash(com)
+                print(tt)
             os.remove('input0')
         # check if good
-        f = open(outfile, 'r')
-        ssf = f.read()
-        f.close()
+        with open(outfile, 'r') as f:
+            ssf = f.read()
         parse = False
         if 'Total localization' in ssf:
             parse = True
@@ -687,9 +647,8 @@ def deloc(molf, folder, gui, flog):
         # parse output #
         ################
         if not skipc and parse:
-            f = open(outfile, 'r')
-            s = f.read()
-            f.close()
+            with open(outfile, 'r') as f:
+                s = f.read()
             # get basins
             if ('The attractors after clustering' in s):
                 st = find_between(s, 'Index      Average', 'The number')
@@ -745,6 +704,6 @@ def deloc(molf, folder, gui, flog):
             indexin.append(indxst)
     # sort alphabetically and print
     text = sorted(text)
-    f = open(folder+'/deloc_res.txt', 'w')
-    f.write(header+''.join(text))
+    with open(folder+'/deloc_res.txt', 'w') as f:
+        f.write(header+''.join(text))
     print("\n##################### Deloc indices are ready ######################\n")

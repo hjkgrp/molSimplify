@@ -1,0 +1,10 @@
+NS- nitrogen sulfide anion 12033566
+##CCCBDB 5172213:38
+Geometry Optimized at CCSD(T)=FULL/6-31G*
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.4992 S   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000   -1.1411 N   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  2  0  0  0
+M  CHG  1   2  -1
+M  RAD  1   2   3
+M  END

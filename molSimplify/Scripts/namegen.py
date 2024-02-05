@@ -13,7 +13,7 @@
 #  @return Complex name
 
 
-def name_complex(core, ligs, ligoc, args):
+def name_complex(core, ligs, ligoc, args) -> str:
     center = core.getAtom(0).symbol()
     name = center + '_'
     if args.oxstate:
@@ -27,6 +27,6 @@ def name_complex(core, ligs, ligoc, args):
         spin = "0"
     name += "_ " + str(spin)
     for i, lig in enumerate(ligs):
-        names += '_' + str(lig[:3]) + '-' + str(ligoc[i])
-    names += "_"+str(spin)
+        name += '_' + str(lig[:3]) + '-' + str(ligoc[i])
+    name += "_"+str(spin)
     return name

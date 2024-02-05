@@ -1,0 +1,11 @@
+#$ -S /bin/bash
+#$ -N job9
+#$ -R y
+#$ -cwd
+#$ -l h_rt=168:00:00
+#$ -l h_rss=8G
+#$ -q gpus
+#$ -l gpus=1
+#$ -pe smp 1
+export OMP_NUM_THREADS=1
+terachem terachem_input > $SGE_O_WORKDIR/opttest.out

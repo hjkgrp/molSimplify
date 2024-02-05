@@ -117,14 +117,13 @@ def setligands(gui, ligs, ligoccs, lcats, kHs, MLb, lang, lname):
 
 
 def writeinputc(args, fname):
-    f = open(fname, 'w')
-    f.write("# Input file generated from GUI options\n")
-    for key, val in list(args.items()):
-        if len(val) > 0:
-            vals = val.splitlines()
-            for v in vals:
-                f.write(key+' '+v+'\n')
-    f.close()
+    with open(fname, 'w') as f:
+        f.write("# Input file generated from GUI options\n")
+        for key, val in list(args.items()):
+            if len(val) > 0:
+                vals = val.splitlines()
+                for v in vals:
+                    f.write(key+' '+v+'\n')
 
 # Writes postprocessing options to input file
 #  @param args Namespace of arguments
@@ -132,31 +131,28 @@ def writeinputc(args, fname):
 
 
 def writeinputp(args, fname):
-    f = open(fname, 'w')
-    f.write("# Input file generated from GUI options\n")
-    for key, val in list(args.items()):
-        f.write(key+' '+val+'\n')
-    f.close()
+    with open(fname, 'w') as f:
+        f.write("# Input file generated from GUI options\n")
+        for key, val in list(args.items()):
+            f.write(key+' '+val+'\n')
 
 # Writes options to input file with fixed name
 #  @param args Namespace of arguments
 
 
 def writeinputf(args):
-    f = open(args['-rundir']+'/geninput.inp', 'w')
-    f.write("# Input file generated from GUI options\n")
-    ff = open(args['-rundir']+'/molSimp.log', 'a')
-    dd = "# Input file generated from GUI options at " + \
-        time.strftime('%m/%d/%Y %H:%M')+'\n'
-    ff.write(dd)
-    for key, val in list(args.items()):
-        if len(val) > 0:
-            vals = val.splitlines()
-            for v in vals:
-                f.write(key+' '+v+'\n')
-                ff.write(key+' '+v+'\n')
-    f.close()
-    ff.close()
+    with open(args['-rundir']+'/geninput.inp', 'w') as f:
+        f.write("# Input file generated from GUI options\n")
+        with open(args['-rundir']+'/molSimp.log', 'a') as ff:
+            dd = "# Input file generated from GUI options at " + \
+                time.strftime('%m/%d/%Y %H:%M')+'\n'
+            ff.write(dd)
+            for key, val in list(args.items()):
+                if len(val) > 0:
+                    vals = val.splitlines()
+                    for v in vals:
+                        f.write(key+' '+v+'\n')
+                        ff.write(key+' '+v+'\n')
 
 # Grabs all GUI options
 #  @param gui GUI flag
@@ -463,10 +459,9 @@ def grabguivarsP(gui):
 
 
 def loadfrominputtc(gui, fname):
-    f = open(fname, 'r')
-    s = f.read()
+    with open(fname, 'r') as f:
+        s = f.read()
     s = [_f for _f in s.splitlines() if _f]
-    f.close()
     gui.qceditor.setText('')
     ### general structure generation options ###
     for ss in s:
@@ -496,10 +491,9 @@ def loadfrominputtc(gui, fname):
 
 
 def loadfrominputgam(gui, fname):
-    f = open(fname, 'r')
-    s = f.read()
+    with open(fname, 'r') as f:
+        s = f.read()
     s = [_f for _f in s.splitlines() if _f]
-    f.close()
     gui.qcgedsys.setText('')
     gui.qcgedctrl.setText('')
     gui.qcgedscf.setText('')
@@ -507,7 +501,7 @@ def loadfrominputgam(gui, fname):
     ### general structure generation options ###
     for ss in s:
         st = ss.split(None, 1)
-      ### Quantum Chemistry options ###
+        ### Quantum Chemistry options ###
         if '-charge' == st[0]:
             gui.etqcgch.setText(st[-1])
         if '-spin' == st[0]:
@@ -539,15 +533,14 @@ def loadfrominputgam(gui, fname):
 
 
 def loadfrominputqch(gui, fname):
-    f = open(fname, 'r')
-    s = f.read()
+    with open(fname, 'r') as f:
+        s = f.read()
     s = [_f for _f in s.splitlines() if _f]
-    f.close()
     gui.qcQeditor.setText('')
     ### general structure generation options ###
     for ss in s:
         st = ss.split(None, 1)
-      ### Quantum Chemistry options ###
+        ### Quantum Chemistry options ###
         if '-basis' == st[0]:
             gui.etqcQbasis.setText(st[-1])
         if '-charge' == st[0]:
@@ -571,10 +564,10 @@ def loadfrominputqch(gui, fname):
 
 
 def loadfrominputjob(gui, fname):
-    f = open(fname, 'r')
-    s = f.read()
+    with open(fname, 'r') as fin:
+        s = fin.read()
     s = [_f for _f in s.splitlines() if _f]
-    f.close()
+
     gui.etjopt.setText('')
     gui.jcomm.setText('')
     ### general structure generation options ###
@@ -606,10 +599,9 @@ def loadfrominputjob(gui, fname):
 
 
 def loadfrominputfile(gui, fname):
-    f = open(fname, 'r')
-    s = f.read()
+    with open(fname, 'r') as f:
+        s = f.read()
     s = [_f for _f in s.splitlines() if _f]
-    f.close()
     # re-initialize GUI
     # gui.initGUI(gui.app)
     db = False
@@ -647,7 +639,7 @@ def loadfrominputfile(gui, fname):
             if checkTrue(st[-1]):
                 gui.chkgenall.setChecked(True)
         if '-MLbonds' == st[0]:
-            Mlb = st[-1]
+            Mlb = st[-1]  # noqa F841 variable never used
         if '-distort' == st[0]:
             gui.sdist.setValue(int(st[-1]))
         if '-pangles' == st[0]:
@@ -708,15 +700,15 @@ def loadfrominputfile(gui, fname):
         if '-bref' == st[0]:
             gui.etmaskbind.setText(st[-1])
         ### force field optimization ###
-        ff = False
+        ff = False  # noqa F841 variable never used
         if '-ff' == st[0]:
             gui.chkFF.setChecked(True)
             gui.enableffinput()
             gui.dff.setCurrentText(st[-1])
-            ff = True
+            ff = True  # noqa F841 variable never used
         if '-ffoption' == st[0]:
             sopt = st[-1].split('&')
-            b, a, e = False, False, False
+            b, a = False, False
             for sopts in sopt:
                 ssopt = sopts.replace(' ', '')
                 if ssopt[0].lower() == 'b':

@@ -47,7 +47,6 @@ def check_refs(inputs):
 
 def writeBasicTest(name):
     testfile = "test_"+name+".py"
-    f = open(testfile, "w")
     content = '''import helperFuncs as hp
 
 def test_TESTNAME(tmpdir):
@@ -62,13 +61,13 @@ def test_TESTNAME(tmpdir):
     assert passOG
     assert pass_report
 '''
-    f.write(content.replace("TESTNAME", name))
-    f.close()
+    with open(testfile, "w") as f:
+        f.write(content.replace("TESTNAME", name))
 
 
 def writeNoffTest(name):
     testfile = "test_"+name+".py"
-    f = open(testfile, "a")
+
     content = '''
 def test_TESTNAME_No_FF(tmpdir):
     testName="TESTNAME"
@@ -81,8 +80,8 @@ def test_TESTNAME_No_FF(tmpdir):
     assert passOG
     assert pass_report
 '''
-    f.write(content.replace("TESTNAME", name))
-    f.close()
+    with open(testfile, "a") as f:
+        f.write(content.replace("TESTNAME", name))
 
 
 def generateTests():

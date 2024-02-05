@@ -1,15 +1,13 @@
 import os
 import time
 import logging
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from collections import OrderedDict
 import numpy as np
-import scipy.ndimage
-import scipy.misc
 import skimage.transform as skitransform
 import pickle
 import json
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 from molSimplify.molscontrol.io_tools import obtain_jobinfo, read_geometry_to_mol, get_geo_metrics, get_bond_order, get_gradient, \
     get_mullcharge, kill_job, check_pid, get_ss_del, get_metal_spin_del
 from molSimplify.molscontrol.clf_tools import get_layer_outputs, dist_neighbor, get_entropy, find_closest_model
@@ -29,7 +27,7 @@ class dft_control:
     self.mode_allowed: allowed modes.
     self.step_decisions: steps at which the dynamic classifier can make predictions. (Resizing to be implemented).
     self.scrpath: path to the scratch directory.
-    self.geofile: filename of the optimization trajectory in a xyz file format. This is the minimum requirement to use 
+    self.geofile: filename of the optimization trajectory in a xyz file format. This is the minimum requirement to use
     the dynamic classifier.
     self.bofile: filename of the trajectory for the bond order matrix (for mode = "terachem").
     self.chargefile: filename of the trajectory for the Mulliken charge(for mode = "terachem").
@@ -219,7 +217,7 @@ class dft_control:
             for idx, fname in list(self.features_dict[self.mode].items()):
                 self.features.update({fname: []})
             logging.info('Feature initialized.')
-        except Exception as e:
+        except Exception:
             logging.error('Feature initialization failed.', exc_info=True)
 
     def get_file_path(self, filein):
@@ -230,8 +228,7 @@ class dft_control:
 
     def load_models(self):
         if not self.modelfile:
-            modelpath = resource_filename(Requirement.parse("molSimplify"),
-                                          "molSimplify/molscontrol/models/" + self.mode + "/")
+            modelpath = str(resource_files("molSimplify.molscontrol").joinpath(f"models/{self.mode}"))
         else:
             modelpath = self.modelfile
             logging.warning("Using user-specified models from %s." % modelpath)
@@ -242,13 +239,12 @@ class dft_control:
                 logging.info("Loading model: %s ..." %
                              _modelname.split('/')[-1])
                 self.models.update({step: load_model(_modelname)})
-        except Exception as e:
+        except Exception:
             logging.error('Failed at model loading.', exc_info=True)
 
     def load_training_data(self):
         if not self.traindatafile:
-            datapath = resource_filename(Requirement.parse("molSimplify"),
-                                         "molSimplify/molscontrol/data/" + self.mode + "/train_data.pkl")
+            datapath = resource_files("molSimplify.molscontrol").joinpath(f"data/{self.mode}/train_data.pkl")
         else:
             datapath = self.traindatafile
             logging.warning("Using user-specified models from %s." % datapath)
@@ -258,13 +254,12 @@ class dft_control:
             for key, val in list(_train_data.items()):
                 self.train_data.append(val)
             logging.info("Training data loaded.")
-        except Exception as e:
+        except Exception:
             logging.error('Failed at training data loading.', exc_info=True)
 
     def load_normalization_vec(self):
         if not self.normfile:
-            normvecpath = resource_filename(Requirement.parse("molSimplify"),
-                                            "molSimplify/molscontrol/normalization_vec/" + self.mode + "/norm_dict.json")
+            normvecpath = resource_files("molSimplify.molscontrol").joinpath(f"normalization_vec/{self.mode}/norm_dict.json")
         else:
             normvecpath = self.normfile
             logging.warning(
@@ -329,9 +324,8 @@ class dft_control:
             raise KeyError("Mode is not recognized.")
         for idx, fname in list(self.features_dict[self.mode].items()):
             self.features[fname].append(dict_combined[fname])
-        f = open("features.json", "w")
-        json.dump(self.features, f)
-        f.close()
+        with open("features.json", "w") as f:
+            json.dump(self.features, f)
 
     def normalize_features(self):
         for idx, fname in list(self.features_dict[self.mode].items()):
@@ -377,7 +371,7 @@ class dft_control:
 
     def calculate_lse(self, step=False):
         step = self.step_now if not step else step
-        if not self.step_now in self.step_decisions:
+        if self.step_now not in self.step_decisions:
             fmat_train = []
             for ii in range(len(self.train_data[0])):
                 # fmat_train.append(scipy.misc.imresize(self.train_data[0][ii, :self.step_now + 1, :],
@@ -437,7 +431,7 @@ class dft_control:
                 filepath = self.get_file_path(filename)
                 if os.path.isfile(filepath):
                     self.file_updated[self.mode].update({filename: True})
-            existed = all(value == True for value in list(
+            existed = all(value is True for value in list(
                 self.file_updated[self.mode].values()))
         for filename in self.files_track[self.mode]:
             filepath = self.get_file_path(filename)
@@ -453,7 +447,7 @@ class dft_control:
             self.step_now += 1
             self.prepare_feature_mat()
             logging.info("%d step feature obtained." % self.step_now)
-        except Exception as e:
+        except Exception:
             logging.warning(
                 'Cannot obtain the information of the zeroth step.', exc_info=True)
 
@@ -462,7 +456,7 @@ class dft_control:
             filepath = self.get_file_path(filename)
             if os.path.getmtime(filepath) - val > 3:
                 self.file_updated[self.mode].update({filename: True})
-        updated = all(value == True for value in list(
+        updated = all(value is True for value in list(
             self.file_updated[self.mode].values()))
         if self.debug:
             updated = True

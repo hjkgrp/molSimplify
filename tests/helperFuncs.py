@@ -1,28 +1,21 @@
-import pytest
-import argparse
 import json
 import os
-import openbabel as ob
-import numpy as np
-from molSimplify.Scripts.inparse import *
-from molSimplify.Scripts.geometry import *
-from molSimplify.Scripts.generator import *
-from molSimplify.Classes.globalvars import *
-from molSimplify.Classes.mol3D import mol3D
-from molSimplify.Classes.atom3D import atom3D
-from molSimplify.Classes.globalvars import *
+import random
 import shutil
-from pkg_resources import resource_filename, Requirement
+import numpy as np
+from typing import List
+from molSimplify.Scripts.geometry import kabsch, distance
+from molSimplify.Scripts.generator import startgen
+from molSimplify.Classes.globalvars import (dict_oneempty_check_st,
+                                            oneempty_angle_ref)
+from molSimplify.Classes.mol3D import mol3D
+from typing import Dict
+from contextlib import contextmanager
+from pathlib import Path
 
 
-def fuzzy_equal(x1, x2, thresh):
-    return np.fabs(float(x1) - float(x2)) < thresh
-
-
-# check whether the string is a integral/float/scientific
-
-
-def is_number(s):
+def is_number(s: str) -> bool:
+    """check whether the string is a integral/float/scientific"""
     try:
         float(s)
         return True
@@ -30,7 +23,21 @@ def is_number(s):
         return False
 
 
-def fuzzy_compare_xyz(xyz1, xyz2, thresh):
+@contextmanager
+def working_directory(path: Path):
+    prev_cwd = os.getcwd()
+    try:
+        os.chdir(path)
+        yield
+    finally:
+        os.chdir(prev_cwd)
+
+
+def fuzzy_equal(x1, x2, thresh: float) -> bool:
+    return np.fabs(float(x1) - float(x2)) < thresh
+
+
+def fuzzy_compare_xyz(xyz1, xyz2, thresh: float) -> bool:
     fuzzyEqual = False
     mol1 = mol3D()
     mol1.readfromxyz(xyz1)
@@ -79,9 +86,7 @@ def getAllLigands(xyz):
     return ligands
 
 
-def getMetalLigBondLength(mymol3d):
-    # findMetal only returns 1 metal atom?
-    # TG: fixed findmetal to return a list
+def getMetalLigBondLength(mymol3d: mol3D) -> List[float]:
     mm = mymol3d.findMetal()[0]
     bonded = mymol3d.getBondedAtoms(mm)
     blength = []
@@ -91,54 +96,52 @@ def getMetalLigBondLength(mymol3d):
     return blength
 
 
-# Compare number of atoms
-
-
-def compareNumAtoms(xyz1, xyz2):
+def compareNumAtoms(xyz1, xyz2) -> bool:
+    """Compare number of atoms"""
     print("Checking total number of atoms")
     mol1 = mol3D()
     mol1.readfromxyz(xyz1)
     mol2 = mol3D()
-    mol2.readfromxyz(xyz1)
+    mol2.readfromxyz(xyz2)
     # Compare number of atoms
     passNumAtoms = (mol1.natoms == mol2.natoms)
     print("Pass total number of atoms check: ", passNumAtoms)
     return passNumAtoms
 
 
-# Compare Metal Ligand Bond Length
-
-
-def compareMLBL(xyz1, xyz2, thresh):
+def compareMLBL(xyz1, xyz2, thresh: float) -> bool:
+    """Compare Metal Ligand Bond Length"""
     print("Checking metal-ligand bond length")
     mol1 = mol3D()
     mol1.readfromxyz(xyz1)
     mol2 = mol3D()
-    mol2.readfromxyz(xyz1)
+    mol2.readfromxyz(xyz2)
     bl1 = getMetalLigBondLength(mol1)
     bl2 = getMetalLigBondLength(mol2)
     passMLBL = True
-    for i in range(0, len(bl1)):
-        if not fuzzy_equal(bl1[i], bl2[i], thresh):
-            print("Error! Metal-Ligand bondlength mismatch for bond # ", i)
-            passMLBL = False
+    if len(bl1) != len(bl2):
+        print("Error! Number of metal-ligand bonds is different")
+        passMLBL = False
+    else:
+        for i in range(0, len(bl1)):
+            if not fuzzy_equal(bl1[i], bl2[i], thresh):
+                print("Error! Metal-Ligand bondlength mismatch for bond # ", i)
+                passMLBL = False
     print("Pass metal-ligand bond length check: ", passMLBL)
     print("Threshold for bondlength difference: ", thresh)
     return passMLBL
 
 
-# Compare Ligand Geometry
-
-
-def compareLG(xyz1, xyz2, thresh):
+def compareLG(xyz1, xyz2, thresh: float) -> bool:
+    """Compare Ligand Geometry"""
     print("Checking the Ligand Geometries")
     passLG = True
     ligs1 = getAllLigands(xyz1)
     ligs2 = getAllLigands(xyz2)
     if len(ligs1) != len(ligs2):
-        pssLG = False
+        passLG = False
         return passLG
-    for i in range(0, len(ligs1)):
+    for i in range(0, len(ligs1)):  # Iterate over the ligands
         print("Checking geometry for ligand # ", i)
         ligs1[i], U, d0, d1 = kabsch(ligs1[i], ligs2[i])
         rmsd12 = ligs1[i].rmsd(ligs2[i])
@@ -151,12 +154,26 @@ def compareLG(xyz1, xyz2, thresh):
     return passLG
 
 
-def compareOG(xyz1, xyz2, thresh):
+def compareOG(xyz1, xyz2, thresh: float) -> bool:
     print("Checking the overall geometry")
     passOG = fuzzy_compare_xyz(xyz1, xyz2, thresh)
     print("Pass overall geometry check: ", passOG)
     print("Threshold for overall geometry check: ", thresh)
     return passOG
+
+
+def runtest_num_atoms_in_xyz(tmpdir, resource_path_root, xyzfile):
+    file_path = resource_path_root / "refs" / f"{xyzfile}.xyz"
+    xyz_file1 = mol3D()
+    xyz_file1.readfromxyz(file_path)
+    xyz_file1.getNumAtoms()
+
+    with open(file_path, 'r') as f:
+        xyz_file2 = f.readlines()
+    num_atoms = int(xyz_file2[0])
+
+    if num_atoms != xyz_file1.getNumAtoms():
+        print('Something is wrong with the number of atoms read from the XYZ file!')
 
 
 def compareGeo(xyz1, xyz2, threshMLBL, threshLG, threshOG, slab=False):
@@ -194,7 +211,7 @@ def comparedict(ref, gen, thresh):
     return passComp
 
 
-def jobname(infile):
+def jobname(infile: str) -> str:
     name = os.path.basename(infile)
     name = name.replace(".in", "")
     return name
@@ -208,71 +225,51 @@ def jobdir(infile):
     return mydir
 
 
-def parse4test(infile, tmpdir, isMulti=False, external={}):
+def parse4test(infile, tmpdir: Path, isMulti: bool = False, extra_args: Dict[str, str] = {}) -> str:
     name = jobname(infile)
     f = tmpdir.join(os.path.basename(infile))
     newname = f.dirname + "/" + os.path.basename(infile)
     print(newname)
     print('&&&&&&&&&')
-    data = open(infile).readlines()
+    with open(infile, 'r') as f_in:
+        data = f_in.readlines()
     newdata = ""
-    hasJobdir = False
-    hasName = False
     for line in data:
-        if line.split()[0] in external.keys():
-            newdata += line.split()[0]+' '+str(os.path.dirname(infile))+'/'+str(external[line.split()[0]])+'\n'
+        if line.split()[0] in extra_args.keys():
+            newdata += (line.split()[0] + ' ' + str(os.path.dirname(infile))
+                        + '/' + str(extra_args[line.split()[0]]) + '\n')
             continue
         if not (("-jobdir" in line) or ("-name" in line)):
             newdata += line
-        if ("-lig " in line) and (".smi" in line):  # Need to parse the dir of smi file
+        # Check if we need to parse the dir of smi file
+        if ("-lig " in line) and (".smi" in line):
             smi = line.strip('\n').split()[1]
             abs_smi = os.path.dirname(infile) + '/' + smi
             newdata += "-lig " + abs_smi + "\n"
             # fsmi = tmpdir.join(smi)
             # oldsmi=os.path.dirname(infile)+"/"+smi
-            # smidata=open(oldsmi).read()
+            # with open(oldsmi) as f:
+            #     smidata=f.read()
             # fsmi.write(smidata)
             # print "smi file is copied to the temporary running folder!"
+    newdata += f"-rundir {tmpdir}\n"
     newdata += "-jobdir " + name + "\n"
     print('=====')
     print(newdata)
-    if isMulti == False:
+    if not isMulti:
         newdata += "-name " + name + "\n"
     print(newdata)
     f.write(newdata)
     print("Input file parsed for test is located: ", newname)
-    return newname
+    jobdir = str(tmpdir / name)
+    return newname, jobdir
 
 
-def parse4testNoFF(infile, tmpdir):
+def parse4testNoFF(infile, tmpdir: Path, isMulti: bool = False) -> str:
     name = jobname(infile)
-    newname = name + "_noff"
-    newinfile = name + "_noff.in"
-    f = tmpdir.join(newinfile)
-    fullnewname = f.dirname + "/" + newinfile
-    data = open(infile).readlines()
-    newdata = ""
-    hasJobdir = False
-    hasName = False
-    hasFF = False
-    for line in data:
-        if ("-ff " in line):
-            hasFF = True
-            break
-    if not hasFF:
-        print("No FF optimization used in original input file. No need to do further test.")
-        fullnewname = ""
-    else:
-        print("FF optimization used in original input file. Now test for no FF result.")
-        for line in data:
-            if not (("-jobdir" in line) or ("-name" in line) or ("-ff " in line)):
-                newdata += line
-        newdata += "-jobdir " + newname + "\n"
-        newdata += "-name " + newname + "\n"
-        print(newdata)
-        f.write(newdata)
-        print("Input file parsed for no FF test is located: ", fullnewname)
-    return fullnewname
+    newinfile = str(tmpdir / (name + "_noff.in"))
+    shutil.copyfile(infile, newinfile)
+    return parse4test(newinfile, tmpdir, isMulti, extra_args={"-ffoption": "N"})
 
 
 def report_to_dict(lines):
@@ -281,13 +278,13 @@ def report_to_dict(lines):
     separated files
     """
     d = dict()
-    for l in lines:
-        key, val = l.strip().split(',')[0:2]
+    for line in lines:
+        key, val = line.strip().split(',')[0:2]
         try:
             d[key] = float(val.strip('[]'))
-        except:
+        except ValueError:
             d[key] = str(val.strip('[]'))
-    ## extra proc for ANN_bond list:
+    # extra proc for ANN_bond list:
     if 'ANN_bondl' in d.keys():
         d['ANN_bondl'] = [float(i.strip('[]')) for i in d['ANN_bondl'].split()]
     return (d)
@@ -298,8 +295,10 @@ def report_to_dict(lines):
 
 
 def compare_report_new(report1, report2):
-    data1 = open(report1, 'r').readlines()
-    data2 = open(report2, 'r').readlines()
+    with open(report1, 'r') as f_in:
+        data1 = f_in.readlines()
+    with open(report2, 'r') as f_in:
+        data2 = f_in.readlines()
     if data1 and data2:
         Equal = True
         dict1 = report_to_dict(data1)
@@ -316,7 +315,7 @@ def compare_report_new(report1, report2):
         for k in dict1.keys():
             if Equal:
                 val1 = dict1[k]
-                if not k in dict2.keys():
+                if k not in dict2.keys():
                     Equal = False
                     print("Report compare failed for ", report1, report2)
                     print("keys " + str(k) + " not present in " + str(report2))
@@ -330,7 +329,8 @@ def compare_report_new(report1, report2):
                         else:
                             Equal = (val1 == val2)
                         if not Equal:
-                            print("Report compare failed for ", report1, report2)
+                            print("Report compare failed for ",
+                                  report1, report2)
                             print("Values don't match for key", k)
                             print([val1, val2])
                     else:
@@ -339,7 +339,8 @@ def compare_report_new(report1, report2):
                         for ii, v in enumerate(val1):
                             Equal = fuzzy_equal(v, val2[ii], 1e-4)
                         if not Equal:
-                            print("Report compare failed for ", report1, report2)
+                            print("Report compare failed for ",
+                                  report1, report2)
                             print("Values don't match for key", k)
                             print([val1, val2])
             else:
@@ -381,8 +382,10 @@ def compare_qc_input(inp, inp_ref):
         print(inp + "not found")
         return passQcInputCheck
 
-    data1 = open(inp, 'r').read()
-    data_ref = open(inp_ref, 'r').read()
+    with open(inp, 'r') as f_in:
+        data1 = f_in.read()
+    with open(inp_ref, 'r') as f_in:
+        data_ref = f_in.read()
     if len(data1) != len(data_ref):
         passQcInputCheck = False
         return passQcInputCheck
@@ -393,17 +396,20 @@ def compare_qc_input(inp, inp_ref):
     return passQcInputCheck
 
 
-def runtest(tmpdir, name, threshMLBL, threshLG, threshOG):
-    infile = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/" + name + ".in")
-    newinfile = parse4test(infile, tmpdir)
+def runtest(tmpdir, resource_path_root, name, threshMLBL, threshLG, threshOG, seed=31415):
+    # Set seeds to eliminate randomness from test results
+    random.seed(seed)
+    np.random.seed(seed)
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    newinfile, myjobdir = parse4test(infile, tmpdir)
     args = ['main.py', '-i', newinfile]
-    startgen(args, False, False)
-    myjobdir = jobdir(infile)
+    with working_directory(tmpdir):
+        startgen(args, False, False)
     output_xyz = myjobdir + '/' + name + '.xyz'
     output_report = myjobdir + '/' + name + '.report'
     output_qcin = myjobdir + '/terachem_input'
-    molsim_data = open(newinfile).read()
+    with open(newinfile, 'r') as f_in:
+        molsim_data = f_in.read()
     if 'orca' in molsim_data.lower():
         # if not '-name' in molsim_data.lower():
         output_qcin = myjobdir + '/orca.in'
@@ -411,12 +417,9 @@ def runtest(tmpdir, name, threshMLBL, threshLG, threshOG):
     if 'molcas' in molsim_data.lower():
         output_qcin = myjobdir + '/molcas.input'
 
-    ref_xyz = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + ".xyz")
-    ref_report = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + ".report")
-    ref_qcin = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + ".qcin")
+    ref_xyz = resource_path_root / "refs" / f"{name}.xyz"
+    ref_report = resource_path_root / "refs" / f"{name}.report"
+    ref_qcin = resource_path_root / "refs" / f"{name}.qcin"
 
     print("Test input file: ", newinfile)
     print("Test output files are generated in ", myjobdir)
@@ -436,7 +439,7 @@ def runtest(tmpdir, name, threshMLBL, threshLG, threshOG):
     return [passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin]
 
 
-def runtest_slab(tmpdir, name, threshOG):
+def runtest_slab(tmpdir, resource_path_root, name, threshOG, extra_files=None):
     """
     Performs test for slab builder.
 
@@ -449,21 +452,25 @@ def runtest_slab(tmpdir, name, threshOG):
         axis : threshOG
                 tolerance for RMSD comparison of overall geometries.
     """
-    infile = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/" + name + ".in")
-    newinfile = parse4test(infile, tmpdir)
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    newinfile, _ = parse4test(infile, tmpdir)
+    if extra_files is not None:
+        for file_name in extra_files:
+            file_path = resource_path_root / "inputs" / f"{file_name}"
+            shutil.copyfile(file_path, tmpdir / file_name)
     args = ['main.py', '-i', newinfile]
-    startgen(args, False, False)
-    myjobdir = jobdir(infile) + "/slab/"
-    output_xyz = myjobdir + '/super332.xyz'
-    ref_xyz = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + ".xyz")
+    with working_directory(tmpdir):
+        startgen(args, False, False)
+    output_xyz = tmpdir / 'slab' / 'super332.xyz'
+    ref_xyz = resource_path_root / "refs" / f"{name}.xyz"
     print("Output xyz file: ", output_xyz)
-    pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0, threshOG=threshOG, slab=True)
+    pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0,
+                          threshOG=threshOG, slab=True)
     [passNumAtoms, passOG] = pass_xyz
     return [passNumAtoms, passOG]
 
-def runtest_molecule_on_slab(tmpdir, name, threshOG):
+
+def runtest_molecule_on_slab(tmpdir, resource_path_root, name, threshOG, extra_files=None):
     """
     Performs test for slab builder with a CO molecule adsorbed.
 
@@ -476,42 +483,44 @@ def runtest_molecule_on_slab(tmpdir, name, threshOG):
         axis : threshOG
                 tolerance for RMSD comparison of overall geometries.
     """
-    infile = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/" + name + ".in")
-    newinfile = parse4test(infile, tmpdir, external={'-unit_cell':'slab.xyz','-target_molecule':'co.xyz'})
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    newinfile, _ = parse4test(infile, tmpdir, extra_args={
+        '-unit_cell': 'slab.xyz', '-target_molecule': 'co.xyz'})
+    if extra_files is not None:
+        for file_name in extra_files:
+            file_path = resource_path_root / "inputs" / f"{file_name}"
+            shutil.copyfile(file_path, tmpdir / file_name)
     args = ['main.py', '-i', newinfile]
-    startgen(args, False, False)
-    myjobdir = os.path.split(jobdir(infile))[0] + "/loaded_slab/"
-    output_xyz = myjobdir + '/loaded.xyz'
-    ref_xyz = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + ".xyz")
+    with working_directory(tmpdir):
+        startgen(args, False, False)
+    output_xyz = tmpdir / 'loaded_slab' / 'loaded.xyz'
+    ref_xyz = resource_path_root / "refs" / f"{name}.xyz"
     print("Output xyz file: ", output_xyz)
-    pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0, threshOG=threshOG, slab=True)
+    pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0,
+                          threshOG=threshOG, slab=True)
     [passNumAtoms, passOG] = pass_xyz
     return [passNumAtoms, passOG]
 
-def runtestgeo(tmpdir, name, thresh, deleteH=True, geo_type="oct"):
-    initgeo = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/geocheck/" + name + "/init.xyz")
-    optgeo = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/geocheck/" + name + "/opt.xyz")
-    refjson = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/geocheck/" + name + "/ref.json")
+
+def runtestgeo(tmpdir, resource_path_root, name, thresh, deleteH=True, geo_type="oct"):
+    initgeo = resource_path_root / "inputs" / "geocheck" / name / "init.xyz"
+    optgeo = resource_path_root / "inputs" / "geocheck" / name / "opt.xyz"
+    refjson = resource_path_root / "refs" / "geocheck" / name / "ref.json"
     mymol = mol3D()
     mymol.readfromxyz(optgeo)
     init_mol = mol3D()
     init_mol.readfromxyz(initgeo)
-    if geo_type == "oct":
-        _, _, dict_struct_info = mymol.IsOct(init_mol=init_mol,
-                                             debug=False,
-                                             flag_deleteH=deleteH)
-    elif geo_type == "one_empty":
-        _, _, dict_struct_info = mymol.IsStructure(init_mol=init_mol,
-                                                   dict_check=dict_oneempty_check_st,
-                                                   angle_ref=oneempty_angle_ref,
-                                                   num_coord=5,
-                                                   debug=False,
-                                                   flag_deleteH=deleteH)
+    with working_directory(tmpdir):
+        if geo_type == "oct":
+            _, _, dict_struct_info = mymol.IsOct(
+                init_mol=init_mol, debug=False, flag_deleteH=deleteH)
+        elif geo_type == "one_empty":
+            _, _, dict_struct_info = mymol.IsStructure(
+                init_mol=init_mol, dict_check=dict_oneempty_check_st,
+                angle_ref=oneempty_angle_ref, num_coord=5, debug=False,
+                flag_deleteH=deleteH)
+        else:
+            raise ValueError(f"Invalid geo_type {geo_type}")
     with open(refjson, "r") as fo:
         dict_ref = json.load(fo)
     # passGeo = (sorted(dict_ref.items()) == sorted(dict_struct_info.items()))
@@ -521,47 +530,44 @@ def runtestgeo(tmpdir, name, thresh, deleteH=True, geo_type="oct"):
     return passGeo
 
 
-def runtestgeo_optonly(tmpdir, name, thresh, deleteH=True, geo_type="oct"):
-    optgeo = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/geocheck/" + name + "/opt.xyz")
-    refjson = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/geocheck/" + name + "/ref.json")
+def runtestgeo_optonly(tmpdir, resource_path_root, name, thresh, deleteH=True, geo_type="oct"):
+    optgeo = resource_path_root / "inputs" / "geocheck" / name / "opt.xyz"
+    refjson = resource_path_root / "refs" / "geocheck" / name / "ref.json"
     mymol = mol3D()
     mymol.readfromxyz(optgeo)
     if geo_type == "oct":
         _, _, dict_struct_info = mymol.IsOct(debug=False,
                                              flag_deleteH=deleteH)
-    with open(refjson, "r") as fo:
-        dict_ref = json.load(fo)
-    passGeo = comparedict(dict_ref, dict_struct_info, thresh)
-    return passGeo
+        with open(refjson, "r") as fo:
+            dict_ref = json.load(fo)
+        passGeo = comparedict(dict_ref, dict_struct_info, thresh)
+        return passGeo
+    else:
+        raise NotImplementedError('Only octahedral geometries supported for now')
 
 
-def runtestNoFF(tmpdir, name, threshMLBL, threshLG, threshOG):
-    infile = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/" + name + ".in")
-    newinfile = parse4testNoFF(infile, tmpdir)
+def runtestNoFF(tmpdir, resource_path_root, name, threshMLBL, threshLG, threshOG):
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    newinfile, myjobdir = parse4testNoFF(infile, tmpdir)
     [passNumAtoms, passMLBL, passLG, passOG, pass_report,
      pass_qcin] = [True, True, True, True, True, True]
     if newinfile != "":
         newname = jobname(newinfile)
         args = ['main.py', '-i', newinfile]
-        startgen(args, False, False)
-        myjobdir = jobdir(newinfile)
+        with working_directory(tmpdir):
+            startgen(args, False, False)
         output_xyz = myjobdir + '/' + newname + '.xyz'
         output_report = myjobdir + '/' + newname + '.report'
-        molsim_data = open(newinfile).read()
+        with open(newinfile, 'r') as f_in:
+            molsim_data = f_in.read()
         output_qcin = myjobdir + '/terachem_input'
         if 'orca' in molsim_data.lower():
             output_qcin = myjobdir + '/orca.in'
         if 'molcas' in molsim_data.lower():
             output_qcin = myjobdir + '/molcas.input'
-        ref_xyz = resource_filename(Requirement.parse(
-            "molSimplify"), "tests/refs/" + newname + ".xyz")
-        ref_report = resource_filename(Requirement.parse(
-            "molSimplify"), "tests/refs/" + newname + ".report")
-        ref_qcin = resource_filename(Requirement.parse(
-            "molSimplify"), "tests/refs/" + name + ".qcin")
+        ref_xyz = resource_path_root / "refs" / f"{newname}.xyz"
+        ref_report = resource_path_root / "refs" / f"{newname}.report"
+        ref_qcin = resource_path_root / "refs" / f"{name}.qcin"
         print("Test input file: ", newinfile)
         print("Test output files are generated in ", myjobdir)
         print("Output xyz file: ", output_xyz)
@@ -576,36 +582,69 @@ def runtestNoFF(tmpdir, name, threshMLBL, threshLG, threshOG):
         print("Reference report status: ", pass_report)
         pass_qcin = compare_qc_input(output_qcin, ref_qcin)
         print("Reference qc input file: ", ref_qcin)
-        print("Test qc input file:", output_qcin)
-        print("Qc input status:", pass_qcin)
+        print("Test qc input file: ", output_qcin)
+        print("Qc input status: ", pass_qcin)
     return [passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin]
 
 
-def runtestMulti(tmpdir, name, threshMLBL, threshLG, threshOG):
-    infile = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/inputs/" + name + ".in")
-    newinfile = parse4test(infile, tmpdir, True)
+def runtest_reportonly(tmpdir, resource_path_root, name, seed=31415):
+    # Set seeds to eliminate randomness from test results
+    random.seed(seed)
+    np.random.seed(seed)
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    # Copy the input file to the temporary folder
+    shutil.copy(infile, tmpdir/f'{name}_reportonly.in')
+    # Add the report only flag
+    with open(tmpdir/f'{name}_reportonly.in', 'a') as f:
+        f.write('-reportonly True\n')
+    newinfile, myjobdir = parse4test(tmpdir/f'{name}_reportonly.in', tmpdir)
     args = ['main.py', '-i', newinfile]
-    # Need to make the ligand file visible to the input file
-    startgen(args, False, False)
-    myjobdir = jobdir(infile) + "/"
+    with open(newinfile, 'r') as f:
+        print(f.readlines())
+    with working_directory(tmpdir):
+        startgen(args, False, False)
+    output_report = myjobdir + '/' + name + '_reportonly.report'
+    ref_report = resource_path_root / "refs" / f"{name}.report"
+    # Copy the reference report to the temporary folder
+    shutil.copy(ref_report, tmpdir/f'{name}_ref.report')
+    with open(tmpdir/f'{name}_ref.report', 'r') as f:
+        lines = f.read()
+    lines = lines.replace('Min_dist (A), 1000', 'Min_dist (A), graph')
+    with open(tmpdir/f'{name}_ref.report', 'w') as f:
+        f.write(lines)
+
     print("Test input file: ", newinfile)
     print("Test output files are generated in ", myjobdir)
-    refdir = resource_filename(Requirement.parse(
-        "molSimplify"), "tests/refs/" + name + "/")
+    pass_report = compare_report_new(output_report, tmpdir/f'{name}_ref.report')
+    print("Test report file: ", output_report)
+    print("Reference report file: ", ref_report)
+    print("Reference report status: ", pass_report)
+    return pass_report
+
+
+def runtestMulti(tmpdir, resource_path_root, name, threshMLBL, threshLG, threshOG):
+    infile = resource_path_root / "inputs" / f"{name}.in"
+    newinfile, myjobdir = parse4test(infile, tmpdir, True)
+    args = ['main.py', '-i', newinfile]
+    with working_directory(tmpdir):
+        startgen(args, False, False)
+    print("Test input file: ", newinfile)
+    print("Test output files are generated in ", myjobdir)
+    refdir = resource_path_root / "refs" / name
     [passMultiFileCheck, myfiles] = checkMultiFileGen(myjobdir, refdir)
     pass_structures = []
-    if passMultiFileCheck == False:
-        print("Test failed for checking number and names of generated files. Test ends")
+    if not passMultiFileCheck:
+        print("Test failed for checking number and names of generated files. "
+              "Test ends")
     else:
         print("Checking each generated structure...")
         for f in myfiles:
             if ".xyz" in f:
                 r = f.replace(".xyz", ".report")
-                output_xyz = output_xyz = myjobdir + f
-                ref_xyz = refdir + f
-                output_report = myjobdir + r
-                ref_report = refdir + r
+                output_xyz = f"{myjobdir}/{f}"
+                ref_xyz = f"{refdir}/{f}"
+                output_report = f"{myjobdir}/{r}"
+                ref_report = f"{refdir}/{r}"
                 print("Output xyz file: ", output_xyz)
                 print("Reference xyz file: ", ref_xyz)
                 print("Test report file: ", output_report)
@@ -614,6 +653,6 @@ def runtestMulti(tmpdir, name, threshMLBL, threshLG, threshOG):
                     output_xyz, ref_xyz, threshMLBL, threshLG, threshOG)
                 [passNumAtoms, passMLBL, passLG, passOG] = pass_xyz
                 pass_report = compare_report_new(output_report, ref_report)
-        pass_structures.append(
-            [f, passNumAtoms, passMLBL, passLG, passOG, pass_report])
+            pass_structures.append(
+                [f, passNumAtoms, passMLBL, passLG, passOG, pass_report])
     return [passMultiFileCheck, pass_structures]

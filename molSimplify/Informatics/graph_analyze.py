@@ -1,11 +1,11 @@
 # Written by JP Janet for HJK Group
 # Dpt of Chemical Engineering, MIT
 
-##########################################################
-####### This script is a collection of helper ############
-########  routines that convert a molecule    #############
-########   in mol3D form to a truncated graph #############
-##########################################################
+# #########################################################
+# ###### This script is a collection of helper ############
+# #######  routines that convert a molecule    #############
+# #######   in mol3D form to a truncated graph #############
+# #########################################################
 # import modules
 from molSimplify.Classes.globalvars import globalvars
 from molSimplify.Classes.mol3D import mol3D
@@ -13,13 +13,13 @@ import numpy as np
 
 
 def obtain_truncation(mol, con_atoms, hops):
-    ## this function truncates a ligand to a certain number of
-    ## hops from the core
+    # # this function truncates a ligand to a certain number of
+    # # hops from the core
     # Inputs:
     #       mol - mol3D class to truncate
     #       con_atoms - index of atoms that connect to metal
     #       hops - int, number of hops to truncate
-    trunc_mol = mol3D(use_atom_specific_cutoffs = mol.use_atom_specific_cutoffs)
+    trunc_mol = mol3D(use_atom_specific_cutoffs=mol.use_atom_specific_cutoffs)
     # metal_ind = mol.findMetal()[0]
     # trunc_mol.addAtom(mol.getAtom(metal_ind))
     added_list = list()
@@ -31,11 +31,11 @@ def obtain_truncation(mol, con_atoms, hops):
             hopped += 1
             new_active_set = list()
             for this_atom in active_set:
-                ## add all connection atoms
+                # add all connection atoms
                 if this_atom not in added_list:
                     trunc_mol.addAtom(mol.getAtom(this_atom))
                     added_list.append(this_atom)
-                ## prepare all atoms attached to this connection
+                # prepare all atoms attached to this connection
                 this_atoms_neighbors = mol.getBondedAtomsSmart(this_atom)
                 for bound_atoms in this_atoms_neighbors:
                     if (bound_atoms not in added_list):
@@ -53,14 +53,15 @@ def obtain_truncation(mol, con_atoms, hops):
         trunc_mol.bo_dict = save_bo_dict
     return trunc_mol
 
+
 def obtain_truncation_metal(mol, hops):
-    ## this function truncates a ligand to a certain number of
-    ## hops from the core
+    # # this function truncates a ligand to a certain number of
+    # # hops from the core
     # Inputs:
     #       mol - mol3D class to truncate
     #       con_atoms - index of atoms that connect to metal
     #       hops - int, number of hops to truncate
-    trunc_mol = mol3D(use_atom_specific_cutoffs = mol.use_atom_specific_cutoffs)
+    trunc_mol = mol3D(use_atom_specific_cutoffs=mol.use_atom_specific_cutoffs)
     metal_ind = mol.findMetal()[0]
     trunc_mol.addAtom(mol.getAtom(metal_ind))
     added_list = list()
@@ -71,11 +72,11 @@ def obtain_truncation_metal(mol, hops):
         hopped += 1
         new_active_set = list()
         for this_atom in active_set:
-            ## add all connection atoms
+            # add all connection atoms
             if this_atom not in added_list:
                 trunc_mol.addAtom(mol.getAtom(this_atom))
                 added_list.append(this_atom)
-            ## prepare all atoms attached to this connection
+            # prepare all atoms attached to this connection
             this_atoms_neighbors = mol.getBondedAtomsSmart(this_atom)
             for bound_atoms in this_atoms_neighbors:
                 if (bound_atoms not in added_list):
@@ -100,7 +101,7 @@ def obtain_truncation_metal(mol, hops):
 
 def create_graph(mol):
     if not len(mol.graph):
-        ## create connectivity matrix from mol3D information
+        # create connectivity matrix from mol3D information
         index_set = range(0, mol.natoms)
         A = np.zeros((mol.natoms, mol.natoms))
         for i in index_set:
@@ -114,9 +115,9 @@ def create_graph(mol):
 
 
 def get_lig_EN(mol, connection_atoms):
-    ## calculate the maximum abs electronegativity
-    ## difference between connection atom an all
-    ## neighbors
+    # calculate the maximum abs electronegativity
+    # difference between connection atom an all
+    # neighbors
     max_EN = 0
     globs = globalvars()
     for atoms in connection_atoms:
@@ -155,9 +156,8 @@ def kier(mol):
 
 
 def get_truncated_kier(ligand, connection_atoms):
-    ### three hop truncation
+    # three hop truncation
     trunc_mol = obtain_truncation(ligand, connection_atoms, 3)
     # trunc_mol.writexyz('trunc.xyz')
     this_kier = kier(trunc_mol)
     return this_kier
-

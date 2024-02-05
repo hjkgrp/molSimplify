@@ -110,7 +110,7 @@ If you use the machine learning (ML) models in molSimplify to predict the outcom
 If you use the machine learning (ML) models in molSimplify to predict the spin-state dependent reaction energetics, please cite:
 
 ::
-	
+
 	@Article{Nandy2019ACSCatal,
 	author = {Nandy, Aditya and Zhu, Jiazhou and Janet, Jon Paul and Duan, Chenru and Getman, Rachel B. and Kulik, Heather J.},
 	title = {Machine Learning Accelerates the Discovery of Design Rules and Exceptions in Stable Metal--Oxo Intermediate Formation},
@@ -122,4 +122,3 @@ If you use the machine learning (ML) models in molSimplify to predict the spin-s
 	doi = {10.1021/acscatal.9b02165},
 	year={2019},
 	}
-

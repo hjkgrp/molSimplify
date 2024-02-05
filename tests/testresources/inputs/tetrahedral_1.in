@@ -1,0 +1,9 @@
+-core co
+-geometry tertrahedral
+-coord 4
+-lig water water water water
+-ligocc 1
+-ff MMFF94
+-ffoption N
+-spin 1
+-oxstate II

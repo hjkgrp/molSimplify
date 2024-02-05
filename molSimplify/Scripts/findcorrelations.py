@@ -47,7 +47,7 @@ def analysis_supervisor(args, rootdir):
         print('using simple autocorrelation descriptors only')
     if args.max_descriptors:
         print(('using a max of '+str(args.max_descriptors)+' only'))
-    res = correlation_supervisor(
+    correlation_supervisor(
         args.correlate, rootdir, args.simple, args.lig_only, args.max_descriptors)
 
 
@@ -67,29 +67,26 @@ def accquire_file(path):
             ### value | path
             for i, lines in enumerate(f):
                 print(('read line: ' + str(i)))
+                ll = lines.strip('\n\r').split(",")
+                name = ll[0]
                 if i == 0:
                     # this is the first line
-                    ll = lines.strip('\n\r').split(",")
-                    name = ll[0]
-                    y_value_name = ll[1]
+                    # y_value_name = ll[1]
                     # check if path exists:
-                    paths_name = ll[2].strip('/') + '/'+name+'.xyz'
+                    # paths_name = ll[2].strip('/') + '/'+name+'.xyz'
                     if len(ll) > 3:
                         print('custom descriptors found!')
                         custom_names = [ll[i] for i in range(4, len(ll))]
 
                 else:
-                    ll = lines.strip('\n\r').split(",")
-                    # print(ll)
-                    name = ll[0]
                     y_value = ll[1]
                     # check if path exists:
                     this_path = '/'+ll[2].strip('/') + '/'+name+'.xyz'
-                    #print('name = '+str(name))
+                    # print('name = '+str(name))
                     this_obs = dft_observation(name, this_path)
                     this_obs.sety(y_value)
                     if os.path.isfile(this_path):
-                        #print('path exists')
+                        # print('path exists')
                         this_obs.obtain_mol3d()
                         if this_obs.health:
                             counter += 1
@@ -131,7 +128,7 @@ def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_desc
     for i, keyv in enumerate(file_dict.keys()):
         file_dict[keyv].get_descriptor_vector(
             lig_only, simple, name=False, loud=False)
-        #print('i = ',str(i))
+        # print('i = ',str(i))
         if i == 0:
             col_names = file_dict[keyv].descriptor_names
         # reorganize the data
@@ -161,7 +158,8 @@ def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_desc
     mse_reduce = list()
     # stepwise reduce the feature set until only one is left
     for n in range(0, n_tot):
-        reductor = feature_selection.RFE(Reg, n_tot-n, step=1, verbose=0)
+        reductor = feature_selection.RFE(Reg, n_features_to_select=n_tot-n,
+                                         step=1, verbose=0)
         reductor.fit(Xs, Y)
         Ypred_all = reductor.predict(Xs)
         rs_all = metrics.r2_score(Y, Ypred_all)
@@ -198,7 +196,6 @@ def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_desc
                    str(n_opt) + ' varibles as optimal'))
             print(('discarding an additional ' + str(n_max-n_opt) + ' variables'))
             new_variables = list()
-            new_mask = np.zeros(n_tot)
             for i in range(0, n_max):
                 new_variables.append(ranked_features[i])
     # report results to user
@@ -214,7 +211,6 @@ def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_desc
     reg_red = linear_model.LinearRegression()
     reg_red.fit(X_r, Y)
     Ypred_r = reg_red.predict(X_r)
-    errors = [Y[i] - Ypred_r[i] for i in range(0, n_obs)]
     coefs = reg_red.coef_
     intercept = reg_red.intercept_
     mse_all = metrics.mean_squared_error(Y, Ypred_all_all)
@@ -278,14 +274,14 @@ def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_desc
             count += 1
 # with open('y_full_all.csv','w') as f:
     # for items in Ypred_all_all:
-        #f.write(str(items) + '\n')
+        # f.write(str(items) + '\n')
 # with open('rfe_r.csv','w') as f:
     # for items in r_reduce:
-        #f.write(str(items) + '\n')
+        # f.write(str(items) + '\n')
 
 # with open('select_mse.csv','w') as f:
     # for items in select_mse:
-        #f.write(str(items) + '\n')
+        # f.write(str(items) + '\n')
 # with open('errors.csv','w') as f:
     # for items in errors:
-        #f.write(str(items) + '\n')
+        # f.write(str(items) + '\n')

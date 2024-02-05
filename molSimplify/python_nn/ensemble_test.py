@@ -4,14 +4,13 @@ import math
 import numpy as np
 import scipy as sp
 import os
-from keras.callbacks import EarlyStopping
-from keras.models import model_from_json
-from keras import backend as K
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.models import model_from_json
+from tensorflow.keras import backend as K
 
-from pkg_resources import resource_filename, Requirement
+from importlib_resources import files as resource_files
 from sklearn.utils import shuffle
-from molSimplify.python_nn.clf_analysis_tool import (array_stack,
-                                                     dist_neighbor,
+from molSimplify.python_nn.clf_analysis_tool import (dist_neighbor,
                                                      get_entropy)
 from molSimplify.python_nn.tf_ANN import (data_normalize,
                                           data_rescale,
@@ -52,16 +51,19 @@ def mc_dropout_logp(tau, err):
     logp -= 0.5 * np.log(np.power(tau, -1))
     logp -= 0.5 * np.log(2 * math.pi)
     return (logp)
-    
-def ensemble_maker_inner(train_mat,labels,model_gen_function, info_dict,num=10):
+
+
+def ensemble_maker_inner(train_mat, labels, model_gen_function, info_dict,
+                         num=10):
     ## contains core functions to make ensemble models
     ## from training data and labels
     ## model_gen_function is a functiont that takes NO arguments and returns a keras model
-    ## info_dict is a dictionary of training info 
+    ## info_dict is a dictionary of training info
     train_mat, labels = shuffle(train_mat, labels)
     train_mat = np.array_split(train_mat, num, axis=0)
     labels = np.array_split(labels, num, axis=0)
-    earlystop = EarlyStopping(monitor=info_dict['monitor'], min_delta=info_dict['min_delta'],
+    earlystop = EarlyStopping(monitor=info_dict['monitor'],
+                              min_delta=info_dict['min_delta'],
                               patience=info_dict['patience'],
                               verbose=0,
                               mode='auto')
@@ -70,14 +72,15 @@ def ensemble_maker_inner(train_mat,labels,model_gen_function, info_dict,num=10):
     for ii in range(num):
         train_feature = array_stack(train_mat, ii)
         train_labels = array_stack(labels, ii)
-        loaded_model = model_gen_function() # note the call to gen new model
+        loaded_model = model_gen_function()  # note the call to gen new model
         current_model = reset_weights(loaded_model)
-        history = current_model.fit(train_feature, train_labels,
-                                    epochs=info_dict['epochs'], verbose=0,
-                                    batch_size=info_dict['batch_size'],
-                                    callbacks=callbacks_list)
+        current_model.fit(train_feature, train_labels,
+                          epochs=info_dict['epochs'], verbose=0,
+                          batch_size=info_dict['batch_size'],
+                          callbacks=callbacks_list)
         model_list.append(current_model)
     return(model_list)
+
 
 def ensemble_maker(predictor, num=10):
     train_mean_x, train_mean_y, train_var_x, train_var_y = load_normalization_data(predictor)
@@ -85,21 +88,21 @@ def ensemble_maker(predictor, num=10):
     mat = np.array(mat, dtype='float64')
     train_mat = data_normalize(mat, train_mean_x, train_var_x)
     labels = load_training_labels(predictor)
-    if not "clf" in predictor:
+    if "clf" not in predictor:
         labels = np.array(labels, dtype='float64')
         labels = data_normalize(labels, train_mean_y, train_var_y)
     info_dict = load_train_info(predictor)
     model_list = ensemble_maker_inner(train_mat=train_mat,
                                       labels=labels,
-                                      model_gen_function = lambda : load_keras_ann(predictor),
-                                      info_dict = info_dict,num=num)
-    for ii,current_model in enumerate(model_list):
+                                      model_gen_function=lambda: load_keras_ann(predictor),
+                                      info_dict=info_dict, num=num)
+    for ii, current_model in enumerate(model_list):
         save_model(current_model, predictor, ii)
 
 
 def ensemble_uq(predictor, descriptors=False, descriptor_names=False, suffix=False):
     key = get_key(predictor, suffix)
-    base_path = resource_filename(Requirement.parse("molSimplify"), "molSimplify/tf_nn/" + key)
+    base_path = str(resource_files("molSimplify.tf_nn").joinpath(f'{key}.csv'))
     base_path = base_path + 'ensemble_models'
     if not os.path.exists(base_path):
         print('Ensemble models do not exist now, training...')
@@ -108,7 +111,7 @@ def ensemble_uq(predictor, descriptors=False, descriptor_names=False, suffix=Fal
     model_list = glob.glob(base_path + '/*.h5')
 
     labels = load_test_labels(predictor)
-    if not 'clf' in predictor:
+    if 'clf' not in predictor:
         labels = np.array(labels, dtype='float64')
     else:
         labels = np.array(labels, dtype='int')
@@ -127,16 +130,15 @@ def ensemble_uq(predictor, descriptors=False, descriptor_names=False, suffix=Fal
     # print('models', model_list)
     for idx, model in enumerate(model_list):
         _base = model.split('.')[0]
-        json_file = open(_base + '.json', 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
+        with open(_base + '.json', 'r') as json_file:
+            loaded_model_json = json_file.read()
         loaded_model = model_from_json(loaded_model_json)
         # load weights into  model
         loaded_model.load_weights(model)
         # complile model
         loaded_model.compile(loss="mse", optimizer='adam',
                              metrics=['mse', 'mae', 'mape'])
-        if not 'clf' in predictor:
+        if 'clf' not in predictor:
             result = data_rescale(loaded_model.predict(excitation), train_mean_y, train_var_y)
         else:
             result = loaded_model.predict(excitation)
@@ -153,7 +155,7 @@ def ensemble_uq(predictor, descriptors=False, descriptor_names=False, suffix=Fal
 
 def mc_dropout_uq(predictor, descriptors=False, descriptor_names=False, num=500):
     labels = load_test_labels(predictor)
-    if not 'clf' in predictor:
+    if 'clf' not in predictor:
         labels = np.array(labels, dtype='float64')
     else:
         labels = np.array(labels, dtype='int')
@@ -178,7 +180,7 @@ def mc_dropout_uq(predictor, descriptors=False, descriptor_names=False, num=500)
     for ii in range(num):
         if not np.mod(ii, int(num / 10)):
             print(('%d / %d' % (ii, num)))
-        if not 'clf' in predictor:
+        if 'clf' not in predictor:
             results = data_rescale(np.array(get_outputs([excitation, 1])), train_mean_y,
                                    train_var_y)[0]
         else:
@@ -188,7 +190,9 @@ def mc_dropout_uq(predictor, descriptors=False, descriptor_names=False, num=500)
         results_list.append(results)
         err_list.append(err)
     results_list = np.transpose(np.array(results_list))
-    f = lambda tau: mc_dropout_logp(tau, np.array(err_list))
+
+    def f(tau):
+        return mc_dropout_logp(tau, np.array(err_list))
     tau = sp.optimize.minimize(f, 10).x
     result_mean, result_std = np.mean(results_list, axis=1), np.std(results_list, axis=1)
     result_std = np.sqrt(1 / tau + result_std ** 2)
@@ -200,7 +204,7 @@ def mc_dropout_uq(predictor, descriptors=False, descriptor_names=False, num=500)
 
 def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_names=False, entropy=False):
     key = get_key(predictor, suffix=False)
-    base_path = resource_filename(Requirement.parse("molSimplify"), "molSimplify/tf_nn/" + key)
+    base_path = str(resource_files("molSimplify.tf_nn").joinpath(f'{key}.csv'))
     base_path = base_path + 'ensemble_models'
     if not os.path.exists(base_path):
         print('Ensemble models do not exist now, training...')
@@ -227,7 +231,7 @@ def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_nam
         excitation_test = np.array(test_mat)
     labels = load_test_labels(predictor)
     labels_train = load_training_labels(predictor)
-    if not 'clf' in predictor:
+    if 'clf' not in predictor:
         labels = np.array(labels, dtype='float64')
         labels_train = np.array(labels_train, dtype='float64')
     else:
@@ -238,9 +242,8 @@ def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_nam
     dist_list = []
     for model in model_list:
         _base = model.split('.')[0]
-        json_file = open(_base + '.json', 'r')
-        loaded_model_json = json_file.read()
-        json_file.close()
+        with open(_base + '.json', 'r') as json_file:
+            loaded_model_json = json_file.read()
         loaded_model = model_from_json(loaded_model_json)
         loaded_model.load_weights(model)
         loaded_model.compile(loss="mse", optimizer='adam',
@@ -251,7 +254,7 @@ def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_nam
                                 [loaded_model.layers[layer_index].output])
         print(('NOTE: you are choosing:', loaded_model.layers[layer_index], loaded_model.layers[layer_index].name,
               'for the latence space!'))
-        if not 'clf' in predictor:
+        if 'clf' not in predictor:
             results = data_rescale(np.array(get_outputs([excitation_test, 0])), train_mean_y,
                                    train_var_y)[0]
         else:
@@ -259,13 +262,13 @@ def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_nam
         ## get latent dist
         training_latent_distance = np.array(get_latent([excitation, 0]))[0]
         nn_latent_dist_train, _, __ = dist_neighbor(training_latent_distance, training_latent_distance, labels_train,
-                                                    l=5, dist_ref=1, just_nn=True)
+                                                    l=5, dist_ref=1)
         nn_dist_avrg_train = np.mean(nn_latent_dist_train)
         # print(nn_dist_avrg_train)
         test_latent_distance = np.array(get_latent([excitation_test, 0]))[0]
         nn_latent_dist_test, nn_dists, nn_labels = dist_neighbor(test_latent_distance, training_latent_distance,
                                                                  labels_train,
-                                                                 l=5, dist_ref=nn_dist_avrg_train, just_nn=False)
+                                                                 l=5, dist_ref=nn_dist_avrg_train)
         if not entropy:
             # print(nn_latent_dist_test.shape)
             # print(min(nn_latent_dist_test), max(nn_latent_dist_test))
@@ -281,7 +284,7 @@ def latent_space_uq(predictor, layer_index=-2, descriptors=False, descriptor_nam
         err_list.append(err)
     dist_list = np.transpose(np.array(dist_list))
     results_list = np.transpose(np.array(results_list))
-    result_mean, result_std = np.mean(results_list, axis=1), np.std(results_list, axis=1)
+    result_mean = np.mean(results_list, axis=1)
     latent_dist = np.mean(dist_list, axis=1)
     labels = np.squeeze(labels, axis=1)
     error_for_mean = np.abs(labels - result_mean)

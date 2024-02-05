@@ -173,7 +173,6 @@ def nbo_parser_restricted(s):
 
 def spinnbo(s, metal):
     sNBO = []
-    sLV = []
     # get molecular orbitals containing metal
     ss = s.split('NATURAL BOND ORBITAL')[1]
     ss2 = ss.split('DIRECTIONALITY')
@@ -251,7 +250,6 @@ def nbopost(resfiles, folder, gui, flog):
             gui.app.processEvents()
         with open(resf) as f:
             s = f.read()
-            f.close()
         # split output into QC and nbo parts
         ssp = ' N A T U R A L   A T O M I C   O R B I T A L'
         if ssp in s:
@@ -272,8 +270,8 @@ def nbopost(resfiles, folder, gui, flog):
                 tt += "{:6.4f}".format(nbores[3]).ljust(10)+'\n'
             textnbo.append(tt)
     textnbo = sorted(textnbo)
-    f = open(folder+'/nbo.txt', 'w')
-    f.write(headern+''.join(textnbo))
+    with open(folder+'/nbo.txt', 'w') as f:
+        f.write(headern+''.join(textnbo))
 
 # Parse terachem output
 #  @param resfiles Files to be post-processed
@@ -290,7 +288,6 @@ def terapost(resfiles, folder, gui, flog):
     header += "\nFolder                                            Compound    Method  %HF  Restricted   Optim  Converged  NoSteps   Spin   S^2   Charge    Energy(au)   Time(s)\n"
     header += "------------------------------------------------------------------------------------------------------------------------------------------------------------------\n"
     # loop over folders
-    resf = []
     text = []
     for numi, resf in enumerate(resfiles):
         resfp = os.path.relpath(resf, folder)
@@ -302,7 +299,6 @@ def terapost(resfiles, folder, gui, flog):
             gui.iWtxt.setText('Processing '+resfp+'\n'+gui.iWtxt.toPlainText())
         with open(resf) as f:
             s = f.read()
-            f.close()
         # split output into terachem and nbo parts
         stera = s  # get tera output
         if 'TeraChem' in s:
@@ -344,7 +340,6 @@ def terapost(resfiles, folder, gui, flog):
             # get results
             en = [line for line in ss if 'FINAL ENERGY:' in line]  # energy
             en = en[-1].rsplit(None, 2)[-2] if len(en) > 0 else 'NaN'
-            conv = 'NA'
             if (optim == 'Y'):
                 conv = [line for line in ss if 'Converged!' in line]
                 conv = 'Y' if len(conv) > 0 else 'N'
@@ -371,9 +366,8 @@ def terapost(resfiles, folder, gui, flog):
     # sort alphabetically and print
     text = sorted(text)
     if len(text) > 0:
-        f = open(folder+'/tera-results.txt', 'w')
-        f.write(header+''.join(text))
-        f.close()
+        with open(folder+'/tera-results.txt', 'w') as f:
+            f.write(header+''.join(text))
 
 # Parse GAMESS output
 #  @param resfiles Files to be post-processed
@@ -388,7 +382,6 @@ def gampost(resfiles, folder, gui, flog):
     header += "\nFolder                                            Method   %MGGA   %LDA  Optim  Converged  NoSteps   S-SQ   Spin   Charge    Energy(au)      Time(MIN)\n"
     header += "--------------------------------------------------------------------------------------------------------------------------------------------------------\n"
     # loop over folders
-    resf = []
     text = []
     flog.write(
         '################## Calculating results summary ##################\n\n')
@@ -408,7 +401,6 @@ def gampost(resfiles, folder, gui, flog):
             resfold = resfold[-1]
         with open(resf) as f:
             s = f.read()
-            f.close()
         if 'GAMESS' in s:
             sgam = s  # get gamess output
             ''' Parse gamess output '''
@@ -492,6 +484,5 @@ def gampost(resfiles, folder, gui, flog):
     # sort alphabetically and print
     text = sorted(text)
     if len(text) > 0:
-        f = open(folder+'/gam-results.txt', 'w')
-        f.write(header+''.join(text))
-        f.close()
+        with open(folder+'/gam-results.txt', 'w') as f:
+            f.write(header+''.join(text))

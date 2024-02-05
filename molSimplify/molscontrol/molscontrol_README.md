@@ -34,4 +34,3 @@ Currently two modes are implemented, "terachem" and "geo".  In "terachem" mode, 
 ##### Other useful info
 
 For the motivation of background of molscontrol, please refer to our tutorials https://hjkgrp.mit.edu/content/molsimplify-tutorial-12-using-static-classifier-predict-your-simulation-outcomes-they-waste and https://hjkgrp.mit.edu/content/molsimplify-tutorial-13-molscontrol-intelligent-job-control-system-manage-your-dft-geometry.
-

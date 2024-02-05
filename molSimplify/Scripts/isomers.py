@@ -1,4 +1,4 @@
-from molSimplify.Scripts.molSimplify_io import getlicores, lig_load
+from molSimplify.Scripts.io import getlicores, lig_load
 from copy import copy, deepcopy
 
 # NOTE: -isomers does not currently support ligands with denticity > 2 or complexes with 3 bidentate molecules
@@ -11,9 +11,9 @@ oct_adjacency = {0: (1, 3, 4, 5), 1: (0, 2, 4, 5), 2: (1, 3, 4, 5), 3: (0, 2, 4,
                  4: (0, 1, 2, 3), 5: (0, 1, 2, 3)}
 thd_adjacency = {0: (1, 2, 3), 1: (0, 2, 3), 2: (0, 1, 3), 3: (0, 1, 2)}
 sqp_adjacency = {0: (1, 3), 1: (0, 2), 2: (1, 3), 3: (0, 2)}
-tbp_adjacency = {0: (2,3,4), 1: (2,3,4), 2: (0,1), 3: (0,1), 4: (0,1)}
-spy_adjacency = {0: (1,3,4), 1: (0,2,4), 2: (1,3,4), 3: (0,2,4), 4: (0,1,2,3)}
-pbp_adjacency = {0: (1,4), 1: (0,2), 2: (1,3), 3: (2,4), 4: (3,0), 5: (0,1,2,3,4), 6: (0,1,2,3,4)}
+tbp_adjacency = {0: (2, 3, 4), 1: (2, 3, 4), 2: (0, 1), 3: (0, 1), 4: (0, 1)}
+spy_adjacency = {0: (1, 3, 4), 1: (0, 2, 4), 2: (1, 3, 4), 3: (0, 2, 4), 4: (0, 1, 2, 3)}
+pbp_adjacency = {0: (1, 4), 1: (0, 2), 2: (1, 3), 3: (2, 4), 4: (3, 0), 5: (0, 1, 2, 3, 4), 6: (0, 1, 2, 3, 4)}
 
 # Core functionality of isomers.py
 #  @param args A class containing the user specified input
@@ -22,23 +22,21 @@ pbp_adjacency = {0: (1,4), 1: (0,2), 2: (1,3), 3: (2,4), 4: (3,0), 5: (0,1,2,3,4
 
 def generateisomers(args):
     # Check if this is a non-supported case
-    continue_flag = True
     dents = []
     for ligands in args.lig:
         denticity = checkdenticity(ligands)
         dents.append(denticity)
     if max(dents) > 2:
         print('WARNING, -isomers does not support ligand denticities greater than two. Quiting...')
-        continue_flag = False
+        return []
 
     # If supported, run the program
-    if continue_flag:
-        expanded = expandrepresentation(args)
-        permutations = findpermutations(expanded)
-        unique_permutations = checkunique(args, permutations)
-        isomers = collapserepresentation(args, unique_permutations)
-        if args.stereos:
-            isomers = generatestereo(isomers)
+    expanded = expandrepresentation(args)
+    permutations = findpermutations(expanded)
+    unique_permutations = checkunique(args, permutations)
+    isomers = collapserepresentation(args, unique_permutations)
+    if args.stereos:
+        isomers = generatestereo(isomers)
 
     return isomers
 
@@ -67,13 +65,15 @@ def expandrepresentation(args):
             expanded.append(ligand)
     return expanded
 
-# Given a list, genertes all possible permutations of that list
+# Given a list, generates all possible permutations of that list
 #  @param lst The list to permute
 #  @return master A list of lists, with each specifying a permutation
 
 
-def findpermutations(lst, master=[]):
-    for i in range(len(lst)-1):
+def findpermutations(lst, master=None):
+    if master is None:
+        master = []
+    for _ in range(len(lst)-1):
         if not master:
             for element in lst:
                 master.append([element])
@@ -118,7 +118,7 @@ def checkunique(args, permutations):
 
             geometry.append([permutation[index]] + visible_ligands)
 
-        if checkallowedbidentates(permutation,args.geometry):
+        if checkallowedbidentates(permutation, args.geometry):
             geometry.sort()
             if checkincluded(geometry, unique_representations):
                 unique_representations.append(geometry)
@@ -136,7 +136,6 @@ def checkunique(args, permutations):
 
 
 def collapserepresentation(args, permutations):
-    collapsed = {}
 
     # First, relabel symmetric ligands
     permutations_tmp = deepcopy(permutations)
@@ -233,12 +232,12 @@ def generatestereo(collapsed_representation):
 #
 #  @param simple_geometry A lig list in expanded form.
 #  @return allowed Returns a boolean. True if the bidentates are in allowed positions.
-def checkallowedbidentates(simple_geometry,geometry):
+def checkallowedbidentates(simple_geometry, geometry):
     simple_geometry_tmp = copy(simple_geometry)
-    
-    #Check if bidentate is in a position where there's nothing to coordinate to
-    
-    if geometry in ['oct','pbp']:
+
+    # Check if bidentate is in a position where there's nothing to coordinate to
+
+    if geometry in ['oct', 'pbp']:
         if simple_geometry[-1].endswith('_alphabond') or simple_geometry[-1].endswith('_betabond'):
             return False
     if geometry in ['tbp']:
@@ -300,11 +299,11 @@ def getadjacency(geo):
         return thd_adjacency
     elif geo == 'sqp':
         return sqp_adjacency
-    elif geo =='tbp':
+    elif geo == 'tbp':
         return tbp_adjacency
-    elif geo =='spy':
+    elif geo == 'spy':
         return spy_adjacency
-    elif geo =='pbp':
+    elif geo == 'pbp':
         return pbp_adjacency
     else:
         print('****************************************************')
@@ -383,7 +382,7 @@ def checksymmetric(lig):
         used_atoms = {index}
 
         finding_atoms = True
-        while finding_atoms == True:
+        while finding_atoms:
             current_sphere = coordination_spheres[-1]
             length = len(coordination_spheres)
 

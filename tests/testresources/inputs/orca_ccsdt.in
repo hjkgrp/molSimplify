@@ -1,0 +1,22 @@
+# Input file generated from molSimplify at 10/29/2018 12:56
+-geometry oct
+-distort 0
+-coord 6
+-nconfs 1
+-method CCSD(T)
+-core Fe
+-ligocc 6
+-spin 5
+-bcharge 0
+-charge 2
+-calccharge True
+-jsched sge
+-oxstate II
+-lig N1C=CC=C1
+-runtyp Opt
+-smicat 1
+-qccode orca
+-ff mmff94
+-ffoption ba
+-keepHs False
+-qoption REL DKH2

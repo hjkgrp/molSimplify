@@ -63,7 +63,6 @@ def write_periodic_mol3d_to_qe(mol, cell_vector, path):
         f.write("ATOMIC_SPECIES\n")
         for elements in unique_atoms:
             ps_info = ".pbe-van_ak.UPF"
-            m_ps = ".pbe-sp-van_ak.UPF"
             if str(elements) in list(psd.keys()):
                 ps_info = str(psd[str(elements)])
             if len(elements) == 1:

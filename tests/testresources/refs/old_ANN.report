@@ -1,0 +1,14 @@
+Bad structure?, False
+Min_dist (A), 1000
+Was ANN used?, True
+ANN_dist_to_train, 1.604089112815757e-10
+ANN_closest_train, fe(2)_ax_h2o_eq_h2o20
+ANN_trust, high
+pred_split_HS_LS, -24.75535541827502
+This spin, 5
+ANN_ground_state, 5
+ANN_bondl, [2.075664750584702, 2.075664750584702, 2.075664750584702, 2.075664750584702, 2.075664750584702, 2.075664750584702]
+ANN_slope, [-46.37397478]
+Was Catalytic ANN used?, False
+Catalytic ANN reason, False
+ML-bl (database, A), 2.12

@@ -1,156 +1,191 @@
-# ligand name, ligand structure file, abbreviation (unique), connection atoms, groups, force field (BA:always,B:before only,A:after only,N:no), formal charge
-# if connecting atoms 
+# ligand name, ligand structure file, abbreviation (unique), connection atoms, groups, force field (BA:before and after,B:before only,A:after only,N:no), formal charge
+# if connecting atoms
+12crown4:12crown4.mol,12crown4,6 9 0 3,build tetradentate,N,0
+Hpyrrole:Hpyrrole.mol,Hpyrl,0,build organic,BA,-1
+N-quinolinylbutyramidate:N-quinolinylbutyramidate.xyz,n-qnbuam,9 2,build small,BA,-1
+N-quinolinylmethylmethinylacetamidate:N-quinolinylmethylmethinylacetamidate.xyz,n-qnbuam3-,9 2 20,build small,BA,-2
 acac:acac.mol,acac,0 5,build functionalize bidentate,BA,-1
 acacen:acacen.mol,acacen, 9 3 14 5,build tetradentate,N,0
-ethylesteracac:ethylesteracac.mol,ethylesteracac,0 5,build functionalize bidentate,BA,-1
-antipyrine:Antipyrine.mol,antipyrine,4,build bulky,BA,0
+acetate:acetate.xyz,acetate,2,build small,BA,-1
+aceticacidbipyridine:aceticacidbipyridine.mol,aceticacidbip,0 1,build bidentate,BA,0
 acetonitrile:acetonitrile.mol,actnt,1,build small,N,0
 acetylacetone:acac.mol,acac,0 5,build functionalize bidentate,BA,-1
 alanine:alanine.mol,Ala,3,build functionalize aminoacid,BA,0
 alanineB:alanine.mol,Ala,3 11,build functionalize aminoacid,BA,0
 amine:amine.mol,ami,0,functionalize small,N,-1
-azide:azide.mol,azide,0,functionalize small,BA,-1
-methylamine:methylamine.mol,methylamine,1,functionalize small,N,0
-ethylamine:ethylamine.mol,ethylamine,1,functionalize small,N,0
-nethanolamine:nethanolamine.mol,nethanolamine,1,functionalize small,N,0
-oethanolamine:oethanolamine.mol,oethanolamine,7,functionalize small,N,0
-ethanolamine:ethanolamine.mol,ethanolamine,1 7,functionalize bidentate,BA,0
 ammonia:ammonia.mol,ammo,0,build small,N,0
-nh3:ammonia.mol,ammo,0,build small,N,0
-arginine:arginine.mol,Arg,3,build functionalize aminoacid,BA,1
-arginineB:arginine.mol,Arg,3 25,build functionalize aminoacid,BA,1
+antipyrine:Antipyrine.mol,antipyrine,4,build bulky,BA,0
+arginine:arginine.mol,Arg,3,build functionalize aminoacid,BA,0
+arginineB:arginine.mol,Arg,3 25,build functionalize aminoacid,BA,0
 asparagine:asparagine.mol,Asn,6,build functionalize aminoacid,BA,0
 aspartic:aspartic_acid.mol,Asp,6,build functionalize aminoacid,BA,-1
 asparticB:aspartic_acid.mol,Asp,6 7,build functionalize aminoacid,BA,-1
+azide:azide.mol,azide,0,functionalize small,BA,-1
 benzene:benzene.mol,bnz,4,build small organic,BA,-1
-benzene_pi:benzene_pi.mol,bnp,0 1 2 3 4 5 pi,build small organometallic,N,0
-benzenedithiol:benzenedithiol.mol,benzenedithiol,0 11,build functionalize bidentate,BA,-1
+benzene_pi:benzene_pi.mol,bnp,0 1 2 3 4 5 pi,build small organometallic,N,-1
+benzenedithiol:benzenedithiol.mol,benzenedithiol,0 11,build functionalize bidentate,BA,-2
 benzenethiol:benzenethiol.mol,bthil,0,build functionalize small,N,-1
-bihydrooxazole:bihydrooxazole.mol,bihydrooxazole,4 13,build bidentate,A,0
-hydrooxazole:hydrooxazole.mol,hydrooxazole,4,build functionalize,A,0
-bihydrothiazole:bihydrothiazole.mol,bihydrothiazole,4 13,,build bidentate,A,0
-hydrothiazole:hydrothiazole.mol,hydrothiazole,4,build functionalize,A,0
-hydrodiazole:hydrodiazole.mol,hydrodiazole,4,build functionalize,A,0
-bihydrodiazole:bihydrodiazole.mol,bihydrodiazole,4 13,build bidentate,A,0
-bioxazole:bioxazole.mol,bioxazole,4 9,build bidentate,A,0
-oxazole:oxazole.mol,oxazole,4,build functionalize,A,0
-bithiazole:bithiazole.mol,bithiazole,4 9,build bidentate,A,0
-thiazole:thiazole.mol,thiazole,4,build functionalize,A,0
-diazole:diazole.mol,diazole,4,build functionalize,A,0
-bidiazole:bidiazole.mol,bidiazole,4 9,build bidentate,A,0
-pyridine:pyridine.mol,pyrd,3,build organic,BA,0
-methylpyridine:methylpyridine.mol,mpyrd,3,build organic,BA,0
-bisnapthyridylpyridine:bisnapthyridylpyridine.mol,bisnp,5 13 36,build tridentate,BA,0
-bipyrimidine:bipyrimidine.mol,bipyrimidine,0 1,build bidentate,N,0
-bipyrazine:bipyrazine.xyz,bpz,0 1,build bidentate,N,0
-bipy:bipy.mol,bip,0 1,build bidentate,N,0
-hydrooxazine:hydrooxazine.mol,hydrooxazine,0,build organic,BA,0
-bihydrooxazine:bihydrooxazine.mol,hydrooxazine,0 1,build bidentate,A,0
-hydrothiazine:hydrothiazine.mol,hydrothiazine,0,build organic,BA,0
-bihydrothiazine:bihydrothiazine.mol,hydrothiazine,0 1,build bidentate,A,0
-hydrodiazine:hydrodiazine.mol,hydrodiazine,0,build organic,BA,0
-bihydrodiazine:bihydrodiazine.mol,hydrodiazine,0 1,build bidentate,A,0
-diazine:diazine.mol,diazine,0,build organic,BA,0
+benzisc:benzylisocy.mol,benzisc,0,bulkymono build,N,0
 bidiazine:bidiazine.mol,diazine,0 1,build bidentate,A,0
-phenylenediamine:phenylenediamine.mol,phenylenediamine,0 7,N,0
+bidiazole:bidiazole.mol,bidiazole,4 9,build bidentate,A,0
 bifuran:bifuran.mol,bifuran,0 9,build bidentate,N,0
+bihydrodiazine:bihydrodiazine.mol,hydrodiazine,0 1,build bidentate,A,0
+bihydrodiazole:bihydrodiazole.mol,bihydrodiazole,4 13,build bidentate,A,0
+bihydrooxazine:bihydrooxazine.mol,hydrooxazine,0 1,build bidentate,A,0
+bihydrooxazole:bihydrooxazole.mol,bihydrooxazole,4 13,build bidentate,A,0
+bihydrothiazine:bihydrothiazine.mol,hydrothiazine,0 1,build bidentate,A,0
+bihydrothiazole:bihydrothiazole.mol,bihydrothiazole,4 13,,build bidentate,A,0
+biimidazole:biimidazole.mol,biimd,2 10,build bidentate,BA,0
+bioxazole:bioxazole.mol,bioxazole,4 9,build bidentate,A,0
+bipy:bipy.mol,bip,0 1,build bidentate,N,0
+bipyrazine:bipyrazine.xyz,bpz,0 1,build bidentate,N,0
+bipyrimidine:bipyrimidine.mol,bipyrimidine,0 1,build bidentate,N,0
+bipyrrole:bipyrrole.mol,bipyrrole,4 11,build bidentate,A,0
+bisnapthyridylpyridine:bisnapthyridylpyridine.mol,bisnp,5 13 36,build tridentate,BA,0
+bithiazole:bithiazole.mol,bithiazole,4 9,build bidentate,A,0
 bpabipy:BPAbipy.mol,bpabp,0 13 26 48 30,build core,BA,0
 bromide:bromide.mol,brode,0,build functionalize small,N,-1
+c2:c2.mol,c2,0,build functionalize small,N,0
+caprolactone:caprolactone.mol,caprolactone,4,bulky mono,N,0
 carbonyl:carbonyl.mol,crbn,0,build small,N,0
-co:carbonyl.mol,crbn,0,build small,N,0
-carboxyl:carboxyl.mol,crbx,1,functionalize small,N,0
+carboxyl:carboxyl.mol,crbx,1,functionalize small,N,-1
 cat:cat.mol,cat,0 7,bulkybi build,BA,-2
 chloride:chloride.mol,chlde,0,build functionalize small,N,-1
-cl:chloride.mol,chlde,0,build functionalize small,N,-1
 chloropyridine:chloropyridine.mol,chloropyrdine,3,build organic,BA,0
-corrolazine:corrolazine.mol,corrolazine,21 19 17 16, build tetradentate, A,-2
-cyanide:cyanide.mol,cyan,0,build small,N,-1
-isocyanide:cyanide.mol,isocyanide,1,build small,N,-1
+cl:chloride.mol,chlde,0,build functionalize small,N,-1
 cn:cyanide.mol,cyan,0,build small,N,-1
+co2:co2.mol,co2,0,all small,N,0
+co:carbonyl.mol,crbn,0,build small,N,0
+corrolazine:corrolazine.mol,corrolazine,21 19 17 16, build tetradentate, A,-2
+cs:cs.mol,cs,0,build functionalize small,N,0
+cyanate:cyanate.xyz,cyanate,0,build functionalize small,N,-1
+cyanide:cyanide.mol,cyan,0,build small,N,-1
 cyanoaceticporphyrin:cyanoaceticporphyrin.mol,caprph,0 1 3 2,build tetradentate,N,-2
 cyanopyridine:cyanopyridine.mol,cyanopyrd,3,build organic,BA,0
 cyclam:cyclam.mol,cyclam,17 34 36 15,build tetradentate,A,0
 cyclen:cyclen.mol,cyclen,6 9 0 3,build tetradentate,A,0
 cyclopentadienyl:cyclopentadienyl.mol,Cp,0 1 2 3 4 pi,build aromatic organometallic,N,-1
 cysteine:cysteine.mol,Cys,5,build functionalize aminoacid,BA,0
-dd:dd.smi,dd,0,all  build functionalize,BA
 diaminomethyl:diaminomethyl.mol,damthyl,3 1,build bidentate,N,-1
+diazine:diazine.mol,diazine,0,build organic,BA,0
+diazole:diazole.mol,diazole,4,build functionalize,A,0
 dicyanamide:dicyanamide.mol,dicyanamide,0,build small,N,-1
-dppe:dppe.mol,dppe,21 25, build bidentate,A,0
-dpmu:dpmu.mol,dpmu,0, build monodentate,A,0
+dihydrofuran:dihydrofuran.mol,dihydrofuran,0,build bulkymono,A,0
+dimethylamide:NMe2_-1.xyz,nme2,0,build small organic,BA,-1
 dmap:dmap.xyz,dmap,10 3 22, build tridentate,N,0
-dmpe:dmpe.mol,dmpe,1 3, build bidentate,A,0
 dmf:dmf.mol,dmf,1, build monodentate,A,0
 dmi:dmi.mol,dmi,0, build monodentate,A,0
-imidazolidinone:imidazolidinone.mol,imidazolidinone,0, bulky monodentate,A,0
-hmpa:hmpa.mol,hmpa,0, build monodentate,A,0
+dmpe:dmpe.mol,dmpe,1 3, build bidentate,A,0
+dpmu:dpmu.mol,dpmu,0, build monodentate,A,0
+dppe:dppe.mol,dppe,21 25, build bidentate,A,0
+e2acetate:acetate.xyz,acetate,2 3,build small,BA,-1
+e2o2:o2.xyz,e2o2,0 1 pi, build small inorganic,BA,0
+e6benzene:benzene_pi.mol,bnp,0 1 2 3 4 5 pi,build small organometallic,N,-1
 edta:edta.mol,edta,0 1 2 3 4 5,build big,A,-4
 en:en.mol,en,0 1,build bidentate,N,0
-aceticacidbipyridine:aceticacidbipyridine.mol,aceticacidbip,0 1,build bidentate,BA,0
 ethanethiol:ethanethiol.mol,ethil,0,build functionalize small,N,-1
+ethanolamine:ethanolamine.mol,ethanolamine,1 7,functionalize bidentate,BA,0
 ethbipyridine:ethbipy.mol,ethbip,0 1,build bidentate,BA,0
 ethyl:ethyl.mol,eth,1,functionalize organometallic small,N,-1
-ethylene:ethylene.mol,ethylene,0 1 pi,organometallic small,N,0
+ethylamine:ethylamine.mol,ethylamine,1,functionalize small,N,0
+ethylene:ethylene.mol,ethylene,0 1 pi,organometallic small,N,-1
+ethylesteracac:ethylesteracac.mol,ethylesteracac,0 5,build functionalize bidentate,BA,-1
 fluoride:fluoride.mol,fluo,0,build functionalize small,N,-1
+formaldehyde:formaldehyde.mol,formaldehyde,1,functionalize small,N,0
+formamidate:formamidate.xyz,hconh,1,build small,BA,-1
+formate:formate.xyz,formate, 0, build mono,B,-1
 furan:furan.mol,furan,0,build bulkymono,A,0
-glutamic:glutamic_acid.mol,Glu,3,build functionalize aminoacid,BA,-1
-glutamicB:glutamic_acid.mol,Glu,3 18,build functionalize aminoacid,BA,-1
+glutamic:glutamic_acid.mol,Glu,3,build functionalize aminoacid,BA,0
+glutamicB:glutamic_acid.mol,Glu,3 18,build functionalize aminoacid,BA,0
 glutamine:glutamine.mol,Gln,3,build functionalize aminoacid,BA,0
 glutamineB:glutamine.mol,Gln,3 19,build functionalize aminoacid,BA,0
 glycinate:glycinate.mol,glycinate,2 3,build custom custom,BA,-1
 glycine:glycine.mol,Gly,8,build functionalize aminoacid,BA,0
 glycineB:glycine.mol,Gly,8 3,build functionalize aminoacid,BA,0
+h2o:water.mol,wat,0,build small,N,0
+h2s:h2s.mol,h2s,0,build functionalize small,N,0
 helium:helium.mol,he,0,build functionalize small,N,0
-histidine:histidine.mol,His,9,build functionalize aminoacid,BA,1
-hydrocyanide:hydrocyanide.mol,hydc,1,build small,N,0
+histidine:histidine.mol,His,9,build functionalize aminoacid,BA,0
+hmpa:hmpa.mol,hmpa,0, build monodentate,A,0
+hs-:hs-.mol,hs-,0,build functionalize small,N,-1
+hydride:hydride.mol,hydride,0,build functionalize small,N,-1
+hydrocarboxyacetylide:hydrocarboxyacetylide.xyz,cccooh,2,build small,BA,-1
+hydrocyanide:hydrocyanide.mol,hydc,1,build small,N,-2
+hydrodiazine:hydrodiazine.mol,hydrodiazine,0,build organic,BA,0
+hydrodiazole:hydrodiazole.mol,hydrodiazole,4,build functionalize,A,0
+hydrogensulfide:hydrogensulfide.mol, hydrogensulfide,0,build functionalize small,N,0
 hydroisocyanide:hydroisocyanide.mol,hisc,0,build small,N,0
+hydrooxazine:hydrooxazine.mol,hydrooxazine,0,build organic,BA,0
+hydrooxazole:hydrooxazole.mol,hydrooxazole,4,build functionalize,A,0
+hydrothiazine:hydrothiazine.mol,hydrothiazine,0,build organic,BA,0
+hydrothiazole:hydrothiazole.mol,hydrothiazole,4,build functionalize,A,0
 hydroxyl:hydroxyl.mol,hxl,0,build functionalize small,N,-1
 imidazole:imidazole.mol,imd,2,build small,BA,0
-imidazolate:imidazolate.mol,imidazolate,2,build small,BA,-1
-aminoimidazolate:aminoimidazolate.mol,aminoimidazolate,2,build monodentate,BA,-1
-cyanoimidazolate:cyanoimidazolate.mol,cyanoimidazolate,2,build monodentate,BA,-1
-hydroxyimidazolate:hydroxyimidazolate.mol,hydroxyimidazolate,2,build monodentate,BA,-1
-biimidazole:biimidazole.mol,biimd,2 10,build bidentate,BA,0
-imine:imine.mol,imi,0,functionalize small,N
+imidazolidinone:imidazolidinone.mol,imidazolidinone,0, bulky monodentate,A,0
+imine:imine.mol,imi,0,functionalize small,N,-1
 iminodiacetic:iminodiacetic.mol,iminodiacetic,0 1,build bidentate, BA, -2
+iodide:iodide.mol,i,0,build functionalize small,N,-1
+iodobenzene:iodobenzene.xyz,phi,0 11 pi,build small,BA,0
+isocyanide:cyanide.mol,isocyanide,1,build small,N,-1
 isoleucine:isoleucine.mol,Ile,3,build functionalize aminoacid,BA,0
 isoleucineB:isoleucine.mol,Ile,3 21,build functionalize aminoacid,BA,0
 isothiocyanate:isothiocyanate.mol,ithcynt,0,build functionalize small,BA,-1
-ncs:isothiocyanate.mol,ithcynt,0,build functionalize small,N
 leucine:leucine.mol,Leu,21,build functionalize aminoacid,BA,0
 leucineB:leucine.mol,Leu,3 21,build functionalize aminoacid,BA,0
-lysine:lysine.mol,Lys,3,build functionalize aminoacid,BA,1
-lysineB:lysine.mol,Lys,3 23,build functionalize aminoacid,BA,1
-mebenzenedithiol:mebenzenedithiol.mol,mebenzenedithiol,0 11,build functionalize bidentate,BA,-1
-mebipy:mebipy.mol,mebipy,0 1,build bidentate,BA,0
-methanal:methanal.mol,metha,0,functionalize small,N,-1
-methanol:methanol.mol,methanol,1,functionalize small,N,0
-formaldehyde:formaldehyde.mol,formaldehyde,1,functionalize small,N,0
-formate:formate.mol,formate, 0, build mono,B,-1
-caprolactone:caprolactone.mol,caprolactone,4,bulky mono,N,0
+lysine:lysine.mol,Lys,3,build functionalize aminoacid,BA,0
+lysineB:lysine.mol,Lys,3 23,build functionalize aminoacid,BA,0
+mebenzenedithiol:mebenzenedithiol.mol,mebenzenedithiol,0 11,build functionalize bidentate,BA,-2
 mebim_py:mebim_py.xyz,mebim_py,0 11,build bidentate,N,0
 mebim_pz:mebim_pz.xyz,mebim_pz,0 10,build bidentate,N,0
 mebimpy:(1_methylbenzimidazol_2_yl)pyridine.xyz,mebimpy,10 4 15, build tridentate,N,0
+mebipy:mebipy.mol,mebipy,0 1,build bidentate,BA,0
+mec:mecat.mol,mec,0 7,build bidentate,BA,-2
+methanal:methanal.mol,metha,0,functionalize small,N,-1
 methanethiol:methanethiol.mol,mthil,0,build functionalize small,N,-1
+methanol:methanol.mol,methanol,1,functionalize small,N,0
 methionine:methionine.mol,Met,6,build functionalize aminoacid,BA,0
 methyl:methyl.mol,meth,0,functionalize small organometallic,N,-1
+methylacetylide:methylacetylide.xyz,mecc-,1,build small organic,N,-1
+methylamine:methylamine.mol,methylamine,1,functionalize small,N,0
+methylazide:methylazide.xyz,men3,1,build small organic,B,-1
+methylpyridine:methylpyridine.mol,mpyrd,3,build organic,BA,0
 misc:methylisocy.mol,misc,0,small,A,0
-c2h3ns:c2h3ns.xyz,c2h3ns,0,small,A,0
-nitro:nitro.mol,nit,1,build functionalize small,N,-1
-nitrite:nitrite.mol,nitrite,1,build mono, B, -1
+n2:n2.mol,n2,0,build functionalize small,N,0
+n4py:n4py.xyz,n4py,5 15 25 35 41, build functionalize tetra dentate,BA,0
+nch:nch.mol,nch,0,build functionalize small,N,0
+nco-:nco-.mol,nco-,0,build functionalize small,N,-1
+ncs:isothiocyanate.mol,ithcynt,0,build functionalize small,N,-1
+nethanolamine:nethanolamine.mol,nethanolamine,1,functionalize small,N,0
+nh3:ammonia.mol,ammo,0,build small,N,0
 nitrate:nitrate.mol,nitrate,1,build mono, B, -1
+nitrite:nitrite.mol,nitrite,1,build mono, B, -1
+nitro:nitro.mol,nit,1,build functionalize small,N,-1
 nitrobipyridine:nitrobipy.mol,nitrobip,0 1,build bidentate,BA,0
-nitroso:nitroso.mol,nits,0,build functionalize small,N,-1
+nitroso:nitroso.mol,nits,0,build functionalize small,N,0
+nme2:NMe2_-1.xyz,nme2,0,build small organic,BA,-1
 nme3:nme3.mol,nme3,0,build small,N,0
-n4py:n4py.mol,n4py,1 2 3 4,build bulky,N,0
+no-:no-.mol,no-,0,build functionalize small,N,-1
+no2-:no2-.mol,no2-,0,build functionalize small,N,-1
 noxygen:noxygen.mol,noxd,0,build small,N,0
+ns-:ns-.mol,ns-,0,build functionalize small,N,-1
+o-pyridylbenzene:o-pyridylbenzene.xyz,o-pyph,4,build small,BA,0
+o-pyridylphenyl:o-pyridylphenylanion.xyz,o-pyphanion,4 12,build small,BA,-1
+o2-:o2-.mol,o2-,0,build functionalize small,N,-2
+o22-:o2.xyz,o22-,0 1,build functionalize small,N,-2
+o2:o2.xyz,o2,0, build small inorganic,B,0
+och2:och2.mol,och2,0,build functionalize small,N,0
+oethanolamine:oethanolamine.mol,oethanolamine,7,functionalize small,N,0
 ome2:ome2.mol,ome2,0,build small,N,0
+ooh:ooh.xyz,ooh,0,all small,N,-1
+opme3:pme3o.mol,opme3,13,build big,BA,0
+opph3:pph3o.mol,opph,34,build bulky big,BA,0
 ox:oxalate.mol,oxate,1 4,build bidentate,A,-2
 oxo:oxygen.mol,oxo,0,build small,N,-2
 pcy3:PCy3.mol,pcy3,0,build bulky big,BA,0
-propylene:propylene.mol,propylene,pi,build organometallic,N,0
-propyphenazone:Propyphenazone.mol,propyphenazone,0,build bulky,BA,0
 pentacyanopentadienide:pentacyanocyclopentadienide.mol,pcyanopent,1,build bulky,A,-1
+pf3:phosphorustrifluoride.mol,pf3,1,build small,BA,0
+ph2-:ph2-.mol,ph2-,0,build functionalize small,N,-1
+ph3:ph3.mol,ph3,0,build functionalize small,N,0
 phen:phen.mol,phen,9 12,build bidentate,BA,0
 phenacac:phenacac.mol,phenacac,0 5,build functionalize bidentate,BA,-1
 phenalalanine:phenalalanine.mol,Phe,3,build functionalize aminoacid,BA,0
@@ -158,57 +193,58 @@ phenalalanineB:phenalalanine.mol,Phe,3 21,build functionalize aminoacid,BA,0
 phenanthroline:phen.mol,phen,9 12,build bidentate,BA,0
 phendione:phendione.mol,phendione,9 12,build bidentate,BA,0
 phenisc:phenylisocy.mol,phenisc,0,build mono,A,0
+phenphen:phenphen.mol,phenphen,9 12 26,build,BA,0
+phenyl:benzene.mol,ph,4,build small organic,BA,-1
+phenylbenzoxazole:phenylbenzoxazole.mol,phenylbenzoxazole,8 14,build bidentate,BA,-1
 phenylcyc:phenylcyc.mol,phenylcyc,27 11 13 26,build tetradentate,B,0
+phenylenediamine:phenylenediamine.mol,phenylenediamine,0 7,build bidentate,N,0
 phosacidbipyridine:phosacidbipy.mol,phosacidbip,0 1,build bidentate,BA,0
 phosphine:phosphine.mol,phosphine,0,build small,N,0
-pf3:phosphorustrifluoride.mol,pf3,1,build small,BA,0 
-phenylbenzoxazole:phenylbenzoxazole.mol,phenylbenzoxazole,8 14,build bidentate,BA,0
+phosphorine:phosphorine.mol,phob,3,build,BA,0
 phthalocyanine:phthalocyanine.mol,phthalocyanine,30 29 0 2,build tetradentate,A,-2
 pisc:tbuphisocy.mol,pisc,0,bulkymono build,N,0
-propylene:propylene.mol,propylene,0 1 pi, organometallic,N,0
-benzisc:benzylisocy.mol,benzisc,0,bulkymono build,N,0
-pme3:PMe3.mol,pme3,0,build big,BA,0
-opme3:pme3o.mol,opme3,13,build big,BA,0
+pme3:PMe3.xyz,pme3,0,build small organic,BA,0
 porphyrin:porphyrin.mol,prph,2 3 1 0,build tetradentate,A,-2
-12crown4:12crown4.mol,12crown4,6 9 0 3,build tetradentate,N,0
 pph3:PPh3.mol,pph,2,build bulky big,BA,0
-opph3:pph3o.mol,opph,34,build bulky big,BA,0
 proline:proline.mol,Pro,3,build functionalize aminoacid,BA,0
 prolineB:proline.mol,Pro,3 15,build functionalize aminoacid,BA,0
 propdiol:propdiol.mol,propdiol,0 4,build functionalize bidentate,BA,-1
+propylene:propylene.mol,propylene,0 1 pi, organometallic,N,-1
+propyphenazone:Propyphenazone.mol,propyphenazone,0,build bulky,BA,0
 pyr:pyridine.mol,pyrd,3,build organic,BA,0
-pyrrole:pyrrole.mol,pyrl,0,build organic,BA,-1
-Hpyrrole:Hpyrrole.mol,Hpyrl,0,build organic,BA,0
-bipyrrole:bipyrrole.mol,bipyrrole,4 11,build bidentate,A,0
+pyridine:pyridine.mol,pyrd,3,build organic,BA,0
 pyrimidone:pyrimidone.mol,pyrimidone,0, build monodentate,A,0
-quinoxalinedithiol:quinoxalinedithiol.mol,quinoxaline,0 7,build functionalize bidentate,BA,-1
-salphen:salphen.mol,slph,7 10 18 24,build tetradentate,A,-2
+pyrrole:pyrrole.mol,pyrl,0,build organic,BA,-1
+quinoxalinedithiol:quinoxalinedithiol.mol,quinoxaline,0 7,build functionalize bidentate,BA,-2
+s2-:s2-.mol,s2-,0,build functionalize small,N,-2
 salen:salen.mol,slph,7 10 18 24,build tetradentate,A,-2
+salphen:salphen.mol,slph,7 10 18 24,build tetradentate,A,-2
+scn:thiocyanate.mol,thcynt,0,build functionalize small,N,-1
 serine:serine.mol,Ser,3,build functionalize aminoacid,BA,0
 serineB:serine.mol,Ser,3 12,build functionalize aminoacid,BA,0
-sulfacidbipyridine:sulfacidbipy.mol,sulfacidbip,0 1,build bidentate,BA,0
+sulfacidbipyridine:sulfacidbipy.mol,sulfacidbip,0 1,build bidentate,BA,2
 tbisc:tbutylisocy.mol,tbisc,0,build bulkymono,A,0
-mec:mecat.mol,mec,0 7,build bidentate,BA,-2
-cat:cat.mol,cat,0 7,build bidentate,BA,-2
 tbuc:tbucat.mol,tbuc,0 11,bulkybi build,BA,-2
 tbutylcyclen:tbutylcyclen.mol,tbutylcyclen,3 0 9 6,build tetradentate,A,0
 tbutylthiol:tbutylthiol.mol,tbthil,0,build functionalize small,N,-1
-tcnoet:tcnoet.mol,tcnoet,7,build big,N,-1
+tcnoet:tcnoet.mol,tcnoet,7,build big,N,-2
 tcnoetOH:tcnoetOH.mol,tcnoet,15,build big,BA,-1
-terpy:terpy.mol,trpy,0 1 2,build tridentate,BA,-2
+terpy:terpy.mol,trpy,0 1 2,build tridentate,BA,0
 terpyridine:terpy.mol,trpy,0 1 2,build tridentate,BA,0
-dihydrofuran:dihydrofuran.mol,dihydrofuran,0,build bulkymono,A,0
 tetrahydrofuran:tetrahydrofuran.mol,tetrahydrofuran,0,build bulkymono,A,0
-thiane:thiane.mol,thiane,0,build,functionalize small,N,0
+thiane:thiane.mol,thiane,0,build functionalize small,N,0
+thiazole:thiazole.mol,thiazole,4,build functionalize,A,0
 thiocyanate:thiocyanate.mol,thcynt,0,build functionalize small,BA,-1
-scn:thiocyanate.mol,thcynt,0,build functionalize small,N,-1
 thiol:thiol.mol,thil,0,build functionalize small,N,-1
+thiophene:thiophene.mol,thip,0,build,BA,0
 thiopyridine:thiopyridine.mol,thiopyrd,3,build organic,BA,0
 threonine:threonine.mol,Thr,3,build functionalize aminoacid,BA,0
 threonineB:threonine.mol,Thr,3 15,build functionalize aminoacid,BA,0
-tpp:tpp.mol,tpp,0 1 3 2,build bulky,A,-2
-tricyanomethyl:tricyanomethyl.mol,tricyanomethyl,5,build,-1
+tpp:tpp.mol,tpp,0 1 3 2,build bulky,A,0
+triazole:1-4-dimethyl-1-2-3-triazole.xyz,triazole,0,build small organic,B,0
+tricyanomethyl:tricyanomethyl.mol,tricyanomethyl,5,build,BA,-1
 trifluoromethyl:trifluoromethyl.mol,trflume,0,functionalize small,BA,-1
+trimethylphosphine:PMe3.xyz,pme3,0,build small organic,BA,0
 tryptophan:tryptophan.mol,Trp,3,build functionalize aminoacid,BA,0
 tryptophanB:tryptophan.mol,Trp,3 25,build functionalize aminoacid,BA,0
 tyrosine:tyrosine.mol,Tyr,11,build functionalize aminoacid,BA,0
@@ -217,55 +253,5 @@ uthiol:uthiol.mol,uthil,0,build functionalize small,N,0
 uthiolme2:uthiolme2.mol,uthilme2,0,build functionalize small,N,0
 valine:valine.mol,Val,3,build functionalize aminoacid,BA,0
 valineB:valine.mol,Val,3 17,build functionalize aminoacid,BA,0
-water:water.mol,wat,0,build small,N,0
-h2o:water.mol,wat,0,build small,N,0
-x:x.mol,x,0,all small,N,-1
-ooh:ooh.xyz,ooh,0,all small,N,-1
-co2:co2.mol,co2,0,all small,N,-1
-phenphen:phenphen.mol,phenphen,9 12 26,build,BA,0
-thiophene:thiophene.mol,thip,0,build,BA,0
-phosphorine:phosphorine.mol,phob,3,build,BA,0
-hydrocarboxyacetylide:hydrocarboxyacetylide.xyz,cccooh,2,build small,BA,-1
-o-pyridylphenyl:o-pyridylphenylanion.xyz,o-pyphanion,4 12,build small,BA,-1
-o-pyridylbenzene:o-pyridylbenzene.xyz,o-pyph,4,build small,BA,0
-e2acetate:acetate.xyz,acetate,2 3,build small,BA,-1
-acetate:acetate.xyz,acetate,2,build small,BA,-1
-methanol:methanol.xyz,ch3oh,1,build small,BA,0
-e6benzene:benzene_pi.mol,bnp,0 1 2 3 4 5 pi,build small organometallic,N,0
-N-quinolinylbutyramidate:N-quinolinylbutyramidate.xyz,n-qnbuam,9 2,build small,BA,-1
-N-quinolinylmethylmethinylacetamidate:N-quinolinylmethylmethinylacetamidate.xyz,n-qnbuam3-,9 2 20,build small,BA,-2
-iodobenzene:iodobenzene.xyz,phi,0 11 pi,build small,BA,0
-iodide:iodide.mol,i,0,build functionalize small,N,-1
-formamidate:formamidate.xyz,hconh,1,build small,BA,-1
-phenyl:benzene.mol,ph,4,build small organic,BA,-1
-trimethylphosphine:PMe3.xyz,pme3,0,build small organic,BA,0
-pme3:PMe3.xyz,pme3,0,build small organic,BA,0
-nme2:NMe2_-1.xyz,nme2,0,build small organic,BA,-1
-dimethylamide:NMe2_-1.xyz,nme2,0,build small organic,BA,-1
-triazole:1-4-dimethyl-1-2-3-triazole.xyz,triazole,0,build small organic,B,0
-methylazide:methylazide.xyz,men3,1,build small organic,B,-1
-methylacetylide:methylacetylide.xyz,mecc-,1,build small organic,N,-1
-e2o2:o2.xyz,e2o2,0 1 pi, build small inorganic,BA,0
-o2:o2.xyz,o2,0, build small inorganic,B,0
-n4py:n4py.xyz,n4py,5 15 25 35 41, build functionalize tetra dentate,BA,0
-test:test.xyz,test,10 14,build,BA,-1
-rotaxane:Rotaxane7.mol,rotaxane,39,build,N,0
-nco-:nco-.mol,nco-,0,build functionalize small,N,-1
-no2-:no2-.mol,no2-,0,build functionalize small,N,-1
-o2-:o2-.mol,o2-,0,build functionalize small,N,-2
-s2-:s2-.mol,s2-,0,build functionalize small,N,-2
-hs-:hs-.mol,hs-,0,build functionalize small,N,-1
-h2s:h2s.mol,h2s,0,build functionalize small,N,0
-ph2-:ph2-.mol,ph2-,0,build functionalize small,N,-1
-ph3:ph3.mol,ph3,0,build functionalize small,N,0
-nitrito:nitrito.mol,nitrito,0,build functionalize small,N,-1
-hydrogen:hydrogen.mol,hydrogen,0,build functionalize small,N,-1
-c2:c2.mol,c2,0,build functionalize small,N,0
-n2:n2.mol,n2,0,build functionalize small,N,0
-o2:o2.mol,o2,0,build functionalize small,N,0
-cs:cs.mol,cs,0,build functionalize small,N,0
-no-:no-.mol,no-,0,build functionalize small,N,-1
-ns-:ns-.mol,ns-,0,build functionalize small,N,-1
-nch:nch.mol,nch,0,build functionalize small,N,0
-och2:och2.mol,och2,0,build functionalize small,N,0
-
+water:water.mol,wat,0,build small,BA,0
+x:x.mol,x,0,all small,N,0

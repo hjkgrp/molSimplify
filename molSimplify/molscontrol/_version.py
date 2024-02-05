@@ -15,6 +15,7 @@ import os
 import re
 import subprocess
 import sys
+from typing import Dict, Any
 
 
 def get_keywords():
@@ -52,7 +53,7 @@ class NotThisMethod(Exception):
     """Exception raised if a method is not valid for the current scenario."""
 
 
-LONG_VERSION_PY = {}
+LONG_VERSION_PY: Dict[Any, Any] = {}
 HANDLERS = {}
 
 
@@ -138,8 +139,9 @@ def git_get_keywords(versionfile_abs):
     # _version.py.
     keywords = {}
     try:
-        f = open(versionfile_abs, "r")
-        for line in f.readlines():
+        with open(versionfile_abs, "r") as f:
+            lines = f.readlines()
+        for line in lines:
             if line.strip().startswith("git_refnames ="):
                 mo = re.search(r'=\s*"(.*)"', line)
                 if mo:
@@ -152,7 +154,6 @@ def git_get_keywords(versionfile_abs):
                 mo = re.search(r'=\s*"(.*)"', line)
                 if mo:
                     keywords["date"] = mo.group(1)
-        f.close()
     except EnvironmentError:
         pass
     return keywords
@@ -495,7 +496,7 @@ def get_versions():
         # versionfile_source is the relative path from the top of the source
         # tree (where the .git directory might live) to this file. Invert
         # this to find the root from __file__.
-        for i in cfg.versionfile_source.split('/'):
+        for _ in cfg.versionfile_source.split('/'):
             root = os.path.dirname(root)
     except NameError:
         return {"version": "0+unknown", "full-revisionid": None,

@@ -5,15 +5,16 @@
 #
 #  Dpt of Chemical Engineering, MIT
 try:
-    from PyQt5.QtWidgets import *
-    from PyQt5.QtGui import *
-    from PyQt5.QtCore import *
-    from PyQt5.QtSvg import *
-except:
+    from PyQt5.QtWidgets import (QApplication, QDesktopWidget, QMainWindow,
+                                 QPushButton, QSizePolicy, QCheckBox,
+                                 QComboBox, QSlider, QDialog, QMessageBox,
+                                 QTextEdit, QLineEdit, QLabel, QSpinBox,
+                                 QCompleter)
+    from PyQt5.QtGui import QFont, QFontMetrics, QPixmap
+    from PyQt5.QtCore import Qt, QSortFilterProxyModel
+    from PyQt5.QtSvg import QSvgWidget
+except ImportError:
     pass
-from molSimplify.Classes.globalvars import *
-from molSimplify.Scripts.molSimplify_io import *
-import os
 import imghdr
 import struct
 

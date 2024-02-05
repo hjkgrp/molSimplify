@@ -1,0 +1,8 @@
+CS carbon monosulfide 2944050
+##CCCBDB 5172213:57
+Geometry Optimized at CCSD(T)/6-31G*
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000   -1.1299 C   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000    0.4237 S   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  1  0  0  0
+M  END

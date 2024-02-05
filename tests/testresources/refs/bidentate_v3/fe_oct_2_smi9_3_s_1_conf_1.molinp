@@ -1,0 +1,25 @@
+# Input file generated from molSimplify at 01/19/2019 23:10
+-jid 8
+-ffoption ba
+-distort 0
+-coord 6
+-nconfs 1
+-checkdirb True
+-method b3lyp
+-core Fe
+-ligocc 3
+-geometry oct
+-spin 1
+-bcharge 0
+-basis lacvps_ecp
+-charge 2
+-calccharge True
+-jsched sge
+-oxstate II
+-lig c1(nn[nH]c1)c1nc(ccc1)C	8,2
+-runtyp energy
+-smicat 7,1
+-qccode terachem
+-ff mmff94
+-keepHs True
+-jobdir gen

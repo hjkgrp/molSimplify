@@ -1,0 +1,9 @@
+# file created with molSimplify
+!B3LYP def2-TZVP NORI  Sp
+
+%scf
+MaxIter 500
+DIISMaxEq 15
+end
+
+*xyzfile 0 1 FeH2O6.xyz

@@ -2,7 +2,7 @@ import copy
 import os
 import re
 import sys
-import time
+# import time
 import numpy as np
 
 from molSimplify.Classes.atom3D import (atom3D,
@@ -45,7 +45,7 @@ def readfromtxt(mol, txt):
             lm = re.search(r'\d+$', line_split[0])
             # if the string ends in digits m will be a Match object, or None otherwise.
             if lm is not None:
-                symb = re.sub('\d+', '', line_split[0])
+                symb = re.sub(r'\d+', '', line_split[0])
                 # number = lm.group()
                 # # print('sym and number ' +str(symb) + ' ' + str(number))
                 # globs = globalvars()
@@ -102,11 +102,11 @@ def comp_two_angle_array(input_angle, target_angle, catoms_map, picked_inds):
     target_angle: a list of angle (n_catom, < n_catom_candidates)
     catoms_map: a map of {atom_ind_in_mol, ind_in_angle_list}
     picked_inds: atom indexes (in the angle list) that have been picked already.
-    ''' 
+    '''
     _angs = input_angle[1][:]
     angs = copy.copy(_angs)
     picked_angles = [angs[x] for x in picked_inds]
-    picked_inds_rev = [x for _,x in sorted(zip(picked_angles,picked_inds), reverse=True)]
+    picked_inds_rev = [x for _, x in sorted(zip(picked_angles, picked_inds), reverse=True)]
     _target_angle = copy.copy(target_angle)
     # print("_angs: ", _angs)
     # print('target_angle', target_angle)
@@ -151,7 +151,7 @@ def comp_two_angle_array(input_angle, target_angle, catoms_map, picked_inds):
 # the output_angle.
 def comp_angle_pick_one_best(input_arr, target_angle, catoms_map, picked):
     '''
-    Given the target_angle, choose the input_angle that has the smallest angle deviation 
+    Given the target_angle, choose the input_angle that has the smallest angle deviation
     in input_array.
     input_arr: array of input angles.
     target_angle: array of target angles.
@@ -257,7 +257,7 @@ def ligand_comp_org(file_in, file_init_geo, catoms_arr, flag_deleteH=True, flag_
                 print(('ligand is:', lig, lig_init))
             posi_shift = 2
             # Create mol3D without a tmp file.
-            _start = time.clock()
+            # _start = time.clock()
             with open(mymol_xyz, 'r') as fo:
                 foo = []
                 for ii, line in enumerate(fo):
@@ -276,7 +276,7 @@ def ligand_comp_org(file_in, file_init_geo, catoms_arr, flag_deleteH=True, flag_
                         foo.append(line)
             tmp_org_mol = mol3D()
             tmp_org_mol = readfromtxt(tmp_org_mol, foo)
-            _elapsed = (time.clock() - _start)
+            # _elapsed = (time.clock() - _start)
             # print('-reading txt:', _elapsed)
             if debug:
                 print(('# atoms: %d, init: %d' %
@@ -286,7 +286,7 @@ def ligand_comp_org(file_in, file_init_geo, catoms_arr, flag_deleteH=True, flag_
             if flag_deleteH:
                 tmp_mol.deleteHs()
                 tmp_org_mol.deleteHs()
-            mol0, U, d0, d1 = kabsch(tmp_org_mol, tmp_mol)
+            _ = kabsch(tmp_org_mol, tmp_mol)
             rmsd = tmp_mol.rmsd(tmp_org_mol)
             rmsd_arr.append(rmsd)
             atom_dist_max = tmp_mol.maxatomdist(tmp_org_mol)
@@ -319,8 +319,8 @@ def match_lig_list(file_in, file_init_geo, catoms_arr,
         init_mol_trunc.writexyz('init_trunc_tmp.xyz')
         my_mol_trunc.writexyz('mymol_trunc_tmp.xyz')
         liglist_init, ligdents_init, ligcons_init = ligand_breakdown(
-            init_mol_trunc)
-        liglist, ligdents, ligcons = ligand_breakdown(my_mol_trunc)
+            init_mol_trunc, BondedOct=BondedOct)
+        liglist, ligdents, ligcons = ligand_breakdown(my_mol_trunc, BondedOct=BondedOct)
         liglist_atom = [[my_mol_trunc.getAtom(x).symbol() for x in ele]
                         for ele in liglist]
         liglist_init_atom = [[init_mol_trunc.getAtom(x).symbol() for x in ele]
@@ -335,12 +335,10 @@ def match_lig_list(file_in, file_init_geo, catoms_arr,
         if debug:
             print('Just inherit the ligand list from init structure.')
         liglist_init, ligdents_init, ligcons_init = ligand_breakdown(init_mol,
-                                                                     flag_loose=flag_loose,
                                                                      BondedOct=BondedOct)
         # _elapsed = (time.clock() - _start)
         # print('time on lig_breakdoen:', _elapsed)
-        liglist, ligdents, ligcons = liglist_init[:
-                                     ], ligdents_init[:], ligcons_init[:]
+        liglist = liglist_init[:]
         liglist_atom = [[my_mol.getAtom(x).symbol() for x in ele]
                         for ele in liglist]
         liglist_init_atom = [[init_mol.getAtom(x).symbol() for x in ele]
@@ -370,7 +368,9 @@ def match_lig_list(file_in, file_init_geo, catoms_arr,
                 if debug:
                     print('Ligands cannot match!')
                 flag_match = False
-        except:
+        except AssertionError:
+            # To whoever encounters this: Please replace AssertionError
+            # with whatever we are actually trying to except. RM 2022/02/17
             print('Ligands cannot match!')
             flag_match = False
     if debug:
@@ -398,10 +398,10 @@ def is_linear_ligand(mol, ind):
             flag = True
         elif len(_catoms) == 2:
             ind_next2 = find_the_other_ind(_catoms[:], ind)
-            vec1 = np.array(mol.getAtomCoords(ind)) - \
-                   np.array(mol.getAtomCoords(ind_next))
-            vec2 = np.array(mol.getAtomCoords(ind_next2)) - \
-                   np.array(mol.getAtomCoords(ind_next))
+            vec1 = (np.array(mol.getAtomCoords(ind))
+                    - np.array(mol.getAtomCoords(ind_next)))
+            vec2 = (np.array(mol.getAtomCoords(ind_next2))
+                    - np.array(mol.getAtomCoords(ind_next)))
             ang = vecangle(vec1, vec2)
             if ang > 170:
                 flag = True
@@ -463,16 +463,17 @@ def oct_comp(file_in, angle_ref=oct_angle_ref, catoms_arr=None,
     # metal_ind = my_mol.findMetal()[0]
     metal_coord = my_mol.getAtomCoords(my_mol.findMetal()[0])
     catom_coord = []
-    if not catoms_arr == None:
+    if catoms_arr is not None:
         catoms = catoms_arr
-        num_coord_metal = len(catoms_arr)
     theta_arr, oct_dist = [], []
     for atom in catoms:
         coord = my_mol.getAtomCoords(atom)
         catom_coord.append(coord)
     th_input_arr = []
+    catoms_map = {}
     for idx1, coord1 in enumerate(catom_coord):
         delr1 = (np.array(coord1) - np.array(metal_coord)).tolist()
+        catoms_map.update({catoms[idx1]: idx1})
         theta_tmp = []
         for idx2, coord2 in enumerate(catom_coord):
             if idx2 != idx1:
@@ -481,7 +482,7 @@ def oct_comp(file_in, angle_ref=oct_angle_ref, catoms_arr=None,
                 theta_tmp.append(theta)
         th_input_arr.append([catoms[idx1], theta_tmp])
     th_output_arr, sum_del_angle, catoms_arr, max_del_sig_angle = loop_target_angle_arr(
-        th_input_arr, angle_ref)
+        th_input_arr, angle_ref, catoms_map)
     if debug:
         print(('th:', th_output_arr))
         print(('sum_del:', sum_del_angle))
@@ -568,18 +569,16 @@ def dict_check_processing(dict_info, dict_check, std_not_use,
 def Oct_inspection(file_in, file_init_geo=None, catoms_arr=None, dict_check=dict_oct_check_st,
                    std_not_use=[], angle_ref=oct_angle_ref, flag_loose=True, flag_lbd=False,
                    dict_check_loose=dict_oct_check_loose, BondedOct=True, debug=False):
-    if catoms_arr == None:
+    if catoms_arr is None:
         print('Error, must have ctoms! If not, please use IsOct.')
         quit()
     elif len(catoms_arr) != 6:
         print('Error, must have 6 connecting atoms for octahedral.')
         quit()
     num_coord_metal = 6
-    oct_angle_devi, oct_dist_del, max_del_sig_angle = [
-                                                          -1, -1], [-1, -1, -1, -1], -1
+    oct_angle_devi, oct_dist_del, max_del_sig_angle = [-1, -1], [-1, -1, -1, -1], -1
     rmsd_max, atom_dist_max = -1, -1
-    dict_orientation = {'devi_linear_max': -1, 'devi_linear_avrg': -1}
-    if not file_init_geo == None:
+    if file_init_geo is not None:
         # print('!!!Inspection,flag_loose:', flag_loose)
         # _start = time.clock()
         rmsd_max, atom_dist_max = ligand_comp_org(file_in, file_init_geo,
@@ -639,7 +638,7 @@ def IsOct(file_in, file_init_geo=None, dict_check=dict_oct_check_st,
           std_not_use=[], angle_ref=oct_angle_ref, flag_catoms=False,
           catoms_arr=None, debug=False):
     num_coord_metal, catoms = get_num_coord_metal(file_in, debug=debug)
-    if not catoms_arr == None:
+    if catoms_arr is not None:
         catoms = catoms_arr
         num_coord_metal = len(catoms_arr)
 
@@ -653,7 +652,7 @@ def IsOct(file_in, file_init_geo=None, dict_check=dict_oct_check_st,
             num_coord_metal = 6
             oct_angle_devi, oct_dist_del, max_del_sig_angle, catoms_arr = oct_comp(file_in, angle_ref,
                                                                                    catoms_arr, debug=debug)
-        if not file_init_geo == None:
+        if file_init_geo is not None:
             rmsd_max, atom_dist_max = ligand_comp_org(
                 file_in, file_init_geo, catoms_arr, debug=debug)
         else:
@@ -697,7 +696,7 @@ def IsStructure(file_in, file_init_geo=None, dict_check=dict_oneempty_check_st,
     if num_coord_metal >= num_coord:
         struct_angle_devi, struct_dist_del, max_del_sig_angle, catoms_arr = oct_comp(file_in, angle_ref,
                                                                                      debug=debug)
-        if file_init_geo != None:
+        if file_init_geo is not None:
             rmsd_max, atom_dist_max = ligand_comp_org(
                 file_in, file_init_geo, catoms_arr, debug=debug)
         else:
@@ -780,4 +779,4 @@ def find_file_with_unique_num(_path, unique_num):
 def gen_file_with_name(path_init_geo, name_opt):
     name_opt = name_opt.split('_')
     name_opt = '_'.join(name_opt[:len(name_opt) - 1])
-    name_init = '%s/%s_mols.xyz' % (path_init_geo, name_opt)
+    name_init = '%s/%s_mols.xyz' % (path_init_geo, name_opt)  # noqa F841 (WIP)

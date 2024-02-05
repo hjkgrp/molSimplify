@@ -1,0 +1,12 @@
+-core fe
+-oxstate II
+-geometry oct
+-coord 6
+-lig salphen ammonia water
+-ligocc 1 1 1
+-keepHs true
+-spin 1
+-ff UFF
+-ffoption BA
+-ff_final_opt XTB
+-jobdir gen

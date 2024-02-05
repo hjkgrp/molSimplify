@@ -5,21 +5,11 @@
 #
 #  Dpt of Chemical Engineering, MIT
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from molSimplify.Classes.mWidgets import *
-from molSimplify.Classes.globalvars import *
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QGridLayout
+from PyQt5.QtGui import QPalette
+from molSimplify.Classes.mWidgets import mQMainWindow, mSvgWidget
 import sys
-import os
-import random
-import shutil
-import unicodedata
-import inspect
-import glob
-import time
-import tempfile
-from pkg_resources import resource_filename, Requirement
-import xml.etree.ElementTree as ET
 
 # Mini GUI class for drawing molecules from the command line
 
@@ -42,7 +32,7 @@ class miniGUI(QApplication):
     def addsvg(self, filename):
         self.svgwidget = mSvgWidget(filename)
         self.lgrid.addWidget(self.svgwidget, 0, 1)
-        #self.lwclose = QPushButton('Close')
+        # self.lwclose = QPushButton('Close')
         # self.lwclose.clicked.connect(self.qcloseligs)
         # self.lgrid.addWidget(self.lwclose,1,0)
 

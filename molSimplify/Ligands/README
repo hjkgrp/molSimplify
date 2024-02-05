@@ -1,0 +1,10 @@
+Useful links for information on mol file formatting, especially charge:
+	https://www.nonlinear.com/progenesis/sdf-studio/v0.9/faq/sdf-file-format-guidance.aspx
+	https://chem.libretexts.org/Courses/University_of_Arkansas_Little_Rock/ChemInformatics_(2017)%3A_Chem_4399_5399/2.2%3A_Chemical_Representations_on_Computer%3A_Part_II/2.2.2%3A_Anatomy_of_a_MOL_file
+	https://discover.3ds.com/sites/default/files/2020-08/biovia_ctfileformats_2020.pdf
+Number of spaces matter in .mol files
+
+In the file ligands.dict, the third to last column (groups) is an artifact, and as far as I can tell it does not matter what you have in that column. But you still need to have that column in order to preserve the order of arguments when they are read by the function `getlicores`
+The other columns do matter.
+
+To use the ligand-specific force field option in ligands.dict, use `-ffoption L` when calling molSimplify from the command line.

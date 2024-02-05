@@ -1,9 +1,9 @@
-## @file __main__.py
-#  Gateway script to rest of program
+# @file __main__.py
+# Gateway script to rest of program
 #
-#  Written by Tim Ioannidis for HJK Group
+# Written by Tim Ioannidis for HJK Group
 #
-#  Dpt of Chemical Engineering, MIT
+# Dpt of Chemical Engineering, MIT
 
 # !/usr/bin/env python
 '''
@@ -24,96 +24,86 @@
     along with molSimplify. If not, see http://www.gnu.org/licenses/.
 '''
 # fix OB bug: https://github.com/openbabel/openbabel/issues/1983
-import sys, argparse, os, platform, shutil
+import sys
+import argparse
+if not ('win' in sys.platform):
+    flags = sys.getdlopenflags()
+if not ('win' in sys.platform):
+    sys.setdlopenflags(flags)
 
-flags = sys.getdlopenflags()
-import openbabel
-
-sys.setdlopenflags(flags)
-
-from .Scripts.inparse import *
-from .Scripts.generator import *
-from molSimplify.Classes.globalvars import *
+from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabgen,
+                                         parseinputs_db, parseinputs_inputgen,
+                                         parseinputs_postproc, parseinputs_random,
+                                         parseinputs_binding, parseinputs_tsgen,
+                                         parseinputs_customcore, parseinputs_naming,
+                                         parseinputs_ligdict, parseinputs_basic,
+                                         parseCLI)
+from molSimplify.Scripts.generator import startgen
+from molSimplify.Classes.globalvars import globalvars
+from molSimplify.utils.tensorflow import tensorflow_silence
 
 globs = globalvars()
-## Basic help description string
-DescString_basic = 'Welcome to molSimplify. Only basic usage is described here.\n'
-DescString_basic += 'For help on advanced modules, please refer to our documentation at molsimplify.mit.edu or provide additional commands to -h, as below:\n'
-DescString_basic += '-h advanced: advanced structure generation help\n'
-DescString_basic += '-h slabgen: slab builder help\n'
-# DescString_basic += '-h chainb: chain builder help\n'
-DescString_basic += '-h autocorr: automated correlation analysis help\n'
-DescString_basic += '-h db: database search help\n'
-DescString_basic += '-h inputgen: quantum chemistry code input file generation help\n'
-DescString_basic += '-h postproc: post-processing help\n'
-DescString_basic += '-h random: random generation help\n'
-DescString_basic += '-h binding: binding species (second molecule) generation help\n'
-DescString_basic += '-h customcore: custom core functionalization help\n'
-DescString_basic += '-h tsgen: transition state generation help\n'
-DescString_basic += '-h naming: custom filename help\n'
-## Advanced help description string
+# Basic help description string
+DescString_basic = (
+    'Welcome to molSimplify. Only basic usage is described here.\n'
+    'For help on advanced modules, please refer to our documentation at '
+    'molsimplify.mit.edu or provide additional commands to -h, as below:\n'
+    '-h advanced: advanced structure generation help\n'
+    '-h slabgen: slab builder help\n'
+    # '-h chainb: chain builder help\n'
+    '-h autocorr: automated correlation analysis help\n'
+    '-h db: database search help\n'
+    '-h inputgen: quantum chemistry code input file generation help\n'
+    '-h postproc: post-processing help\n'
+    '-h random: random generation help\n'
+    '-h binding: binding species (second molecule) generation help\n'
+    '-h customcore: custom core functionalization help\n'
+    '-h tsgen: transition state generation help\n'
+    '-h naming: custom filename help\n'
+    '-h liganddict: ligands.dict help\n'
+)
+# Advanced help description string
 DescString_advanced = 'Printing advanced structure generation help.'
-## Slab builder help description string
+# Slab builder help description string
 DescString_slabgen = 'Printing slab builder help.'
-## Chain builder help description string
+# Chain builder help description string
 DescString_chainb = 'Printing chain builder help.'
-## Automated correlation analysis description string
+# Automated correlation analysis description string
 DescString_autocorr = 'Printing automated correlation analysis help.'
-## Database search help description string
+# Database search help description string
 DescString_db = 'Printing database search help.'
-## Input file generation help description string
+# Input file generation help description string
 DescString_inputgen = 'Printing quantum chemistry code input file generation help.'
-## Post-processing help description string
+# Post-processing help description string
 DescString_postproc = 'Printing post-processing help.'
-## Random generation help description string
+# Random generation help description string
 DescString_random = 'Printing random generation help.'
-## Binding species placement help description string
+# Binding species placement help description string
 DescString_binding = 'Printing binding species (second molecule) generation help.'
-## Transition state generation help description string
+# Transition state generation help description string
 DescString_tsgen = 'Printing transition state generation help.'
-## Ligand replacement help description string
+# Ligand replacement help description string
 DescString_customcore = 'Printing ligand replacement help.'
-## Custom file naming help description string
+# Custom file naming help description string
 DescString_naming = 'Printing custom filename help.'
-
-def tensorflow_silence():
-    ## thanks to
-    # stackoverflow.com/questions/40426502/is-there-a-way-to-suppress-the-messages-tensorflow-prints
-    try:
-        from tensorflow.compat.v1 import logging
-        logging.set_verbosity(logging.ERROR)
-        os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-        os.environ['KMP_WARNINGS'] = '0'
-
-        def deprecated(date, instructions, warn_once=False):
-            def deprecated_wrapper(func):
-                return func
-            return deprecated_wrapper
-
-        from tensorflow.python.util import deprecation
-        deprecation.deprecated = deprecated
-
-    except ImportError:
-        pass
+# Ligand dictionary help description string
+DescString_ligdict = 'Printing ligand dictionary help.'
 
 
 try:
-    import PyQt5
-    from PyQt5.QtGui import *
-    from molSimplify.Classes.mGUI import *
-
+    from PyQt5.QtWidgets import QApplication
+    from molSimplify.Classes.mGUI import mGUI
     qtflag = True
 except ImportError:
     qtflag = False
-    pass
 
 
-## Main function
+# Main function
 #  @param args Argument namespace
 def main(args=None):
-    ## issue a call to test TF, this is needed to keep
-    ## ordering between openbabel and TF calls consistent
-    ## on some sytems
+    # issue a call to test TF, this is needed to keep
+    # ordering between openbabel and TF calls consistent
+    # on some sytems
     if globs.testTF():
         print('TensorFlow connection successful')
         tensorflow_silence()
@@ -122,15 +112,13 @@ def main(args=None):
 
     if args is None:
         args = sys.argv[1:]
-    ### run GUI by default ###
-    args = sys.argv[1:]
+    # ## run GUI by default ###
     gui = True
-    cmd = False
-    if len(args)==0 and not qtflag:
+    if len(args) == 0 and not qtflag:
         print("\nGUI not supported since PyQt5 can not be loaded. Please use commandline version.\n")
         exit()
     ####################################
-    ### print help ###
+    # ## print help ###
     elif '-h' in args or '-H' in args or '--help' in args:
         if 'advanced' in args:
             parser = argparse.ArgumentParser(description=DescString_advanced)
@@ -168,35 +156,42 @@ def main(args=None):
         elif 'naming' in args:
             parser = argparse.ArgumentParser(description=DescString_naming)
             parseinputs_naming(parser)
+        elif 'liganddict' in args:
+            # The formatter class allows for the display of new lines.
+            parser = argparse.ArgumentParser(description=DescString_ligdict,
+                                             formatter_class=argparse.RawTextHelpFormatter)
+            parseinputs_ligdict(parser)
         else:
             # print basic help
             parser = argparse.ArgumentParser(description=DescString_basic,
                                              formatter_class=argparse.RawDescriptionHelpFormatter)
             parseinputs_basic(parser)
         exit()
-    ### run with gui ###
+    # ## run with gui ###
     elif gui and len(args) == 0:
         print('molSimplify is starting!')
-        ### create main application
+        # ## create main application
         app = QApplication(sys.argv)  # main application
-        gui = mGUI(app)  # main GUI class
+        _ = mGUI(app)  # main GUI class
         app.processEvents()
         app.exec_()
-    ### if input file is specified run without GUI ###
+    # ## if input file is specified run without GUI ###
     elif '-i' in args:
         print('Input file detected, reading arguments from input file')
         print('molSimplify is starting!')
         gui = False
         # run from commandline
-        emsg = startgen(sys.argv, False, gui)
-    ### grab from commandline arguments ###
+        startgen(sys.argv, False, gui)
+    # ## grab from commandline arguments ###
     else:
         print('No input file detected, reading arguments from commandline')
         print('molSimplify is starting!')
         gui = False
         # create input file from commandline
         infile = parseCLI([_f for _f in args if _f])
-        args = ['main.py','-i',infile]
-        emsg = startgen(args,False,gui)
+        args = ['main.py', '-i', infile]
+        startgen(args, False, gui)
+
+
 if __name__ == '__main__':
     main()

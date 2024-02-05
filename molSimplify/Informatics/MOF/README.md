@@ -1,0 +1,4 @@
+A user can generate RAC features for a MOF using [`MOF_descriptors.py`](MOF_descriptors.py), provided the user has a CIF file for the MOF in question. The main function is `get_MOF_descriptors`. An example is provided at the end of the python file.
+
+A user can add functional groups to a CIF file using [`MOF_functionalizer.py`](MOF_functionalizer.py). The main functions are `functionalize_MOF` and `functionalize_MOF_at_indices`. An example is provided at the end of the python file.
+The supported functional groups are indicated in the function `check_support`. A user can add support for an additional functional group by adding an XYZ to the folder [`monofunctionalized_BDC`](monofunctionalized_BDC) and adding an entry to [`index_information.py`](monofunctionalized_BDC/index_information.py). Custom functional groups can be used with the function `functionalize_MOF_at_indices`.

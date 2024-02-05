@@ -5,22 +5,31 @@
 #  Modified by JP Janet and Aditya Nandy
 #  Dpt of Chemical Engineering, MIT
 
-from molSimplify.Scripts.geometry import *
-from molSimplify.Scripts.molSimplify_io import *
-from molSimplify.Classes.globalvars import *
-try:
-    from molSimplify.Classes.mWidgets import *
-except:
-    pass
+from molSimplify.Scripts.io import (copy_to_custom_path, readdict,
+                                    lig_load, core_load, bind_load)
+from molSimplify.Classes.globalvars import globalvars
 import os
 import sys
-import subprocess
 import re
 import unicodedata
-import openbabel
-import random
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 import shutil
-from pkg_resources import resource_filename, Requirement
+import pathlib
+
+
+def initialize_custom_database(globs):
+    print('To add to database, you need to set a custom path. Please enter a writeable file path:')
+    # Strip double quotes from the string
+    raw_input = input('path=').replace('"', '')
+    # Resolve the path to get the absolute path and convert back to string
+    new_path = str(pathlib.Path(raw_input).resolve())
+    globs.add_custom_path(new_path)
+    globs.custom_path = new_path
+    copy_to_custom_path()
+
 
 # Add molecule to ligand database
 #  @param smimol SMILES string or molecule file to be added
@@ -31,15 +40,11 @@ from pkg_resources import resource_filename, Requirement
 #  @param smictg Ligand category
 #  @param ffopt Flag for ligand FF optimization
 #  @return Error messages
-
-def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt):
+def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt, smichg=None):
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
 
     lipath = globs.custom_path + "/Ligands/ligands.dict"
     licores = readdict(lipath)
@@ -80,11 +85,13 @@ def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt):
         print("smimol is "+str(smimol))
         print("sminame is "+str(sminame))
         # sanitize ff options:
-        if not ffopt in ["A", "B", "BA"]:
+        if ffopt not in ["A", "B", "BA", "N"]:
             print('warning: incompatible ffopt choice. Options are ' +
                   str(["A", "B", "BA", "N"]))
             sys.exit(1)
 
+        if smichg is not None:
+            lig.charge = smichg
         # new entry for dictionary
         if '.mol' in smimol:
             shutil.copy2(smimol, ligands_folder + sminame+'.mol')
@@ -96,9 +103,9 @@ def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt):
             # write smiles file in Ligands directory
             obConversion = openbabel.OBConversion()
             obConversion.SetOutFormat("smi")
-            red = obConversion.Read(lig.OBMol)
+            obConversion.Read(lig.OBMol)
             obConversion.WriteFile(lig.OBMol, ligands_folder + sminame+'.smi')
-            #lig.OBMol.write('smi',ligands_folder + sminame+'.smi')
+            # lig.OBMol.write('smi',ligands_folder + sminame+'.smi')
             snew = str(sminame)+':'+str(sminame)+'.smi,'+str(shortname)+','+str(css)+','+str(grp)+','+str(ffopt)+','+str(lig.charge)
         else:
             # write xyz file in Ligands directory
@@ -106,33 +113,27 @@ def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt):
             snew = str(sminame)+':'+str(sminame)+'.xyz,'+str(shortname)+','+str(css)+','+str(grp)+','+str(ffopt)+','+str(lig.charge)
         # update dictionary
 
-        f = open(lipath, 'r')
-
-        ss = f.read().splitlines()
-        f.close()
-        f = open(lipath, 'w')
+        with open(lipath, 'r') as f:
+            ss = f.read().splitlines()
         ss.append(snew)
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            f.write(s+'\n')
-        f.close()
+        with open(lipath, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                f.write(s+'\n')
     return emsg
+
 
 # Add molecule to cores database
 #  @param smimol SMILES string or molecule file to be added
 #  @param sminame Name of core for key in dictionary
 #  @param smicat Core connecting atoms
 #  @return Error messages
-
 def addtocdb(smimol, sminame, smicat):
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     cpath = globs.custom_path + "/Cores/cores.dict"
     mcores = readdict(cpath)
     cores_folder = globs.custom_path + "/Cores/"
@@ -150,7 +151,7 @@ def addtocdb(smimol, sminame, smicat):
         css = ' '.join(cs)
         # convert to unicode
         smimol = unicodedata.normalize(
-            'NFKD', smimol).encode('ascii', 'ignore')
+            'NFKD', smimol)
         if '~' in smimol:
             smimol = smimol.replace('~', os.expanduser('~'))
         # convert ligand from smiles/file
@@ -171,30 +172,25 @@ def addtocdb(smimol, sminame, smicat):
             # new entry for dictionary
             snew = sminame+':'+sminame+'.xyz,'+css+','+'1'
         # update dictionary
-        f = open(cpath, 'r')
-        ss = f.read().splitlines()
-        f.close()
-        f = open(cpath, 'w')
+        with open(cpath, 'r') as f:
+            ss = f.read().splitlines()
         ss.append(snew)
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            f.write(s+'\n')
-        f.close()
+        with open(cpath, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                f.write(s+'\n')
     return emsg
+
 
 # Add molecule to binding species database
 #  @param smimol SMILES string or molecule file to be added
 #  @param sminame Name of binding species for key in dictionary
 #  @return Error messages
-
 def addtobdb(smimol, sminame):
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To add to database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     bpath = globs.custom_path + "/Bind/bind.dict"
     bindcores = readdict(bpath)
     bind_folder = globs.custom_path + "/Bind/"
@@ -205,9 +201,9 @@ def addtobdb(smimol, sminame):
     else:
         # convert to unicode
         smimol = unicodedata.normalize(
-            'NFKD', smimol).encode('ascii', 'ignore')
+            'NFKD', smimol)
         sminame = unicodedata.normalize(
-            'NFKD', sminame).encode('ascii', 'ignore')
+            'NFKD', sminame)
         if '~' in smimol:
             smimol = smimol.replace('~', os.expanduser('~'))
         # convert ligand from smiles/file
@@ -236,86 +232,73 @@ def addtobdb(smimol, sminame):
             bind.writexyz(bind_folder + sminame+'.xyz')  # write xyz file
             snew = sminame+':'+sminame+'.xyz,'+shortname+','
         # update dictionary
-        f = open(bpath, 'r')
-        ss = f.read().splitlines()
-        f.close()
-        f = open(bpath, 'w')
+        with open(bpath, 'r') as f:
+            ss = f.read().splitlines()
         ss.append(snew)
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            f.write(s+'\n')
-        f.close()
+        with open(bpath, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                f.write(s+'\n')
     return emsg
+
 
 # Remove molecule from database
 #  @param sminame Name of molecule for key in dictionary
 #  @param ropt Flag for molecule type (0 for core, 1 for ligand, 2 for binding species)
 #  @return Error messages
-
 def removefromDB(sminame, ropt):
     emsg = False
     globs = globalvars()
     if not globs.custom_path or not os.path.exists(str(globs.custom_path)):
-        print('To database, you need to set a custom path. Please enter a writeable file path:')
-        new_path = eval(input('path='))
-        globs.add_custom_path(new_path)
-        copy_to_custom_path()
+        initialize_custom_database(globs)
     li_path = globs.custom_path + "/Ligands/ligands.dict"
     li_folder = globs.custom_path + "/Ligands/"
     core_path = globs.custom_path + "/Cores/cores.dict"
-    core_dir = globs.custom_path + "/Cores/"
+    core_folder = globs.custom_path + "/Cores/"
     bind_path = globs.custom_path + "/Bind/bind.dict"
     bind_folder = globs.custom_path + "/Bind/"
 
     # convert to unicode
-    sminame = unicodedata.normalize('NFKD', sminame).encode('ascii', 'ignore')
+    sminame = unicodedata.normalize('NFKD', sminame)
 
     if ropt == 1:
         # update dictionary
-        f = open(li_path, 'r')
-        ss = f.read().splitlines()
-        f.close()
-        f = open(li_path, 'w')
+        with open(li_path, 'r') as f:
+            ss = f.read().splitlines()
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            sss = s.split(':')
-            if sminame != sss[0]:
-                f.write(s+'\n')
-            else:
-                os.remove(li_folder + sss[1].split(',')[0])
-        f.close()
+        with open(li_path, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                sss = s.split(':')
+                if sminame != sss[0]:
+                    f.write(s+'\n')
+                else:
+                    os.remove(li_folder + sss[1].split(',')[0])
     elif ropt == 0:
-        mcores = readdict(core_path)
         # update dictionary
-        f = open(core_path, 'r')
-        ss = f.read().splitlines()
-        f.close()
-        f = open(core_path, 'w')
+        with open(core_path, 'r') as f:
+            ss = f.read().splitlines()
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            sss = s.split(':')
-            if sminame != sss[0]:
-                f.write(s+'\n')
-            else:
-                os.remove(core_folder+sss[1].split(',')[0])
-        f.close()
+        with open(core_path, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                sss = s.split(':')
+                if sminame != sss[0]:
+                    f.write(s+'\n')
+                else:
+                    os.remove(core_folder+sss[1].split(',')[0])
     elif ropt == 2:
-        bindcores = readdict(bind_path)
         # update dictionary
-        f = open(bind_path, 'r')
-        ss = f.read().splitlines()
-        f.close()
-        f = open(bind_path, 'w')
+        with open(bind_path, 'r') as f:
+            ss = f.read().splitlines()
         ssort = sorted(ss[1:])
-        f.write(ss[0]+'\n')
-        for s in ssort:
-            sss = s.split(':')
-            if sminame != sss[0]:
-                f.write(s+'\n')
-            else:
-                os.remove(bind_folder+sss[1].split(',')[0])
-        f.close()
+        with open(bind_path, 'w') as f:
+            f.write(ss[0]+'\n')
+            for s in ssort:
+                sss = s.split(':')
+                if sminame != sss[0]:
+                    f.write(s+'\n')
+                else:
+                    os.remove(bind_folder+sss[1].split(',')[0])
     return emsg

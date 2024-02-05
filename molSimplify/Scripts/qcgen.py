@@ -15,14 +15,14 @@ from molSimplify.Classes.mol3D import mol3D
 
 def multitcgen(args, strfiles):
     """Generate multiple terachem input files at once.
-        
+
         Parameters
         ----------
             args : Namespace
                 Namespace of input arguments.
             strfiles : list
                 List of xyz files produced.
-        
+
         Returns
         -------
             jobdirs : list
@@ -44,14 +44,15 @@ def multitcgen(args, strfiles):
             try:
                 os.remove(xyzf+'.molinp')
                 os.remove(xyzf+'.report')
-            except:
+            except FileNotFoundError:
                 pass
             if not args.reportonly:
                 try:
                     os.remove(xyzf+'.xyz')
-                except:
+                except FileNotFoundError:
                     pass
     return jobdirs
+
 
 def tcgen(args, strfiles, method):
     """Generate a single terachem input file.
@@ -64,7 +65,7 @@ def tcgen(args, strfiles, method):
                 List of xyz files produced.
             method : str
                 Name of method to use, (e.g. B3LYP).
-        
+
         Returns
         -------
             jobdirs : list
@@ -107,7 +108,7 @@ def tcgen(args, strfiles, method):
         else:
             nametrunc = coordname
         if not os.path.exists(rdir+'/'+nametrunc) and not args.jobdir:
-            os.mkdir(rdir+'/'+nametrunc)
+            os.makedirs(rdir+'/'+nametrunc)
         mdir = rdir+'/'+nametrunc
         if method:
             if method[0] == 'U' or method[0] == 'u':
@@ -116,7 +117,7 @@ def tcgen(args, strfiles, method):
                 mmd = '/'+method
             mdir = rdir+'/'+nametrunc+mmd
             if not os.path.exists(mdir):
-                os.mkdir(mdir)
+                os.makedirs(mdir)
         if not args.jobdir:
             jobdirs.append(mdir)
             if not args.reportonly:
@@ -126,7 +127,7 @@ def tcgen(args, strfiles, method):
             try:
                 shutil.copy2(xyzf.replace('.xyz', '.report'),
                              mdir.replace('.xyz', '.report'))
-            except:
+            except FileNotFoundError:
                 pass
         elif args.jobdir:
             jobdirs.append(rdir)
@@ -172,7 +173,7 @@ def tcgen(args, strfiles, method):
         jobparams['charge'] = args.charge
     # Check for existence of basis and sanitize name
     if args.basis:
-        ecp = False  # Flag not currently used, for deciding gpus_ecp code or not later. Can always specify with 'extra' command
+        # ecp = False  # Flag not currently used, for deciding gpus_ecp code or not later. Can always specify with 'extra' command
         if '*' in args.basis:
             jobparams['basis'] = args.basis.replace('*', 's')
         else:
@@ -201,57 +202,57 @@ def tcgen(args, strfiles, method):
     # Now we're ready to start building the input file
     if not args.jobdir:
         for i, jobd in enumerate(jobdirs):
-            output = open(jobd+'/' + coordfs[i][:-4] + '.in', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            jobparams['coordinates'] = coordfs[i]
-            for keys in list(jobparams.keys()):
-                output.write('%s %s\n' % (keys, jobparams[keys]))
-            if jobparams['run'] == 'minimize':
-                output.write('new_minimizer yes\n')
-                #output.write('min_coordinates cartesian\n')
-            if args.tc_fix_dihedral:
-                temp = mol3D()
-                temp.readfromxyz(strfiles[i])
-                metal_ind = temp.findMetal()
-                fixed_atoms = list()
-                fixed_atoms = temp.getBondedAtoms(metal_ind)
-                fixed_atoms = [str(int(i)+1)
-                               for i in fixed_atoms]  # 1-based indices
-                string_to_write = 'dihedral 0 ' + '_'.join(fixed_atoms)
-                # print(string_to_write)
-                output.write('$constraint_set \n')
-                output.write(string_to_write + '\n')
-            output.write('end\n')
-            output.close()
+            with open(jobd+'/' + coordfs[i][:-4] + '.in', 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                jobparams['coordinates'] = coordfs[i]
+                for keys in list(jobparams.keys()):
+                    output.write('%s %s\n' % (keys, jobparams[keys]))
+                if jobparams['run'] == 'minimize':
+                    output.write('new_minimizer yes\n')
+                    # output.write('min_coordinates cartesian\n')
+                if args.tc_fix_dihedral:
+                    temp = mol3D()
+                    temp.readfromxyz(strfiles[i])
+                    metal_ind = temp.findMetal()
+                    fixed_atoms = list()
+                    fixed_atoms = temp.getBondedAtoms(metal_ind)
+                    fixed_atoms = [str(int(i)+1)
+                                   for i in fixed_atoms]  # 1-based indices
+                    string_to_write = 'dihedral 0 ' + '_'.join(fixed_atoms)
+                    # print(string_to_write)
+                    output.write('$constraint_set \n')
+                    output.write(string_to_write + '\n')
+                output.write('end\n')
     elif args.jobdir:
         for i, jobd in enumerate(jobdirs):
             print(('jobd is ' + jobd))
             if args.name:
-                output = open(jobd + '/'+args.name + '.in', 'w')
+                output_filename = jobd + '/'+args.name + '.in'
             else:
-                output = open(jobd+'/' + coordfs[i][:-4] + '.in', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            jobparams['coordinates'] = coordfs[i]
-            for keys in list(jobparams.keys()):
-                output.write('%s %s\n' % (keys, jobparams[keys]))
-            if jobparams['run'] == 'minimize':
-                output.write('new_minimizer yes\n')
-                #output.write('min_coordinates cartesian\n')
-            if args.tc_fix_dihedral:
-                temp = mol3D()
-                temp.readfromxyz(strfiles[i])
-                metal_ind = temp.findMetal()
-                fixed_atoms = list()
-                fixed_atoms = temp.getBondedAtoms(metal_ind)
-                fixed_atoms = [str(int(i)+1)
-                               for i in fixed_atoms]  # 1-based indices
-                string_to_write = 'dihedral 0 ' + '_'.join(fixed_atoms)
-                # print(string_to_write)
-                output.write('$constraint_set \n')
-                output.write(string_to_write + '\n')
-            output.write('end\n')
-            output.close()
+                output_filename = jobd+'/' + coordfs[i][:-4] + '.in'
+            with open(output_filename, 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                jobparams['coordinates'] = coordfs[i]
+                for keys in list(jobparams.keys()):
+                    output.write('%s %s\n' % (keys, jobparams[keys]))
+                if jobparams['run'] == 'minimize':
+                    output.write('new_minimizer yes\n')
+                    # output.write('min_coordinates cartesian\n')
+                if args.tc_fix_dihedral:
+                    temp = mol3D()
+                    temp.readfromxyz(strfiles[i])
+                    metal_ind = temp.findMetal()
+                    fixed_atoms = list()
+                    fixed_atoms = temp.getBondedAtoms(metal_ind)
+                    fixed_atoms = [str(int(i)+1)
+                                   for i in fixed_atoms]  # 1-based indices
+                    string_to_write = 'dihedral 0 ' + '_'.join(fixed_atoms)
+                    # print(string_to_write)
+                    output.write('$constraint_set \n')
+                    output.write(string_to_write + '\n')
+                output.write('end\n')
     return jobdirs
+
 
 def xyz2gxyz(filename):
     """Turn an XYZ file into a GAMESS XYZ file.
@@ -260,7 +261,7 @@ def xyz2gxyz(filename):
         ----------
             filename : str
                 Filename of xyz file.
-        
+
         Returns
         -------
             gfilename : str
@@ -274,6 +275,7 @@ def xyz2gxyz(filename):
     mol.writegxyz(gfilename)  # write gamess formatted xyz file
     return gfilename.split('.gxyz')[0]
 
+
 def multigamgen(args, strfiles):
     """Generate multiple GAMESS files, loops over methods.
 
@@ -283,7 +285,7 @@ def multigamgen(args, strfiles):
                 Namespace of input arguments.
             strfiles : list
                 List of xyz files produced.
-        
+
         Returns
         -------
             jobdirs : list
@@ -305,6 +307,7 @@ def multigamgen(args, strfiles):
         os.remove(xyzf+'.molinp')
     return jobdirs
 
+
 def gamgen(args, strfiles, method):
     """Generate a single GAMESS input file.
 
@@ -316,7 +319,7 @@ def gamgen(args, strfiles, method):
                 List of xyz files produced.
             method : str
                 Name of method to use, (e.g. B3LYP).
-        
+
         Returns
         -------
             jobdirs : list
@@ -364,12 +367,16 @@ def gamgen(args, strfiles, method):
                 os.mkdir(mdir)
         jobdirs.append(mdir)
         shutil.copy2(xyzf, mdir)
-        shutil.copy2(xyzf.replace('.gxyz', '.molinp'),
-                     mdir.replace('.gxyz', '.molinp'))
+        # Try copying molinp and report file to jobdir
+        try:
+            shutil.copy2(xyzf.replace('.gxyz', '.molinp'),
+                         mdir.replace('.gxyz', '.molinp'))
+        except FileNotFoundError:
+            pass
         try:
             shutil.copy2(xyzf.replace('.xyz', '.report'),
                          mdir.replace('.xyz', '.report'))
-        except:
+        except FileNotFoundError:
             pass
 
     if method:
@@ -393,29 +400,28 @@ def gamgen(args, strfiles, method):
         jobparams['run'] = 'SADPOINT'
     # Now we're ready to start building the input file and the job script
     for i, jobd in enumerate(jobdirs):
-        output = open(jobd+'/gam.inp', 'w')
-        f = open(coordfs[i])
-        s = f.read()  # read coordinates
-        f.close()
+        output = []
+        with open(coordfs[i]) as f:
+            s = f.read()  # read coordinates
         jobparams['coordinates'] = s
-        output.write('! File created using %s\n' % globs.PROGRAM)
+        output.append('! File created using %s\n' % globs.PROGRAM)
         # write $BASIS block
-        output.write(' $BASIS ')
+        output.append(' $BASIS ')
         if args.ngauss:
-            output.write(' GBASIS='+jobparams['GBASIS'])
-            output.write(' NGAUSS='+jobparams['NGAUSS'])
+            output.append(' GBASIS='+jobparams['GBASIS'])
+            output.append(' NGAUSS='+jobparams['NGAUSS'])
         else:
-            output.write(' GBASIS='+jobparams['GBASIS'])
+            output.append(' GBASIS='+jobparams['GBASIS'])
         if args.ndfunc:
-            output.write(' NDFUNC='+args.ndfunc)
+            output.append(' NDFUNC='+args.ndfunc)
         if args.npfunc:
-            output.write(' NPFUNC='+args.npfunc)
-        output.write(' $END\n')
+            output.append(' NPFUNC='+args.npfunc)
+        output.append(' $END\n')
         # write $SYSTEM block
-        output.write(' $SYSTEM ')
+        output.append(' $SYSTEM ')
         # check if MWORDS specified by the user
         if not args.sysoption or not ('MWORDS' in args.sysoption):
-            output.write(' MWORDS=16')
+            output.append(' MWORDS=16')
         # write additional options
         if (args.sysoption):
             if len(args.sysoption) % 2 > 0:
@@ -423,17 +429,17 @@ def gamgen(args, strfiles, method):
             else:
                 for elem in range(0, int(0.5*len(args.sysoption))):
                     key, val = args.sysoption[2*elem], args.sysoption[2*elem+1]
-                    output.write(' '+key+'='+val+' ')
-        output.write(' $END\n')
+                    output.append(' '+key+'='+val+' ')
+        output.append(' $END\n')
         # write CONTRL block
-        output.write(' $CONTRL SCFTYP='+jobparams['SCFTYP']+' DFTTYP=')
-        output.write(jobparams['DFTTYP']+' RUNTYP='+jobparams['RUNTYP'])
-        output.write('\n  ICHARG='+jobparams['ICHARG']+' MULT=')
+        output.append(' $CONTRL SCFTYP='+jobparams['SCFTYP']+' DFTTYP=')
+        output.append(jobparams['DFTTYP']+' RUNTYP='+jobparams['RUNTYP'])
+        output.append('\n  ICHARG='+jobparams['ICHARG']+' MULT=')
         # check if CC basis set specified and add spherical
         if 'CC' in jobparams['GBASIS']:
-            output.write(jobparams['MULT']+' ISPHER=1\n')
+            output.append(jobparams['MULT']+' ISPHER=1\n')
         else:
-            output.write(jobparams['MULT']+'\n')
+            output.append(jobparams['MULT']+'\n')
         # write additional options
         if (args.ctrloption):
             if len(args.ctrloption) % 2 > 0:
@@ -442,17 +448,17 @@ def gamgen(args, strfiles, method):
                 for elem in range(0, int(0.5*len(args.ctrloption))):
                     key, val = args.ctrloption[2 *
                                                elem], args.ctrloption[2*elem+1]
-                    output.write(' '+key+'='+val+' ')
-        output.write(' $END\n')
+                    output.append(' '+key+'='+val+' ')
+        output.append(' $END\n')
         # write $SCF block
-        output.write(' $SCF ')
+        output.append(' $SCF ')
         # check if options specified by the user
         if not args.scfoption or not ('DIRSCF' in args.scfoption):
-            output.write(' DIRSCF=.TRUE.')
+            output.append(' DIRSCF=.TRUE.')
         if not args.scfoption or not ('DIIS' in args.scfoption):
-            output.write(' DIIS=.TRUE.')
+            output.append(' DIIS=.TRUE.')
         if not args.scfoption or not ('SHIFT' in args.scfoption):
-            output.write(' SHIFT=.TRUE.')
+            output.append(' SHIFT=.TRUE.')
         # write additional options
         if (args.scfoption):
             if len(args.scfoption) % 2 != 0:
@@ -460,13 +466,13 @@ def gamgen(args, strfiles, method):
             else:
                 for elem in range(0, int(0.5*len(args.scfoption))):
                     key, val = args.scfoption[2*elem], args.scfoption[2*elem+1]
-                    output.write(' '+key+'='+val+' ')
-        output.write(' $END\n')
+                    output.append(' '+key+'='+val+' ')
+        output.append(' $END\n')
         # write $STATPT block
-        output.write(' $STATPT ')
+        output.append(' $STATPT ')
         # check if NSTEP specified by the user
         if not args.statoption or not ('NSTEP' in args.statoption):
-            output.write(' NSTEP=100')
+            output.append(' NSTEP=100')
         # write additional options
         if (args.statoption):
             if len(args.statoption) % 2 > 0:
@@ -475,24 +481,26 @@ def gamgen(args, strfiles, method):
                 for elem in range(0, int(0.5*len(args.statoption))):
                     key, val = args.statoption[2 *
                                                elem], args.statoption[2*elem+1]
-                    output.write(' '+key+'='+val+' ')
-        output.write(' $END\n')
+                    output.append(' '+key+'='+val+' ')
+        output.append(' $END\n')
         # write $DATA block
-        output.write(' $DATA\n')
-        output.write(jobparams['coordinates']+' $END\n')
-        output.close()
+        output.append(' $DATA\n')
+        output.append(jobparams['coordinates']+' $END\n')
+        with open(jobd+'/gam.inp', 'w') as f:
+            f.writelines(output)
     return jobdirs
+
 
 def multiqgen(args, strfiles):
     """Generate multiple QChem input files at once.
-        
+
         Parameters
         ----------
             args : Namespace
                 Namespace of input arguments.
             strfiles : list
                 List of xyz files produced.
-        
+
         Returns
         -------
             jobdirs : list
@@ -504,7 +512,7 @@ def multiqgen(args, strfiles):
     if args.method and len(args.method) > 1:
         methods = args.exchange
         for method in methods:
-            jobdirs.append(qen(args, strfiles, method))
+            jobdirs.append(qgen(args, strfiles, method))
     else:
         jobdirs.append(qgen(args, strfiles, method))
     # remove original files
@@ -513,6 +521,7 @@ def multiqgen(args, strfiles):
         os.remove(xyzf+'.molinp')
         os.remove(xyzf + '.report')
     return jobdirs
+
 
 def qgen(args, strfiles, method):
     """Generate a single QChem input file.
@@ -525,15 +534,13 @@ def qgen(args, strfiles, method):
                 List of xyz files produced.
             method : str
                 Name of method to use, (e.g. B3LYP).
-        
+
         Returns
         -------
             jobdirs : list
                 List of job directory with QChem input file.
 
     """
-    # get global variables
-    globs = globalvars()
     jobdirs = []
     coordfs = []
     # Initialize the jobparams dictionary with mandatory/useful keywords.
@@ -562,22 +569,26 @@ def qgen(args, strfiles, method):
         else:
             nametrunc = coordname
         if not os.path.exists(rdir+'/'+nametrunc) and not args.jobdir:
-            os.mkdir(rdir+'/'+nametrunc)
+            os.makedirs(rdir+'/'+nametrunc)
         mdir = rdir+'/'+nametrunc
         if method:
             mmd = '/'+method
             mdir = rdir+'/'+nametrunc+mmd
             if not os.path.exists(mdir):
-                os.mkdir(mdir)
+                os.makedirs(mdir)
 
         jobdirs.append(mdir)
         shutil.copy2(xyzf, mdir)
-        shutil.copy2(xyzf.replace('.xyz', '.molinp'),
-                     mdir.replace('.xyz', '.molinp'))
+        # Try copying molinp and report files to the new jobdir
+        try:
+            shutil.copy2(xyzf.replace('.xyz', '.molinp'),
+                         mdir.replace('.xyz', '.molinp'))
+        except FileNotFoundError:
+            pass
         try:
             shutil.copy2(xyzf.replace('.xyz', '.report'),
                          mdir.replace('.xyz', '.report'))
-        except:
+        except FileNotFoundError:
             pass
     # Check for existence of basis and sanitize name
     if args.basis and len(args.basis) > 1:
@@ -599,10 +610,9 @@ def qgen(args, strfiles, method):
         jobparams['CHARGE'] = args.charge
     # Now we're ready to start building the input file and the job script
     for i, jobd in enumerate(jobdirs):
-        output = open(jobd+'/qch.inp', 'w')
-        f = open(jobd+'/'+coordfs[i])
-        s0 = f.readlines()[2:]  # read coordinates
-        f.close()
+        output = []
+        with open(jobd+'/'+coordfs[i]) as f:
+            s0 = f.readlines()[2:]  # read coordinates
         # if separate split to two molecules
         if args.bsep and '--' in ''.join(s0):
             idxsplit = [isdx for isdx, ss in enumerate(s0) if '--' in ss][0]
@@ -613,16 +623,16 @@ def qgen(args, strfiles, method):
         else:
             s = s0
         # write rem block
-        output.write('$rem\nUNRESTRICTED\t\t' + jobparams['UNRESTRICTED'])
-        output.write(
+        output.append('$rem\nUNRESTRICTED\t\t' + jobparams['UNRESTRICTED'])
+        output.append(
             '\nBASIS\t\t'+jobparams['BASIS']+'\nJOBTYPE\t\t'+jobparams['JOBTYPE'])
-        output.write('\nEXCHANGE\t\t' +
-                     jobparams['EXCHANGE']+'\nCORRELATION\t\t')
-        output.write(jobparams['CORRELATION']+'\nMAX_SCF_CYCLES\t\t')
-        output.write(jobparams['MAX_SCF_CYCLES']+'\nGEOM_OPT_MAX_CYCLES\t\t')
-        output.write(jobparams['GEOM_OPT_MAX_CYCLES'] +
-                     '\nSYMMETRY\t\t'+jobparams['SYMMETRY'])
-        output.write('\nPRINT_ORBITALS\t\t'+jobparams['PRINT_ORBITALS']+'\n')
+        output.append('\nEXCHANGE\t\t' +
+                      jobparams['EXCHANGE']+'\nCORRELATION\t\t')
+        output.append(jobparams['CORRELATION']+'\nMAX_SCF_CYCLES\t\t')
+        output.append(jobparams['MAX_SCF_CYCLES']+'\nGEOM_OPT_MAX_CYCLES\t\t')
+        output.append(jobparams['GEOM_OPT_MAX_CYCLES'] +
+                      '\nSYMMETRY\t\t'+jobparams['SYMMETRY'])
+        output.append('\nPRINT_ORBITALS\t\t'+jobparams['PRINT_ORBITALS']+'\n')
         # write additional options
         if (args.remoption):
             if len(args.remoption) % 2 > 0:
@@ -630,14 +640,16 @@ def qgen(args, strfiles, method):
             else:
                 for elem in range(0, int(0.5*len(args.remoption))):
                     key, val = args.remoption[2*elem], args.remoption[2*elem+1]
-                    output.write(key+'\t\t'+val+'\n')
-        output.write('$end\n\n')
+                    output.append(key+'\t\t'+val+'\n')
+        output.append('$end\n\n')
         # write $molecule block
-        output.write(
+        output.append(
             '$molecule\n'+jobparams['CHARGE']+' '+jobparams['SPIN']+'\n')
-        output.write(''.join(s)+'$end')
-        output.close()
+        output.append(''.join(s)+'$end\n')
+        with open(jobd+'/qch.inp', 'w') as f:
+            f.writelines(output)
     return jobdirs
+
 
 def mlpgen(args, strfiles, rootdir):
     """Generate MOPAC input files.
@@ -650,15 +662,13 @@ def mlpgen(args, strfiles, rootdir):
                 List of xyz files produced.
             rootdir : str
                 Path of the root directory.
-        
+
         Returns
         -------
             jobdirs : list
                 List of job directory with MOPAC input file.
 
     """
-    # get global variables
-    globs = globalvars()
     jobdirs = []
     coordfs = []
     # Initialize the jobparams dictionary with mandatory/useful keywords.
@@ -697,14 +707,13 @@ def mlpgen(args, strfiles, rootdir):
     if args.charge:
         jobparams.append('CHARGE='+str(args.charge))
     # Now we're ready to start building the input file and the job script
-    for i, jobd in enumerate(jobdirs):
-        output = open(strfiles[i] + '.mop', 'w')
-        f = open(strfiles[i]+'.xyz')
-        s = f.readlines()[2:]  # read coordinates
-        f.close()
+    for xyzf in strfiles:
+        output = []
+        with open(xyzf + '.xyz') as f:
+            s = f.readlines()[2:]  # read coordinates
         # write rem block
         for terms in jobparams:
-            output.write(' ' + terms)
+            output.append(' ' + terms)
         # write additional options
         if (args.remoption):
             if len(args.remoption) % 2 > 0:
@@ -712,20 +721,22 @@ def mlpgen(args, strfiles, rootdir):
             else:
                 for elem in range(0, int(0.5*len(args.remoption))):
                     key, val = args.remoption[2*elem], args.remoption[2*elem+1]
-                    output.write(key+'\t\t'+val+'\n')
-        output.write('\n' + nametrunc+'\n')
-        output.write('\n')
+                    output.append(key+'\t\t'+val+'\n')
+        output.append('\n' + nametrunc+'\n')
+        output.append('\n')
         # write $molecule block
         for lines in s:
             ll = lines.split('\t')
             for i, items in enumerate(ll):
-                output.write(' ' + items.strip('\n'))
+                output.append(' ' + items.strip('\n'))
                 if i > 0:
-                    output.write(' 1')
+                    output.append(' 1')
                 if i == 3:
-                    output.write('\n')
-        output.close()
+                    output.append('\n')
+        with open(xyzf + '.mop', 'w') as f:
+            f.writelines(output)
     return jobdirs
+
 
 def multiogen(args, strfiles):
     """Generate ORCA input files.
@@ -736,7 +747,7 @@ def multiogen(args, strfiles):
                 Namespace of input arguments.
             strfiles : list
                 List of xyz files produced.
-            
+
         Returns
         -------
             jobdirs : list
@@ -759,9 +770,10 @@ def multiogen(args, strfiles):
                 os.remove(xyzf+'.xyz')
                 os.remove(xyzf+'.molinp')
                 os.remove(xyzf + '.report')
-            except:
+            except FileNotFoundError:
                 pass
     return jobdirs
+
 
 def ogen(args, strfiles, method):
     """Generate a single ORCA input file.
@@ -774,7 +786,7 @@ def ogen(args, strfiles, method):
                 List of xyz files produced.
             method : str
                 Method to be used (e.g. B3LYP)
-            
+
         Returns
         -------
             jobdirs : list
@@ -824,8 +836,8 @@ def ogen(args, strfiles, method):
             mdir = rdir+'/'+nametrunc+mmd
             if not os.path.exists(mdir):
                 try:
-                    os.mkdirs(mdir)
-                except:
+                    os.makedirs(mdir)
+                except FileExistsError:
                     pass
         if not args.jobdir:
             jobdirs.append(mdir)
@@ -835,7 +847,7 @@ def ogen(args, strfiles, method):
             try:
                 shutil.copy2(xyzf.replace('.xyz', '.report'),
                              mdir.replace('.xyz', '.report'))
-            except:
+            except FileNotFoundError:
                 pass
         elif args.jobdir:
             jobdirs.append(rdir)
@@ -877,7 +889,7 @@ def ogen(args, strfiles, method):
     # Special sanity check for CCSD(T)
     if jobparams['run'] == 'Opt' and 'CC' in jobparams['method']:
         print('''Warning! You requested geometry optimization with Coupled-Cluster methods,
-                which is NOT supported. Instead, we will geometry optimize the structure 
+                which is NOT supported. Instead, we will geometry optimize the structure
                 with B3LYP and then conduct CCSD(T) energy calculation on the optimized structure''')
     # TODO: check ORCA dispersion
     if (args.dispersion):
@@ -925,34 +937,33 @@ def ogen(args, strfiles, method):
     # Now we're ready to start building the input file
     if not args.jobdir:
         for i, jobd in enumerate(jobdirs):
-            output = open(jobd+'/orca.in', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            if 'CC' in jobparams['method'] and jobparams['run'] == 'Opt':
-                params0 = jobparams.copy()
-                params0['method'] = 'B3LYP'
-                ogenwrt(output, params0, coordfs[i])
-                output.write('\n$new_job\n')
-                jobparams['run'] = 'Sp'
-                ogenwrt(output, jobparams, '')
-            else:
-                ogenwrt(output, jobparams, coordfs[i])
-            output.close()
+            with open(jobd+'/orca.in', 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                if 'CC' in jobparams['method'] and jobparams['run'] == 'Opt':
+                    params0 = jobparams.copy()
+                    params0['method'] = 'B3LYP'
+                    ogenwrt(output, params0, coordfs[i])
+                    output.write('\n$new_job\n')
+                    jobparams['run'] = 'Sp'
+                    ogenwrt(output, jobparams, '')
+                else:
+                    ogenwrt(output, jobparams, coordfs[i])
     elif args.jobdir:
         for i, jobd in enumerate(jobdirs):
             print(('jobd is ' + jobd))
-            output = open(jobd+'/orca.in', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            if 'CC' in jobparams['method'] and jobparams['run'] == 'Opt':
-                params0 = jobparams.copy()
-                params0['method'] = 'B3LYP'
-                ogenwrt(output, params0, coordfs[i])
-                output.write('\n$new_job\n')
-                jobparams['run'] = 'Sp'
-                ogenwrt(output, jobparams, '')
-            else:
-                ogenwrt(output, jobparams, coordfs[i])
-            output.close()
+            with open(jobd+'/orca.in', 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                if 'CC' in jobparams['method'] and jobparams['run'] == 'Opt':
+                    params0 = jobparams.copy()
+                    params0['method'] = 'B3LYP'
+                    ogenwrt(output, params0, coordfs[i])
+                    output.write('\n$new_job\n')
+                    jobparams['run'] = 'Sp'
+                    ogenwrt(output, jobparams, '')
+                else:
+                    ogenwrt(output, jobparams, coordfs[i])
     return jobdirs
+
 
 def ogenwrt(output, jobparams, xyzf):
     """Generate a single ORCA input file with custom parameters.
@@ -965,7 +976,7 @@ def ogenwrt(output, jobparams, xyzf):
                 Dictionary of ORCA input parameters.
             xyzf : str
                 Name for XYZ file.
-            
+
         Returns
         -------
             jobdirs : list
@@ -986,9 +997,10 @@ def ogenwrt(output, jobparams, xyzf):
     # write the scf control block
     output.write('%scf\n')
     output.write('MaxIter '+jobparams['MaxIter']+'\n')
-    if jobparams['levelshift'] == 'yes':
-        output.write(
-            'Shift Shift '+str(jobparams['levelshiftval'])+' ErrOff ' + str(jobparams['ErrOff'])+'  end\n')
+    if 'levelshift' in jobparams:
+        if jobparams['levelshift'] == 'yes':
+            output.write('Shift Shift '+str(jobparams['levelshiftval'])
+                         + ' ErrOff ' + str(jobparams['ErrOff'])+'  end\n')
     output.write('DIISMaxEq '+str(jobparams['DIISMaxEq'])+'\n')
     output.write('end\n\n')
     # write the method block to control HFX
@@ -1011,6 +1023,7 @@ def ogenwrt(output, jobparams, xyzf):
         '*xyzfile '+str(jobparams['charge'])+' '+str(jobparams['spinmult'])+' '+xyzf+'\n')
     # output.write(''.join(s0)+'*\n')
 
+
 def molcgen(args, strfiles, method):
     """Generate a single MOLCAS input file.
 
@@ -1022,7 +1035,7 @@ def molcgen(args, strfiles, method):
                 List of xyz files produced.
             method : str
                 Method to be used (e.g. B3LYP)
-            
+
         Returns
         -------
             jobdirs : list
@@ -1075,8 +1088,8 @@ def molcgen(args, strfiles, method):
             mdir = rdir+'/'+nametrunc+mmd
             if not os.path.exists(mdir):
                 try:
-                    os.mkdirs(mdir)
-                except:
+                    os.makedirs(mdir)
+                except FileExistsError:
                     pass
         if not args.jobdir:
             jobdirs.append(mdir)
@@ -1086,7 +1099,7 @@ def molcgen(args, strfiles, method):
             try:
                 shutil.copy2(xyzf.replace('.xyz', '.report'),
                              mdir.replace('.xyz', '.report'))
-            except:
+            except FileNotFoundError:
                 pass
         elif args.jobdir:
             jobdirs.append(rdir)
@@ -1116,7 +1129,6 @@ def molcgen(args, strfiles, method):
     if args.basis and args.basis != 'lacvps_ecp':
         jobparams['basis'] = args.basis
     elif (not args.basis) or args.basis == 'lacvps_ecp':
-        temp = mol3D()
         jobparams['basis'] = molcbasis(strfiles, 'ANO-rcc')
     # Overwrite plus add any new dictionary keys from commandline input.
     if args.qoption:
@@ -1160,18 +1172,17 @@ def molcgen(args, strfiles, method):
     # Now we're ready to start building the input file
     if not args.jobdir:
         for i, jobd in enumerate(jobdirs):
-            output = open(jobd+'/molcas.input', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            molcwrt(output, jobparams, coordfs[i], i)
-            output.close()
+            with open(jobd+'/molcas.input', 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                molcwrt(output, jobparams, coordfs[i], i)
     elif args.jobdir:
         for i, jobd in enumerate(jobdirs):
             print(('jobd is ' + jobd))
-            output = open(jobd+'/molcas.input', 'w')
-            output.write('# file created with %s\n' % globs.PROGRAM)
-            molcwrt(output, jobparams, coordfs[i], i)
-            output.close()
+            with open(jobd+'/molcas.input', 'w') as output:
+                output.write('# file created with %s\n' % globs.PROGRAM)
+                molcwrt(output, jobparams, coordfs[i], i)
     return jobdirs
+
 
 def molcwrt(output, jobparams, xyzf, xyzind):
     """Generate a single MOLCAS input file with custom parameters.
@@ -1186,7 +1197,7 @@ def molcwrt(output, jobparams, xyzf, xyzind):
                 Name for XYZ file.
             xyzind : int
                 Index for xyz file in all generated xyz files
-            
+
         Returns
         -------
             jobdirs : list
@@ -1223,6 +1234,7 @@ def molcwrt(output, jobparams, xyzf, xyzind):
         output.write(jobparams['gridtype']+'\n')
         output.write('NPOINTS\n'+jobparams['NPOINTS']+'\n')
 
+
 def multimolcgen(args, strfiles):
     """Generate MOLCAS input files.
 
@@ -1232,7 +1244,7 @@ def multimolcgen(args, strfiles):
                 Namespace of input arguments.
             strfiles : list
                 List of xyz files produced.
-            
+
         Returns
         -------
             jobdirs : list
@@ -1254,9 +1266,10 @@ def multimolcgen(args, strfiles):
                 os.remove(xyzf+'.xyz')
                 os.remove(xyzf+'.molinp')
                 os.remove(xyzf + '.report')
-            except:
+            except FileNotFoundError:
                 pass
     return jobdirs
+
 
 def molcbasis(strfiles, basistyp):
     """Generate MOLCAS basis keyword for a given mol3D.
@@ -1267,7 +1280,7 @@ def molcbasis(strfiles, basistyp):
                 List of XYZ files produced
             basistyp : str
                 The basis set.
-            
+
         Returns
         -------
             basis : str
@@ -1282,7 +1295,7 @@ def molcbasis(strfiles, basistyp):
     # collect elements by rows in the periodic table
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         for atom in temp.getAtoms():
             atno = atom.atno
             sym = atom.symbol()
@@ -1337,6 +1350,7 @@ def molcbasis(strfiles, basistyp):
         other than ANO-rcc is not supported yet''')
     return basis
 
+
 def molcras2s(strfiles):
     """Determine MOLCAS CASSCF active space for a given mol3D.
 
@@ -1344,7 +1358,7 @@ def molcras2s(strfiles):
         ----------
             strfiles : list
                 List of XYZ files produced
-            
+
         Returns
         -------
             ras2s : list
@@ -1355,7 +1369,7 @@ def molcras2s(strfiles):
     ras2s = []
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         metal_ind = temp.findMetal()
         ras2 = 0
         for ind in metal_ind:
@@ -1368,6 +1382,7 @@ def molcras2s(strfiles):
         ras2s.append(ras2)
     return ras2s
 
+
 def molcnactels(strfiles, oxnum):
     """Determine MOLCAS CASSCF active electrons for a given mol3D.
 
@@ -1377,7 +1392,7 @@ def molcnactels(strfiles, oxnum):
                 List of XYZ files produced
             oxnum : int
                 Oxidation state.
-            
+
         Returns
         -------
             nactels : list
@@ -1388,7 +1403,7 @@ def molcnactels(strfiles, oxnum):
     nactels = []
     for i in range(0, len(strfiles)):
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         metal_ind = temp.findMetal()
         nactel = 0
         for ind in metal_ind:
@@ -1402,6 +1417,7 @@ def molcnactels(strfiles, oxnum):
         nactels.append(nactel)
     return nactels
 
+
 def molcfrozens(strfiles):
     """Determine MOLCAS CASSCF frozen orbitals for a given mol3D
 
@@ -1409,7 +1425,7 @@ def molcfrozens(strfiles):
         ----------
             strfiles : list
                 List of XYZ files produced
-            
+
         Returns
         -------
             frozens : list
@@ -1420,7 +1436,7 @@ def molcfrozens(strfiles):
     for i in range(0, len(strfiles)):
         frozen = 0
         temp = mol3D()
-        temp.readfromxyz(strfiles[i])
+        temp.readfromxyz(f"{strfiles[i]}.xyz")
         for atom in temp.getAtoms():
             atno = atom.atno
             if atno > 2 and atno <= 10:
@@ -1433,6 +1449,6 @@ def molcfrozens(strfiles):
                 frozen += 9  # 1s2s2p3s3p
             elif atno > 54:
                 print('Warning! Automatic assignment of "frozen"is not available')
-                print(('for heavy atom like ' + temp.getAtom(ind).symbol()+'yet'))
+                print(('for heavy atom like ' + atom.symbol()+'yet'))
         frozens.append(frozen)
     return frozens

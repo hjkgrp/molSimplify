@@ -1,0 +1,11 @@
+-core fe
+-oxstate II
+-geometry oct
+-coord 6
+-lig [NH3]
+-ligocc 6
+-keepHs true
+-spin 1
+-ff gfnff
+-ffoption BA
+-jobdir gen

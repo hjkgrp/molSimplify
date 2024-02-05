@@ -1,0 +1,14 @@
+# Input file for ANN tutorial
+-charge 3
+-coord 6
+-calccharge True
+-method UDFT
+-core Fe
+-ligocc 3
+-geometry oct
+-spin 2
+-oxstate III
+-lig c1(nn[nH]n1)c1ncccc1
+-smicat 7,5
+-debug
+-ffoption BA

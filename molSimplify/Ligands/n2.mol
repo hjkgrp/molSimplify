@@ -1,0 +1,8 @@
+N2 Nitrogen diatomic 7727379
+##CCCBDB 5172213:58
+Geometry Optimized at CCSD(T)=FULL/6-31G*
+  2  1  0  0  0  0  0  0  0  0999 V2000
+    0.0000    0.0000    0.5595 N   0  0  0  0  0  0  0  0  0  0  0  0
+    0.0000    0.0000   -0.5595 N   0  0  0  0  0  0  0  0  0  0  0  0
+  1  2  3  0  0  0
+M  END

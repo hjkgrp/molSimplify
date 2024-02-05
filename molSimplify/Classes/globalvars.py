@@ -12,43 +12,44 @@ import glob
 import platform
 import sys
 import subprocess
-from math import sqrt
+from molSimplify.utils.metaclasses import Singleton
 
 # Dictionary containing atomic mass, atomic number, covalent radius, num valence electrons
 # Data from http://www.webelements.com/ (last accessed May 13th 2015)
-amassdict = {'X': (1.0, 0, 0.77, 0),     'H': (1.0079, 1, 0.37, 1),     'He': (4.002602, 2, 0.46, 2),
-             'Li': (6.94, 3, 1.33, 1),   'Be': (9.0121831, 4, 1.02, 2), 'B': (10.83, 5, 0.85, 3),
-             'C': (12.0107, 6, 0.77, 4), 'N': (14.0067, 7, 0.75, 5),    'O': (15.9994, 8, 0.73, 6), 
-             'F': (18.9984, 9, 0.71, 7), 'Ne': (20.1797, 10, 0.67, 8),  'Na': (22.99, 11, 1.55, 1), 
-             'Mg': (24.30, 12, 1.39, 2), 'Al': (26.98, 13, 1.26, 3),    'Si': (28.08, 14, 1.16, 4),
-             'P': (30.9738, 15, 1.06, 5),'S': (32.065, 16, 1.02, 6),    'Cl': (35.453, 17, 0.99, 7),
-             'Ar': (39.948, 18, 0.96, 8),'K': (39.10, 19, 1.96, 1),     'Ca': (40.08, 20, 1.71, 2),
-             'Sc': (44.96, 21, 1.7, 3),  'Ti': (47.867, 22, 1.36, 4),   'V': (50.94, 23, 1.22, 5),
-             'Cr': (51.9961, 24, 1.27, 6),'Mn': (54.938, 25, 1.39, 7),  'Fe': (55.84526, 26, 1.25, 8), 
-             'Co': (58.9332, 27, 1.26, 9), 'Ni': (58.4934, 28, 1.21, 10),'Cu': (63.546, 29, 1.38, 11), 
-             'Zn': (65.39, 30, 1.31, 12), 'Ga': (69.72, 31, 1.24, 3), 'Ge': (72.63, 32, 1.21, 4), 
-             'As': (74.92, 33, 1.21, 5),'Se': (78.96, 34, 1.16, 6),'Br': (79.904, 35, 1.14, 7), 
-             'Kr': (83.798, 36, 1.17, 8),'Rb': (85.47, 37, 2.10, 1), 'Sr': (87.62, 38, 1.85, 2),
+amassdict = {'X': (1.0, 0, 0.77, 0), 'H': (1.0079, 1, 0.37, 1),
+             'D': (2.0141, 1, 0.37, 1), 'He': (4.002602, 2, 0.46, 2),
+             'Li': (6.94, 3, 1.33, 1), 'Be': (9.0121831, 4, 1.02, 2), 'B': (10.83, 5, 0.85, 3),
+             'C': (12.0107, 6, 0.77, 4), 'N': (14.0067, 7, 0.75, 5), 'O': (15.9994, 8, 0.73, 6),
+             'F': (18.9984, 9, 0.71, 7), 'Ne': (20.1797, 10, 0.67, 8), 'Na': (22.99, 11, 1.55, 1),
+             'Mg': (24.30, 12, 1.39, 2), 'Al': (26.98, 13, 1.26, 3), 'Si': (28.08, 14, 1.16, 4),
+             'P': (30.9738, 15, 1.06, 5), 'S': (32.065, 16, 1.02, 6), 'Cl': (35.453, 17, 0.99, 7),
+             'Ar': (39.948, 18, 0.96, 8), 'K': (39.10, 19, 1.96, 1), 'Ca': (40.08, 20, 1.71, 2),
+             'Sc': (44.96, 21, 1.7, 3), 'Ti': (47.867, 22, 1.36, 4), 'V': (50.94, 23, 1.22, 5),
+             'Cr': (51.9961, 24, 1.27, 6), 'Mn': (54.938, 25, 1.39, 7), 'Fe': (55.84526, 26, 1.25, 8),
+             'Co': (58.9332, 27, 1.26, 9), 'Ni': (58.4934, 28, 1.21, 10), 'Cu': (63.546, 29, 1.38, 11),
+             'Zn': (65.39, 30, 1.31, 12), 'Ga': (69.72, 31, 1.24, 3), 'Ge': (72.63, 32, 1.21, 4),
+             'As': (74.92, 33, 1.21, 5), 'Se': (78.96, 34, 1.16, 6), 'Br': (79.904, 35, 1.14, 7),
+             'Kr': (83.798, 36, 1.17, 8), 'Rb': (85.47, 37, 2.10, 1), 'Sr': (87.62, 38, 1.85, 2),
              'Y': (88.91, 39, 1.63, 3), 'Zr': (91.22, 40, 1.54, 4), 'Nb': (92.91, 41, 1.47, 5),
-             'Mo': (95.96, 42, 1.38, 6),'Tc': (98.9, 43, 1.56, 7), 'Ru': (101.1, 44, 1.25, 8), 
-             'Rh': (102.9, 45, 1.25, 9),'Pd': (106.4, 46, 1.20, 10),'Ag': (107.9, 47, 1.28, 11), 
-             'Cd': (112.4, 48, 1.48, 12),'In': (111.818, 49, 1.42, 3), 'Sn': (118.710, 50, 1.40, 4), 
-             'Sb': (121.760, 51, 1.40, 5),'Te': (127.60, 52, 1.99, 6),'I': (126.90447, 53, 1.40, 7), 
-             'Xe': (131.293, 54, 1.31, 8),'Cs': (132.9055, 55, 2.32, 1), 'Ba': (137.327, 56, 1.96, 2),
+             'Mo': (95.96, 42, 1.38, 6), 'Tc': (98.9, 43, 1.56, 7), 'Ru': (101.1, 44, 1.25, 8),
+             'Rh': (102.9, 45, 1.25, 9), 'Pd': (106.4, 46, 1.20, 10), 'Ag': (107.9, 47, 1.28, 11),
+             'Cd': (112.4, 48, 1.48, 12), 'In': (111.818, 49, 1.42, 3), 'Sn': (118.710, 50, 1.40, 4),
+             'Sb': (121.760, 51, 1.40, 5), 'Te': (127.60, 52, 1.99, 6), 'I': (126.90447, 53, 1.40, 7),
+             'Xe': (131.293, 54, 1.31, 8), 'Cs': (132.9055, 55, 2.32, 1), 'Ba': (137.327, 56, 1.96, 2),
              'La': (138.9, 57, 1.69, 3), 'Ce': (140.116, 58, 1.63, 4), 'Pr': (140.90766, 59, 1.76, 5),
-             'Nd': (144.242, 60, 1.74, 6),'Pm': (145, 61, 1.73, 7), 'Sm': (150.36, 62, 1.72, 8), 
-             'Eu': (151.964, 63, 1.68, 9),'Gd': (157.25, 64, 1.69, 10),'Tb': (158.92535, 65, 1.68, 11), 
-             'Dy': (162.500, 66, 1.67, 12), 'Ho': (164.93033, 67, 1.66, 13),'Er': (167.259, 68, 1.65, 14), 
-             'Tm': (168.93422, 69, 1.64, 15), 'Yb': (173.045, 70, 1.70, 16),'Lu': (174.9668, 71, 1.62, 3),
+             'Nd': (144.242, 60, 1.74, 6), 'Pm': (145, 61, 1.73, 7), 'Sm': (150.36, 62, 1.72, 8),
+             'Eu': (151.964, 63, 1.68, 9), 'Gd': (157.25, 64, 1.69, 10), 'Tb': (158.92535, 65, 1.68, 11),
+             'Dy': (162.500, 66, 1.67, 12), 'Ho': (164.93033, 67, 1.66, 13), 'Er': (167.259, 68, 1.65, 14),
+             'Tm': (168.93422, 69, 1.64, 15), 'Yb': (173.045, 70, 1.70, 16), 'Lu': (174.9668, 71, 1.62, 3),
              'Hf': (178.5, 72, 1.50, 8), 'Ta': (180.9, 73, 1.38, 5), 'W': (183.8, 74, 1.46, 6),
-             'Re': (186.2, 75, 1.59, 7),'Os': (190.2, 76, 1.28, 8), 'Ir': (192.2, 77, 1.37, 9), 
-             'Pt': (195.1, 78, 1.23, 10),'Au': (197.0, 79, 1.24, 11),'Hg': (200.6, 80, 1.49, 2),
+             'Re': (186.2, 75, 1.59, 7), 'Os': (190.2, 76, 1.28, 8), 'Ir': (192.2, 77, 1.37, 9),
+             'Pt': (195.1, 78, 1.23, 10), 'Au': (197.0, 79, 1.24, 11), 'Hg': (200.6, 80, 1.49, 2),
              'Tl': (204.38, 81, 1.44, 3), 'Pb': (207.2, 82, 1.44, 4), 'Bi': (208.9804, 83, 1.51, 5),
              'Po': (208.98, 84, 1.90, 6), 'At': (209.99, 85, 2.00, 7), 'Rn': (222.6, 86, 142, 4),
-             'Fr': (223.02, 87, 3.48, 8),'Ra': (226.03, 88, 2.01, 2), 'Ac': (277, 89, 1.86, 3), 
-             'Th': (232.0377, 90, 1.75, 4),'Pa': (231.04, 91,2.00, 5),'U': (238.02891, 92, 1.70, 6),
-             'Np': (237.05, 93, 1.90, 7), 'Pu': (244.06, 94, 1.75, 8),'Am': (243.06, 95,1.80, 9),
-             'Cm': (247.07, 96, 1.69, 10), 'Bk': (247.07, 97, 1.68, 11),'Cf': (251.08, 98, 1.68, 12)}
+             'Fr': (223.02, 87, 3.48, 8), 'Ra': (226.03, 88, 2.01, 2), 'Ac': (277, 89, 1.86, 3),
+             'Th': (232.0377, 90, 1.75, 4), 'Pa': (231.04, 91, 2.00, 5), 'U': (238.02891, 92, 1.70, 6),
+             'Np': (237.05, 93, 1.90, 7), 'Pu': (244.06, 94, 1.75, 8), 'Am': (243.06, 95, 1.80, 9),
+             'Cm': (247.07, 96, 1.69, 10), 'Bk': (247.07, 97, 1.68, 11), 'Cf': (251.08, 98, 1.68, 12)}
 
 # Pa and onward should be checked
 
@@ -73,7 +74,18 @@ vdwrad = {'H': 1.2, 'He': 1.43, 'Li': 2.12, 'Be': 1.98, 'B': 1.91,
           'Pt': 2.29, 'Au': 2.32, 'Hg': 2.45, 'Tl': 2.47, 'Pb': 2.60,
           'Bi': 2.54, 'Ac': 2.8, 'Th': 2.93, 'Pa': 2.88, 'U': 2.71,
           'Np': 2.82, 'Pu': 2.81, 'Am': 2.83, 'Cm': 3.05, 'Bk': 3.4,
-          'Cf': 3.05, 'Es': 2.7 }
+          'Cf': 3.05, 'Es': 2.7}
+
+# Bondi van der Waals radii for elements
+# From: doi:10.1021/j100881a503
+# Accessed: http://www.knowledgedoor.com/2/elements_handbook/bondi_van_der_waals_radius.html 4/8/2021
+bondivdw = {'Ar': 1.88, 'As': 1.85, 'Br': 1.85, 'Cd': 1.62, 'C': 1.70,
+            'Cl': 1.75, 'Cu': 1.4, 'F': 1.47, 'Ga': 1.87, 'Au': 1.66,
+            'He': 1.40, 'H': 1.20, 'In': 1.93, 'I': 1.98, 'Kr': 2.02,
+            'Pb': 2.02, 'Li': 1.82, 'Mg': 1.73, 'Hg': 1.70, 'Ne': 1.54,
+            'Ni': 1.63, 'N': 1.55, 'O': 1.52, 'Pd': 1.63, 'P': 1.80, 'Pt': 1.7,
+            'K': 2.75, 'Se': 1.90, 'Si': 2.10, 'Ag': 1.72, 'Na': 2.27, 'S': 1.80,
+            'Te': 2.06, 'Tl': 1.96, 'Sn': 1.96, 'U': 1.86, 'Xe': 2.16, 'Zn': 1.39}
 
 # Period definitions for all element symbols
 # Data from https://en.wikipedia.org/wiki/Group_(periodic_table) (last accessed Sept. 12th 2019)
@@ -149,96 +161,77 @@ lanthanides = ['La', 'Ce', 'Pr', 'Nd', 'Pm', 'Sm', 'Eu', 'Gd', 'Tb', 'Dy',
 actinides = ['Ac', 'Th', 'Pa', 'U', 'Np', 'Pu', 'Am', 'Cm', 'Bk', 'Cf',
              'Es', 'Fm', 'Md', 'No', 'Lr']
 
-groups_dict = {'group_1': group_1, 'group_2': group_2, 'group_3': group_3,
-               'group_4': group_4, 'group_5': group_5, 'group_6': group_6,
-               'group_7': group_7, 'group_8': group_8, 'group_9': group_9,
-               'group_10': group_10, 'group_11': group_11, 'group_12': group_12,
-               'group_13': group_13, 'group_14': group_14, 'group_15': group_15,
-               'group_16': group_16, 'group_17': group_17, 'group_18': group_18,
-               'lanthanides': lanthanides, 'actinides': actinides, 'hydrogen': hydrogen}
+groups_dict = {
+    'group_1': group_1, 'group_2': group_2, 'group_3': group_3,
+    'group_4': group_4, 'group_5': group_5, 'group_6': group_6,
+    'group_7': group_7, 'group_8': group_8, 'group_9': group_9,
+    'group_10': group_10, 'group_11': group_11, 'group_12': group_12,
+    'group_13': group_13, 'group_14': group_14, 'group_15': group_15,
+    'group_16': group_16, 'group_17': group_17, 'group_18': group_18,
+    'lanthanides': lanthanides, 'actinides': actinides, 'hydrogen': hydrogen}
 
 # Metals (includes alkali, alkaline earth, and transition metals)
-alkali_and_alkaline_earth = ['Li', 'li', 'LI', 'lithium', 'Be', 'be', 'BE', 'beryllium',
+alkali_and_alkaline_earth = [
+    'Li', 'li', 'LI', 'lithium', 'Be', 'be', 'BE', 'beryllium',
     'Na', 'na', 'NA', 'sodium', 'Mg', 'mg', 'MG', 'magnesium',
-    'Al', 'al', 'AL', 'aluminum', 'aluminium',
     'K', 'k', 'potassium', 'Ca', 'ca', 'CA', 'calcium',
     'Rb', 'rb', 'RB', 'rubidium', 'Sr', 'sr', 'SR', 'strontium',
     'Cs', 'cs', 'CS', 'cesium', 'Ba', 'ba', 'BA', 'barium',
     'Fr', 'fr', 'FR', 'francium', 'Ra', 'ra', 'RA', 'radium']
 
-heavy_metals_and_metalloids = ['Ga', 'ga', 'GA', 'gallium',
-                                'In', 'in', 'IN', 'indium', 'Sn', 'sn', 'SN', 'tin',
-                                'Tl', 'tl', 'TL', 'thallium', 'Pb', 'pb', 'PB', 'lead',
-                                'Bi', 'bi', 'BI', 'bismuth', 'Po', 'po', 'PO', 'polonium',
-                                'La', 'la', 'LA', 'lanthanum',
-                                'Ce', 'ce', 'CE', 'cerium', 'Pr', 'pr', 'PR', 'praseodymium',
-                                'Nd', 'nd', 'ND', 'neodymium', 'Pm', 'pm', 'PM', 'promethium',
-                                'Sm', 'sm', 'SM', 'samarium', 'Eu', 'eu', 'EU', 'europium',
-                                'Gd', 'gd', 'GD', 'gadolinium', 'Tb', 'tb', 'TB', 'terbium',
-                                'Dy', 'dy', 'DY', 'dysprosium', 'Ho', 'ho', 'HO', 'holmium',
-                                'Er', 'er', 'ER', 'erbium', 'Tm', 'tm', 'TM', 'thulium',
-                                'Yb', 'yb', 'YB', 'ytterbium', 'Lu', 'lu', 'LU', 'lutetium',
-                                'Ac', 'ac', 'AC', 'actinium', 'Th', 'th', 'TH', 'thorium',
-                                'Pa', 'pa', 'PA', 'proactinium', 'U', 'u', 'uranium',
-                                'Np', 'np', 'NP', 'neptunium', 'Pu', 'pu', 'PU', 'plutonium',
-                                'Am', 'am', 'AM', 'americium', 'Cu', 'cu', 'CU', 'curium',
-                                'Bk', 'bk', 'BK', 'berkelium', 'Cf', 'cf', 'CF', 'californium',
-                                'Es', 'es', 'ES', 'einsteinium', 'Fm', 'fm', 'FM', 'fermium',
-                                'Md', 'md', 'MD', 'mendelevium', 'No', 'no', 'NO', 'nobelium',
-                                'Lr', 'lr', 'LR', 'lawrencium']
-metalslist = [  # 'Li', 'li', 'LI', 'lithium', 'Be', 'be', 'BE', 'beryllium',
-    # 'Na', 'na', 'NA', 'sodium', 'Mg', 'mg', 'MG', 'magnesium',
-    # 'Al', 'al', 'AL', 'aluminum', 'aluminium',
-    # 'K', 'k', 'potassium', 'Ca', 'ca', 'CA', 'calcium',
-    # 'Rb', 'rb', 'RB', 'rubidium', 'Sr', 'sr', 'SR', 'strontium',
-    # 'Cs', 'cs', 'CS', 'cesium', 'Ba', 'ba', 'BA', 'barium',
-    # 'Fr', 'fr', 'FR', 'francium', 'Ra', 'ra', 'RA', 'radium',
+heavy_metals_and_metalloids = [
+    'Al', 'al', 'AL', 'aluminum', 'aluminium',
+    'Ga', 'ga', 'GA', 'gallium', 'Ge', 'ge', 'GE', 'germanium',
+    'As', 'as', 'AS', 'arsenic', 'In', 'in', 'IN', 'indium',
+    'Sn', 'sn', 'SN', 'tin', 'Sb', 'sb', 'SB', 'antimony',
+    'Te', 'te', 'TE', 'tellurium', 'Tl', 'tl', 'TL', 'thallium',
+    'Pb', 'pb', 'PB', 'lead', 'Bi', 'bi', 'BI', 'bismuth',
+    'Po', 'po', 'PO', 'polonium', 'At', 'at', 'AT', 'astatine',
+    'La', 'la', 'LA', 'lanthanum',
+    'Ce', 'ce', 'CE', 'cerium', 'Pr', 'pr', 'PR', 'praseodymium',
+    'Nd', 'nd', 'ND', 'neodymium', 'Pm', 'pm', 'PM', 'promethium',
+    'Sm', 'sm', 'SM', 'samarium', 'Eu', 'eu', 'EU', 'europium',
+    'Gd', 'gd', 'GD', 'gadolinium', 'Tb', 'tb', 'TB', 'terbium',
+    'Dy', 'dy', 'DY', 'dysprosium', 'Ho', 'ho', 'HO', 'holmium',
+    'Er', 'er', 'ER', 'erbium', 'Tm', 'tm', 'TM', 'thulium',
+    'Yb', 'yb', 'YB', 'ytterbium', 'Lu', 'lu', 'LU', 'lutetium',
+    'Ac', 'ac', 'AC', 'actinium', 'Th', 'th', 'TH', 'thorium',
+    'Pa', 'pa', 'PA', 'proactinium', 'U', 'u', 'uranium',
+    'Np', 'np', 'NP', 'neptunium', 'Pu', 'pu', 'PU', 'plutonium',
+    'Am', 'am', 'AM', 'americium', 'Cu', 'cu', 'CU', 'curium',
+    'Bk', 'bk', 'BK', 'berkelium', 'Cf', 'cf', 'CF', 'californium',
+    'Es', 'es', 'ES', 'einsteinium', 'Fm', 'fm', 'FM', 'fermium',
+    'Md', 'md', 'MD', 'mendelevium', 'No', 'no', 'NO', 'nobelium',
+    'Lr', 'lr', 'LR', 'lawrencium']
+
+# ## The metals list below contains only TMs. See metalslist function for logic.
+metalslist = [
     'Sc', 'sc', 'SC', 'scandium', 'Ti', 'ti', 'TI', 'titanium',
     'V', 'v', 'vanadium', 'Cr', 'cr', 'CR', 'chromium',
     'Mn', 'mn', 'MN', 'manganese', 'Fe', 'fe', 'FE', 'iron',
     'Co', 'co', 'CO', 'cobalt', 'Ni', 'ni', 'NI', 'nickel',
     'Cu', 'cu', 'CU', 'copper', 'Zn', 'zn', 'ZN', 'zinc',
-    # 'Ga', 'ga', 'GA', 'gallium',
     'Y', 'y', 'yttrium', 'Zr', 'zr', 'ZR', 'zirconium',
     'Nb', 'nb', 'NB', 'niobium', 'Mo', 'mo', 'MO', 'molybdenum',
     'Tc', 'tc', 'TC', 'technetium', 'Ru', 'ru', 'RU', 'ruthenium',
     'Rh', 'rh', 'RH', 'rhodium', 'Pd', 'pd', 'PD', 'palladium',
     'Ag', 'ag', 'AG', 'silver', 'Cd', 'cd', 'CD', 'cadmium',
-    # 'In', 'in', 'IN', 'indium', 'Sn', 'sn', 'SN', 'tin',
     'Hf', 'hf', 'HF', 'hafnium', 'Ta', 'ta', 'TA', 'tantalum',
     'W', 'w', 'tungsten', 'Re', 're', 'RE', 'rhenium',
     'Os', 'os', 'OS', 'osmium', 'Ir', 'ir', 'IR', 'iridium',
     'Pt', 'pt', 'PT', 'platinum', 'Au', 'au', 'AU', 'gold',
     'Hg', 'hg', 'HG', 'mercury', 'X',
-    # 'Tl', 'tl', 'TL', 'thallium', 'Pb', 'pb', 'PB', 'lead',
-    # 'Bi', 'bi', 'BI', 'bismuth', 'Po', 'po', 'PO', 'polonium',
-    # 'La', 'la', 'LA', 'lanthanum',
-    # 'Ce', 'ce', 'CE', 'cerium', 'Pr', 'pr', 'PR', 'praseodymium',
-    # 'Nd', 'nd', 'ND', 'neodymium', 'Pm', 'pm', 'PM', 'promethium',
-    # 'Sm', 'sm', 'SM', 'samarium', 'Eu', 'eu', 'EU', 'europium',
-    # 'Gd', 'gd', 'GD', 'gadolinium', 'Tb', 'tb', 'TB', 'terbium',
-    # 'Dy', 'dy', 'DY', 'dysprosium', 'Ho', 'ho', 'HO', 'holmium',
-    # 'Er', 'er', 'ER', 'erbium', 'Tm', 'tm', 'TM', 'thulium',
-    # 'Yb', 'yb', 'YB', 'ytterbium', 'Lu', 'lu', 'LU', 'lutetium',
-    # 'Ac', 'ac', 'AC', 'actinium', 'Th', 'th', 'TH', 'thorium',
-    # 'Pa', 'pa', 'PA', 'proactinium', 'U', 'u', 'uranium',
-    # 'Np', 'np', 'NP', 'neptunium', 'Pu', 'pu', 'PU', 'plutonium',
-    # 'Am', 'am', 'AM', 'americium', 'Cu', 'cu', 'CU', 'curium',
-    # 'Bk', 'bk', 'BK', 'berkelium', 'Cf', 'cf', 'CF', 'californium',
-    # 'Es', 'es', 'ES', 'einsteinium', 'Fm', 'fm', 'FM', 'fermium',
-    # 'Md', 'md', 'MD', 'mendelevium', 'No', 'no', 'NO', 'nobelium',
-    # 'Lr', 'lr', 'LR', 'lawrencium'
 ]
 
-metals_conv = {'scandium': 'Sc', 'titanium': 'Ti', 'vanadium': 'V', 'chromium': 'Cr', 'manganese': 'Mn',
-               'iron': 'Fe', 'cobalt': 'Co', 'nickel': 'Ni', 'copper': 'Cu', 'zinc': 'Zn',
-               'yttrium': 'Y', 'zirconium': 'Zr', 'niobium': 'Nb', 'molybdenum': 'Mo', 'technetium': 'Tc',
-               'ruthenium': 'Ru', 'rhodium': 'Rh', 'palladium': 'Pd', 'silver': 'Ag', 'cadmium': 'Cd',
-               'lanthanum': 'La', 'hafnium': 'Hf',
-               'tantalum': 'Ta', 'tungsten': 'W',
-               'rhenium': 'Re', 'osmium': 'Os',
-               'iridium': 'Ir', 'platinum': 'Pt',
-               'gold': 'Au', 'mercury': 'Hg'}
+metals_conv = {
+    'scandium': 'Sc', 'titanium': 'Ti', 'vanadium': 'V', 'chromium': 'Cr',
+    'manganese': 'Mn', 'iron': 'Fe', 'cobalt': 'Co', 'nickel': 'Ni',
+    'copper': 'Cu', 'zinc': 'Zn', 'yttrium': 'Y', 'zirconium': 'Zr',
+    'niobium': 'Nb', 'molybdenum': 'Mo', 'technetium': 'Tc',
+    'ruthenium': 'Ru', 'rhodium': 'Rh', 'palladium': 'Pd', 'silver': 'Ag',
+    'cadmium': 'Cd', 'lanthanum': 'La', 'hafnium': 'Hf', 'tantalum': 'Ta',
+    'tungsten': 'W', 'rhenium': 'Re', 'osmium': 'Os', 'iridium': 'Ir',
+    'platinum': 'Pt', 'gold': 'Au', 'mercury': 'Hg'}
 
 # d-electron counts of transition metals
 mtlsdlist = {'sc': 1, 'ti': 2, 'v': 3, 'cr': 4, 'mn': 5, 'fe': 6, 'co': 7, 'ni': 8, 'cu': 9, 'zn': 10,
@@ -283,21 +276,21 @@ endict = {"H": 2.20, "He": 4.16,
 # From https://www.tandfonline.com/doi/full/10.1080/00268976.2018.1535143
 # Last accessed 4/28/20
 
-poldict = {"H": 4.50711, "He": 1.38375, 
+poldict = {"H": 4.50711, "He": 1.38375,
            "Li": 164.1125, "Be": 37.74, "B": 20.5, "C": 11.3, "N": 7.4,
-           "O":5.3, "F": 3.74, "Ne": 2.66, "Na": 162.7, "Mg":71.2, "Al": 57.8, "Si": 37.3, "P": 25, 
-           "S": 19.4, "Cl": 14.6, "Ar": 11.083, "K": 289.7, "Ca": 160.8, "Sc": 97, "Ti": 100, 
+           "O": 5.3, "F": 3.74, "Ne": 2.66, "Na": 162.7, "Mg": 71.2, "Al": 57.8, "Si": 37.3, "P": 25,
+           "S": 19.4, "Cl": 14.6, "Ar": 11.083, "K": 289.7, "Ca": 160.8, "Sc": 97, "Ti": 100,
            "V": 87, "Cr": 83, "Mn": 68, "Fe": 62, "Co": 55, "Ni": 49, "Cu": 46.5, "Zn": 38.67,
            "Ga": 50, "Ge": 40, "As": 30, "Se": 28.9, "Br": 21, "Kr": 16.78, "Rb": 319.8, "Sr": 197.2,
            "Y": 162, "Zr": 112, "Nb": 98, "Mo": 87, "Tc": 79, "Ru": 72, "Rh": 66, "Pd": 26.14,
            "Ag": 55, "Cd": 46, "In": 65, "Sn": 53, "Sb": 43, "Te": 38, "I": 32.9, "Xe": 27.32,
            "Cs": 400.9, "Ba": 272, "La": 215, "Ce": 205, "Pr": 216, "Nd": 208, "Pm": 200, "Sm": 192,
-           "Eu": 184, "Gd": 158, "Tb": 170, "Dy": 163, "Ho": 156, "Er": 150, "Tm": 144, 
+           "Eu": 184, "Gd": 158, "Tb": 170, "Dy": 163, "Ho": 156, "Er": 150, "Tm": 144,
            "Yb": 139, "Lu": 137, "Hf": 103, "Ta": 74, "W": 68, "Re": 62, "Os": 57, "Ir": 54,
-           "Pt": 48, "Au": 36, "Hg": 33.91, "Tl": 50, "Pb": 47, "Bi": 48, "Po": 44, "At": 42, 
+           "Pt": 48, "Au": 36, "Hg": 33.91, "Tl": 50, "Pb": 47, "Bi": 48, "Po": 44, "At": 42,
            "Rn": 35, "Fr": 317.8, "Ra": 246, "Ac": 203, "Pa": 154, "U": 129, "Np": 151, "Pu": 132,
            "Am": 131, "Cm": 144, "Bk": 125, "Cf": 122, "Es": 118, "Fm": 113, "Md": 109, "No": 110,
-           "Lr": 320, "Rf": 112, "Db": 42, "Sg": 40, "Bh": 38, "Hs": 36, "Mt": 34, "Ds": 32, 
+           "Lr": 320, "Rf": 112, "Db": 42, "Sg": 40, "Bh": 38, "Hs": 36, "Mt": 34, "Ds": 32,
            "Rg": 32, "Cn": 28, "Nh": 29, "Fl": 31, "Mc": 71, "Ts": 76, "Og": 58}
 
 
@@ -308,12 +301,37 @@ romans = {'I': '1', 'II': '2', 'III': '3', 'IV': '4',
 # bondsdict
 bondsdict = {"H": 1, "Li": 1, "Be": 2, "B": 3, "C": 4, "N": 3, "O": 2, "F": 1,
              "Na": 1, "Mg": 2, "Al": 3, "Si": 4, "P": 3, "S": 2, "Cl": 1,
-             "As": 3, "Se": 2, "Br": 1, "I": 1}
+             "As": 3, "Se": 2, "Br": 1, "I": 1, "He": 2}
 
 # triple bonds dictionry: Defined as 0.5*(double bond dist + triple bond dist)
 # bond lengths are from http://www.wiredchemist.com/chemistry/data/bond_energies_lengths.html
 tribonddict = {("C", "C"): 1.27, ("C", "N"): 1.235, ("C", "O"): 1.165, ("N", "N"): 1.175,
                ("N", "C"): 1.235, ("O", "C"): 1.165}
+
+# Amino acids
+amino_acids = {"ALA": "ALA", "A": "ALA",
+               "ARG": "ARG", "R": "ARG", "ARN": "ARG",
+               "ASN": "ASN", "N": "ASN",
+               "ASP": "ASP", "D": "ASP", "ASH": "ASP",
+               "CYS": "CYS", "C": "CYS", "CYS2": "CYS", "CYM": "CYS",
+               "CYX": "CYS", "GLU": "GLU", "E": "GLU", "GLH": "GLU",
+               "GLN": "GLN", "Q": "GLN", 'AGLN': 'GLN', 'BGLN': 'GLN',
+               "GLY": "GLY", "G": "GLY",
+               "HIS": "HIS", 'H': "HIS", "HID": "HIS", "HIE": "HIS",
+               "HIP": "HIS", "HSE": "HIS", "HSD": "HIS", "HSP": "HIS",
+               "ILE": "ILE", "I": "ILE", "LEU": "LEU", "L": "LEU",
+               "LYS": "LYS", "K": "LYS", "LYN": "LYS",
+               "MET": "MET", "M": "MET", "AMET": "MET", "BMET": "MET",
+               "PHE": "PHE", "F": "PHE", "PRO": "PRO", "P": "PRO",
+               "SER": "SER", "S": "SER", "ASER": "SER", "BSER": "SER",
+               "THR": "THR", 'T': "THR", "TRP": "TRP", "W": "TRP",
+               "TYR": "TYR", "Y": 'TYR',
+               "VAL": "VAL", 'V': "VAL", 'AVAL': 'VAL', 'BVAL': 'VAL'
+               }
+
+# Common heteromolecules
+het_mols = ['TAU', 'AKG', 'FE2', 'HOH', 'NAG', 'BMA', 'MAN', 'ACE', 'ACY', 'FE',
+            'HEM', 'BLE', 'MG', 'BGC', 'WAT', 'CA', 'CL1']
 
 # ---Geo_Check_Metrics------
 dict_oct_check_loose = {"mono": {'num_coord_metal': 6,
@@ -335,7 +353,7 @@ dict_oct_check_st = {"mono": {'num_coord_metal': 6,
                               'devi_linear_avrg': 20, 'devi_linear_max': 28},
                      "multi": {'num_coord_metal': 6,
                                'rmsd_max': 3, 'atom_dist_max': 0.45,
-                               'oct_angle_devi_max': 15, 'max_del_sig_angle': 30,
+                               'oct_angle_devi_max': 20, 'max_del_sig_angle': 36,
                                'dist_del_eq': 0.35, 'dist_del_all': 1.0,
                                'devi_linear_avrg': 20, 'devi_linear_max': 28}
                      }
@@ -440,17 +458,14 @@ def mybash(cmd):
     """
     p = subprocess.Popen(
         cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    stdout = []
-    while True:
-        line = p.stdout.readline()
-        stdout.append(line)
-        if line == '' and p.poll() != None:
-            break
-    return ''.join(stdout)
+    stdout, stderr = p.communicate()
+    lines = stdout.decode('utf-8').splitlines()
+    lines = [line+"\n" for line in lines if line !=""]
+    return ''.join(lines)
 
 
 # Defines global variables used throughout the code
-class globalvars:
+class globalvars(metaclass=Singleton):
     """Globalvars class. Defines global variables used throughout the code, including periodic table.
     """
     def __init__(self):
@@ -467,50 +482,50 @@ class globalvars:
         s += 'J.P. Janet, T. Z. H. Gani, A. H. Steeves, E. I. Ioannidis, H. J. Kulik. Ind. Eng. Chem. Res. 2017, 56(17), 4898-4910.\n'
         # About message
         self.about = s
-        ###### GET INFORMATION ######
-        runfromcmd, Linux, OSX = False, False, False
+        # ##### GET INFORMATION ######
+        runfromcmd = False
         try:
-            ### check if running through commandline ###
+            # ## check if running through commandline ###
             if sys.stdin.isatty():
                 # running through command line
                 runfromcmd = True
             else:
                 runfromcmd = False
-        except:
+        except AttributeError:  # if sys.stdin does not have an isatty method
             runfromcmd = True
-        ### get running os ###
+        # ## get running os ###
+        self.linux, self.osx = False, False
         if platform.system().lower() in 'linux':
-            Linux = True
+            self.linux = True
         elif platform.system().lower() in 'darwin':
-            OSX = True
-        self.osx = OSX
+            self.osx = True
         # get cwd
         # script filename (usually with path)
-        cfile = inspect.getfile(inspect.currentframe())
+        _ = inspect.getfile(inspect.currentframe())
         cdir2 = os.path.dirname(os.path.abspath(
             inspect.getfile(inspect.currentframe())))  # script directory
         cdir = cdir2.rsplit('/', 1)[0]
-        cdir2 = cdir
+        # unused:
+        # cdir2 = cdir
         homedir = os.path.expanduser("~")
         # create default molSimplify for mac
-        if OSX and not glob.glob(homedir + '/.' + self.PROGRAM) and not runfromcmd:
+        if self.osx and not glob.glob(homedir + '/.' + self.PROGRAM) and not runfromcmd:
             txt = 'INSTALLDIR=/Applications/' + self.PROGRAM + '.app/Contents/Resources\n'
-            f = open(homedir + '/.' + self.PROGRAM, 'w')
-            f.write(txt)
-            f.close()
+            with open(homedir + '/.' + self.PROGRAM, 'w') as fout:
+                fout.write(txt)
         self.chemdbdir = ''
         self.multiwfn = ''
         self.custom_path = False
-        ###### check for ~/.molSimplify ######
+        # ##### check for ~/.molSimplify ######
         if glob.glob(homedir + '/.' + self.PROGRAM):
-            f = open(homedir + '/.' + self.PROGRAM, 'r')
-            s = [_f for _f in f.read().splitlines() if _f]
+            with open(homedir + '/.' + self.PROGRAM, 'r') as fin:
+                s = [_f for _f in fin.read().splitlines() if _f]
             d = dict()
             for ss in s:
                 sp = [_f for _f in ss.split('=') if _f]
                 try:
                     d[sp[0]] = sp[1]
-                except:
+                except IndexError:
                     pass
             if 'CHEMDBDIR' in list(d.keys()):
                 self.chemdbdir = d['CHEMDBDIR']
@@ -520,9 +535,8 @@ class globalvars:
                 self.custom_path = d['CUSTOM_DATA_PATH']
         else:
             self.installdir = cdir
-            f = open(homedir + '/.' + self.PROGRAM, 'w')
-            f.write('CHEMDBDIR=\n')
-            f.close()
+            with open(homedir + '/.' + self.PROGRAM, 'w') as fout:
+                fout.write('CHEMDBDIR=\n')
 
         # Home directory
         self.homedir = homedir
@@ -551,7 +565,7 @@ class globalvars:
     #  @return Atomic mass dictionary
     def amass(self):
         """Get the atomic mass dictionary.
-           
+
         Returns
         -------
             amassdict : dict
@@ -561,7 +575,7 @@ class globalvars:
 
     def polarizability(self):
         """Get the polarizability dictionary.
-           
+
         Returns
         -------
             poldict : dict
@@ -571,7 +585,7 @@ class globalvars:
 
     def tribonddict(self):
         """Get the triple bond dictionary.
-           
+
         Returns
         -------
             tribonddict : dict
@@ -581,7 +595,7 @@ class globalvars:
 
     def bondsdict(self):
         """Get the bond dictionary.
-           
+
         Returns
         -------
             bondsdict : dict
@@ -591,7 +605,7 @@ class globalvars:
 
     def elementsbynum(self):
         """Returns list of elements by number
-           
+
         Returns
         -------
             elementsbynum : list
@@ -601,7 +615,7 @@ class globalvars:
 
     def endict(self):
         """Returns electronegativity dictionary.
-           
+
         Returns
         -------
             endict : list
@@ -611,7 +625,7 @@ class globalvars:
 
     def vdwrad(self):
         """Returns VDW dictionary.
-           
+
         Returns
         -------
             vdwrad : list
@@ -621,20 +635,20 @@ class globalvars:
 
     def metalslist(self, transition_metals_only=True):
         """Get the metals list.
-           
+
         Returns
         -------
             metalslist : list
                 List of available metals.
         """
         if not transition_metals_only:
-          return metalslist + alkali_and_alkaline_earth + heavy_metals_and_metalloids
+            return metalslist + alkali_and_alkaline_earth + heavy_metals_and_metalloids
         else:
-          return metalslist
+            return metalslist
 
     def groups(self):
         """Returns dict of elements by groups.
-           
+
         Returns
         -------
             groups_dict : dict
@@ -644,7 +658,7 @@ class globalvars:
 
     def periods(self):
         """Returns dict of elements by periods.
-           
+
         Returns
         -------
             periods_dict : dict
@@ -654,7 +668,7 @@ class globalvars:
 
     def geo_check_dictionary(self):
         """Returns list of geo check objects dictionary.
-           
+
         Returns
         -------
             geo_check_dictionary : dict
@@ -664,7 +678,7 @@ class globalvars:
 
     def get_all_geometries(self):
         """Get available geometries.
-           
+
         Returns
         -------
             all_geometries : list
@@ -674,7 +688,7 @@ class globalvars:
 
     def get_all_angle_refs(self):
         """Get references angle dict.
-           
+
         Returns
         -------
             all_angle_refs : dict
@@ -684,20 +698,19 @@ class globalvars:
 
     def add_custom_path(self, path):
         """Record custom path in ~/.molSimplify file
-           
+
         Parameters
         ----------
             path : str
                 Path to custom data ~/.molSimplify file.
         """
         homedir = os.path.expanduser("~")
-        f = open(homedir + '/.' + self.PROGRAM, 'a')
-        f.write('CUSTOM_DATA_PATH=' + str(path) + "\n")
-        f.close()
+        with open(homedir + '/.' + self.PROGRAM, 'a') as f:
+            f.write('CUSTOM_DATA_PATH=' + str(path) + "\n")
 
     def bbcombs_mononuc(self):
         """Get backbone combinations dictionary
-           
+
         Returns
         -------
             bbcombs_mononuc : dict
@@ -749,7 +762,7 @@ class globalvars:
 
     def testTF(self):
         """Tests to see whether keras and tensorflow are available.
-           
+
         Returns
         -------
             tf_flag : bool
@@ -757,15 +770,15 @@ class globalvars:
         """
         try:
             os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-            from keras.models import Model
-            from keras.models import Sequential
+            from tensorflow.keras.models import Model  # noqa: F401
+            from tensorflow.keras.models import Sequential  # noqa: F401
             return True
-        except:
+        except ImportError:
             return False
 
     def testmatplotlib(self):
         """Tests to see if matplotlib is available
-           
+
         Returns
         -------
             mpl_flag : bool
@@ -773,8 +786,18 @@ class globalvars:
         """
         try:
             # os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
-            import matplotlib.pyplot as plt
-            import matplotlib.ticker as ticker
+            import matplotlib.pyplot as plt  # noqa: F401
+            import matplotlib.ticker as ticker  # noqa: F401
             return True
-        except:
+        except ImportError:
             return False
+
+    def getAllAAs(self):
+        """ Gets all amino acids
+
+        Returns
+        -------
+            amino_acids : dictionary
+                Dictionary of standard amino acids
+        """
+        return amino_acids

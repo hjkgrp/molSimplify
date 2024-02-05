@@ -18,7 +18,7 @@ tools for io.
 def get_num_frame(geofile):
     with open(geofile, 'r') as fo:
         num_atoms = int(fo.readline().split()[0])
-        num_lines = num_atoms + 2  ## +2 for the xyz format.
+        num_lines = num_atoms + 2  # +2 for the xyz format.
     with open(geofile, 'r') as fo:
         txt = fo.readlines()
     return int(len(txt) / num_lines)
@@ -80,7 +80,7 @@ def read_geometry_to_mol(geofile, frame=-1, txt=False):
     if not txt:
         with open(geofile, 'r') as fo:
             num_atoms = int(fo.readline().split()[0])
-        num_lines = num_atoms + 2  ## +2 for the xyz format.
+        num_lines = num_atoms + 2  # +2 for the xyz format.
         with open(geofile, 'r') as fo:
             if (frame + 1) * num_lines != 0:
                 geotext = fo.readlines()[frame * num_lines:(frame + 1) * num_lines]
@@ -96,7 +96,7 @@ def obtain_jobinfo(xyzfile, frame=-1, txt=False):
     init_mol = read_geometry_to_mol(xyzfile, frame=frame, txt=txt)
     natoms = init_mol.natoms
     metal_ind = init_mol.findMetal()[0]
-    liglist, ligdents, ligcons = ligand_breakdown(init_mol, flag_loose=False, BondedOct=False)
+    liglist, ligdents, ligcons = ligand_breakdown(init_mol, BondedOct=False)
     # print(liglist)
     # print(ligdents)
     # print(ligcons)
@@ -106,10 +106,11 @@ def obtain_jobinfo(xyzfile, frame=-1, txt=False):
     except:
         print("bad initial geometry")
         return False
+    print("metal_ind: ", metal_ind)
     print("ax_con: ", _ax_con)
     print("eq_con: ", _eq_con)
     job_info = {}
-    info_list = ['ax_con', 'eq_con', 'ax_con_sym', 'eq_con_sym', 'catoms', 'natoms', 'metal_ind']
+    info_list = ['ax_con', 'eq_con', 'ax_con_sym', 'eq_con_sym', 'catoms', 'natoms', 'metal_ind', "symbols"]
     eq_con, ax_con = [], []
     for x in _eq_con:
         eq_con += x
@@ -118,6 +119,7 @@ def obtain_jobinfo(xyzfile, frame=-1, txt=False):
     ax_con_sym = [init_mol.atoms[x].sym for x in ax_con]
     eq_con_sym = [init_mol.atoms[x].sym for x in eq_con]
     catoms = [x for x in eq_con] + [x for x in ax_con]
+    symbols = [init_mol.atoms[ii].sym for ii in range(natoms)]
     for info in info_list:
         job_info.update({info: locals()[info]})
     return job_info
@@ -148,10 +150,8 @@ def get_geo_metrics(init_mol, job_info, geofile, frame=-1):
     for key in dict_oct_info:
         if "relative" in key:
             continue
-        val = dict_oct_info[key] if (dict_oct_info[key] != -1) and (dict_oct_info[key] != "lig_mismatch") else 1.20 * \
-                                                                                                               dict_oct_check_st[
-                                                                                                                   choice][
-                                                                                                                   key]
+        val = (dict_oct_info[key] if (dict_oct_info[key] != -1) and (dict_oct_info[key] != "lig_mismatch")
+               else 1.20 * dict_oct_check_st[choice][key])
         actural_dict_geo['actural_%s' % key] = val
     for key in dict_oct:
         if "relative" in key:
@@ -213,10 +213,12 @@ def get_bond_order(bofile, job_info, num_sv=4, frame=-1):
     for sv in range(num_sv):
         dict_bondorder.update({'bo_offsv%d' % sv: _sigma[sv]})
     for catom, vals in list(dict_patterns.items()):
-        if catom == metal_ind:
-            catom = 0
-        dict_bondorder.update({'bo_%d' % catom: bo_mat[vals[0], vals[1]]})
+        if catom != metal_ind:
+            dict_bondorder.update({'bo_%d' % catom: bo_mat[vals[0], vals[1]]})
     dict_bondorder = symmetricalize_dict(job_info, feature_dict=dict_bondorder)
+    for catom, vals in list(dict_patterns.items()):
+        if catom == metal_ind:
+            dict_bondorder.update({'bo_0': bo_mat[vals[0], vals[1]]})
     return dict_bondorder
 
 
@@ -235,7 +237,7 @@ def get_gradient(gradfile, job_info, num_sv=3, frame=-1):
                 gradtext = fo.readlines()[frame * num_lines:]
         with open(gradfile, 'r') as fo:
             if not len(gradtext):
-                gradtext = fo.readlines()[-1* num_lines:]
+                gradtext = fo.readlines()[-1 * num_lines:]
         frame += 1
         # print("gradtext: ", gradtext)
     grad_mat = np.zeros(shape=(natoms, 3))
@@ -251,9 +253,8 @@ def get_gradient(gradfile, job_info, num_sv=3, frame=-1):
     for sv in range(num_sv):
         dict_gradient.update({'grad_sv%d' % sv: sigma[sv]})
     for catom in catoms:
-        if catom == metal_ind:
-            catom = 0
-        dict_gradient.update({'grad_%d' % catom: np.linalg.norm(grad_mat[catom, :])})
+        if catom != metal_ind:
+            dict_gradient.update({'grad_%d' % catom: np.linalg.norm(grad_mat[catom, :])})
     max_norm = 0
     for ii in range(natoms):
         _norm = np.linalg.norm(grad_mat[ii, :])
@@ -273,6 +274,9 @@ def get_gradient(gradfile, job_info, num_sv=3, frame=-1):
             _max_norm = _norm
     dict_gradient.update({'grad_intmaxnorm': _max_norm})
     dict_gradient = symmetricalize_dict(job_info, feature_dict=dict_gradient)
+    for catom in catoms:
+        if catom == metal_ind:
+            dict_gradient.update({'grad_0': np.linalg.norm(grad_mat[catom, :])})
     return dict_gradient
 
 
@@ -290,20 +294,28 @@ def get_mullcharge(chargefile, job_info, frame=-1):
                 chargetext = fo.readlines()[frame * natoms:]
         with open(chargefile, 'r') as fo:
             if not len(chargetext):
-                chargetext = fo.readlines()[-1* natoms:]
+                chargetext = fo.readlines()[-1 * natoms:]
         frame += 1
         # print("chargetext: ", chargetext)
     for line in chargetext:
         ll = line.split()
         atom_ind = int(ll[0]) - 1
         if atom_ind in catoms:
-            if atom_ind == metal_ind:
-                atom_ind = 0
-            if not "nan" in ll[-1]:
-                dict_mullcharge.update({'charge_%d' % atom_ind: float(ll[-1])})
-            else:
-                dict_mullcharge.update({'charge_%d' % atom_ind: 0})
+            if atom_ind != metal_ind:
+                if "nan" not in ll[-1]:
+                    dict_mullcharge.update({'charge_%d' % atom_ind: float(ll[-1])})
+                else:
+                    dict_mullcharge.update({'charge_%d' % atom_ind: 0})
     dict_mullcharge = symmetricalize_dict(job_info, feature_dict=dict_mullcharge)
+    for line in chargetext:
+        ll = line.split()
+        atom_ind = int(ll[0]) - 1
+        if atom_ind in catoms:
+            if atom_ind == metal_ind:
+                if "nan" not in ll[-1]:
+                    dict_mullcharge.update({'charge_0': float(ll[-1])})
+                else:
+                    dict_mullcharge.update({'charge_0': 0})
     return dict_mullcharge
 
 
@@ -334,7 +346,7 @@ def get_feature_type(feature_dict):
 
 def check_pid(pid):
     # print("PID: ", pid)
-    if pid == False:
+    if not pid:
         pid = 000000
     try:
         os.kill(int(pid), 0)
@@ -347,4 +359,5 @@ def check_pid(pid):
 def kill_job(pid):
     cmd = 'kill -9 %s' % str(pid)
     q = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    ll = q.communicate()[0].decode("utf-8")
+    # Unused:
+    _ = q.communicate()[0].decode("utf-8")

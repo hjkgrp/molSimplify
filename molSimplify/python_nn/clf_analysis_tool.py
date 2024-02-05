@@ -1,116 +1,10 @@
 # import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
-from keras import backend as K
-
-
-# def plot_scatter(x, y,
-#                  xlabel=False, ylabel=False,
-#                  show=False, figname=False):
-#     try:
-#         plt.style.use('myline')
-#     except:
-#         pass
-#     fig = plt.figure(figsize=(8, 6))
-#     fig.add_subplot(111)
-#     plt.scatter(x, y)
-#     if xlabel:
-#         plt.xlabel(xlabel)
-#     if ylabel:
-#         plt.ylabel(ylabel)
-#     plt.tight_layout()
-#     if show:
-#         plt.show()
-#     if figname:
-#         fig.savefig(figname)
-
-
-# def plot_scatter_colored(x_axis, y_axis, c_axis,
-#                          xlabel, ylabel,
-#                          legend=None,
-#                          figname='tmp.pdf'):
-#     try:
-#         plt.style.use('myline')
-#     except:
-#         pass
-#     fig = plt.figure()
-#     ax = fig.add_subplot(111)
-#     plt.scatter(x_axis, y_axis, c=c_axis,
-#                 alpha=0.5, cmap='cool')
-#     cb = plt.colorbar()
-#     cb.set_label('Error')
-#     plt.xlabel(xlabel)
-#     plt.ylabel(ylabel)
-#     if not legend == None:
-#         plt.legend(legend)
-#     plt.tight_layout()
-#     plt.show()
-#     if figname:
-#         fig.savefig(figname)
-
-
-# def simp_plot_line(y_axis, x_axis=None,
-#                    label_x='x_axis', label_y='y_axis',
-#                    log_x=False, log_y=False,
-#                    figname='tmp.pdf',
-#                    show=False, line=False):
-#     try:
-#         plt.style.use('myline')
-#     except:
-#         pass
-#     fig = plt.figure(figsize=(8, 6))
-#     ax = fig.add_subplot(111)
-#     if not line:
-#         ax.plot(x_axis, y_axis, '*')
-#     else:
-#         ax.plot(x_axis, y_axis, '-')
-#     ax.set_xlabel(label_x)
-#     ax.set_ylabel(label_y)
-#     if log_x:
-#         ax.set_xscale("log")
-#     if log_y:
-#         ax.set_yscale("log")
-#     plt.tight_layout()
-#     if show:
-#         plt.show()
-#     if figname:
-#         fig.savefig(figname)
-
-
-# def plot_double_line(x_axis, y1_axis, y2_axis,
-#                      label_x='x_axis', label_y='y_axis',
-#                      lable_y2='y_axis1',
-#                      log_x=False, log_y=False,
-#                      legend=None,
-#                      figname='tmp.pdf',
-#                      show=False, y1_err_flag=False, y1_err_bar=None):
-#     try:
-#         plt.style.use('myline')
-#     except:
-#         pass
-#     fig = plt.figure(figsize=(8, 6))
-#     ax = fig.add_subplot(111)
-#     if y1_err_flag:
-#         p1 = ax.errorbar(x_axis, y1_axis, yerr=y1_err_bar, fmt='-bs')
-#     else:
-#         p1 = ax.plot(x_axis, y1_axis, '-bs')
-#     ax.set_xlabel(label_x)
-#     ax.set_ylabel(label_y)
-#     if log_x:
-#         ax.set_xscale("log")
-#     if log_y:
-#         ax.set_yscale("log")
-#     ax2 = ax.twinx()
-#     p2 = ax2.plot(x_axis, y2_axis, '--r*')
-#     ax2.set_ylabel(lable_y2, color='r')
-#     ax2.tick_params('y', colors='r')
-#     plt.tight_layout()
-#     if not legend == None:
-#         plt.legend((p1[0], p2[0]), legend)
-#     if show:
-#         plt.show()
-#     if figname:
-#         fig.savefig(figname)
+from packaging import version
+import tensorflow as tf
+from tensorflow.keras import backend as K
+from tensorflow.keras import Model
 
 
 def get_acc(pred_std, pred_err, stds):
@@ -121,7 +15,7 @@ def get_acc(pred_std, pred_err, stds):
             if _std < target_std:
                 _pred_err.append(pred_err[idx])
         pred_err_arr.append(_pred_err)
-    acc, auc, ratio = [], [], []
+    acc, ratio = [], []
     for idx, _ in enumerate(pred_err_arr):
         pred_err_now = pred_err_arr[idx]
         acc_arr = [1 if pred_err_now[ii] < 0.5 else 0 for ii in range(len(pred_err_now))]
@@ -133,29 +27,7 @@ def get_acc(pred_std, pred_err, stds):
     return stds, np.array(acc), np.array(ratio)
 
 
-# def plot_dist_err(pred_std, pred_err, stds, label_x=False, label_y=False,
-#                   lable_y2=False, figname=False):
-#     std_arr, acc_arr, ratio_arr = get_acc(pred_std, pred_err, stds)
-#     plot_double_line(x_axis=std_arr, y1_axis=acc_arr, y2_axis=ratio_arr,
-#                      label_x=label_x, label_y=label_y,
-#                      lable_y2=lable_y2,
-#                      log_x=False, log_y=False,
-#                      legend=None,
-#                      figname=figname,
-#                      show=True)
-
-
-# def plot_metrics_correlation(metric1, metric2, pred_err,
-#                              xlabel=False, ylabel=False, figname='dist_relations.pdf'):
-#     match = [0 if x < 0.5 else 1 for x in pred_err]
-#     plot_scatter_colored(x_axis=metric1, y_axis=metric2, c_axis=match,
-#                          xlabel=xlabel,
-#                          ylabel=ylabel,
-#                          legend=None,
-#                          figname=figname)
-
-
-def dist_neighbor(fmat1, fmat2, labels, l=5, dist_ref=1):
+def dist_neighbor(fmat1, fmat2, labels, l=5, dist_ref=1):  # noqa: E741
     dist_mat = pairwise_distances(fmat1, fmat2, 'manhattan')
     dist_mat = dist_mat * 1.0 / dist_ref
     dist_avrg, dist_list, labels_list = [], [], []
@@ -198,7 +70,7 @@ def dist_penalty(d):
     return np.exp(-1 * d ** 2)
 
 
-def get_entropy(dists, neighbor_targets):
+def get_entropy(dists, neighbor_targets) -> np.ndarray:
     entropies = []
     for ii, _neighbor_targets in enumerate(neighbor_targets):
         p0, p1 = dist_penalty(2), dist_penalty(2)
@@ -227,10 +99,14 @@ def get_entropy(dists, neighbor_targets):
 
 
 def get_layer_outputs(model, layer_index, input,
-                      training_flag=False):
-    get_outputs = K.function([model.layers[0].input, K.learning_phase()],
-                             [model.layers[layer_index].output])
-    nn_outputs = get_outputs([input, training_flag])[0]
+                      training_flag=False) -> np.ndarray:
+    if not version.parse(tf.__version__) >= version.parse('2.0.0'):
+        get_outputs = K.function([model.layers[0].input, K.learning_phase()],
+                                 [model.layers[layer_index].output])
+        nn_outputs = get_outputs([input, training_flag])[0]
+    else:
+        partial_model = Model(model.inputs, model.layers[layer_index].output)
+        nn_outputs = partial_model([input], training=training_flag).numpy()  # runs the model in training mode
     return nn_outputs
 
 

@@ -4,7 +4,7 @@ import scipy as sp
 class Mol2Parser:
     ##### This parser takes in a mol2 file and extracts info.
     ##### Currently contains methods for connectivity.
-    
+
     def __init__(self, mol2path):
         self.mol2path = mol2path
         with open(self.mol2path) as f:
@@ -44,5 +44,3 @@ class Mol2Parser:
             if 'BOND' in row:
                 connectivity_info = True
         return list_of_bonding_info
-
-

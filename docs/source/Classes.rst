@@ -18,6 +18,23 @@ mol3D Class
    :undoc-members:
    :show-inheritance:
 
+monomer3D Class
+--------------------------------
+
+.. automodule:: molSimplify.Classes.monomer3D
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+protein3D Class
+--------------------------------
+
+.. automodule:: molSimplify.Classes.protein3D
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 globalvars
 --------------------------------
 

@@ -16,7 +16,7 @@ from molSimplify.Scripts.geometry import (alignPtoaxis,
                                           rotation_params,
                                           vecangle,
                                           vecdiff)
-from molSimplify.Scripts.molSimplify_io import (getinputargs)
+from molSimplify.Scripts.io import getinputargs
 from molSimplify.Scripts.structgen import (PointTranslateSph,
                                            align_lig_centersym,
                                            check_rotate_linear_lig,
@@ -104,7 +104,6 @@ def substplaceff_mode3(core, substr, substreact, compreact, cpoint, args, connec
     substr.alignmol(substr.getAtom(substreact), atom3D('H', cpoint))
     # perform rotations
     Bcoords = core.getAtomCoords(compreact)
-    adjsidx = substr.getBondedAtoms(substreact)[0]
     if substr.natoms > 1:
         # align ligand center of symmetry
         substr = align_lig_centersym(Bcoords, substr, substreact, core, False)
@@ -180,6 +179,7 @@ def substplaceff_mode1(core, substr, substreact, compreact, cpoint, ligalignpt, 
 
 def tsgen(mode, args, rootdir, core, substr, compreact, substreact, globs):
     emsg = False
+    ts3D = mol3D()
     this_diag = run_diag()
     strfiles = []
     adjsidx = substr.getBondedAtoms(substreact)[0]
@@ -198,7 +198,7 @@ def tsgen(mode, args, rootdir, core, substr, compreact, substreact, globs):
         emsg = 'Sorry, this mode is not supported yet. Exiting...'
         return strfiles, emsg, this_diag
     elif mode == 1:  # oxidative addition of a single group
-                # get first connecting point
+        # get first connecting point
         MXBL = MXdistcoeff*(core.getAtom(compreact).rad +
                             substr.getAtom(substreact).rad)
         cpoint = getconnection(core, compreact, MXBL)
@@ -273,7 +273,7 @@ def tsgen(mode, args, rootdir, core, substr, compreact, substreact, globs):
                 print('FF optimized remainder of substrate')
     ts3D.charge += substr.charge
     # END FUNCTIONALIZING
-    fname = name_TS(rootdir, args.core, substr, args,
+    fname = name_TS(rootdir, args.core, substr, args,  # noqa F821 function deprecated
                     bind=args.bind, bsmi=args.nambsmi)
     ts3D.writexyz(fname)
     strfiles.append(fname)

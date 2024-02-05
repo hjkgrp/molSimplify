@@ -1,0 +1,8 @@
+-core co
+-geo thd
+-lig pdp.mol
+-ligocc 1
+-smicat 1,4,7,12
+-skipANN True
+-jobdir ligand_from_mol_file
+-name ligand_from_mol_file

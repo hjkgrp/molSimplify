@@ -63,13 +63,13 @@ def find_term_heavy(mol, reference_point):
     min_ind = 0
     print(('reference_point', reference_point))
     for inds, atoms in enumerate(mol.getAtoms()):
-         #           print('inds,atoms')
-          #          print('this ind is ',inds)
-          #          print('this atom ',atoms.symbol())
+        # print('inds,atoms')
+        # print('this ind is ',inds)
+        # print('this atom ',atoms.symbol())
         if not atoms.symbol() == "H":
             this_coord = atoms.coords()
             this_dist = distance(this_coord, reference_point)
-    #                print(atoms.symbol(),inds,this_coord,this_dist)
+            # print(atoms.symbol(),inds,this_coord,this_dist)
             if this_dist < min_dist:
                 min_dist = this_dist
                 min_ind = inds
@@ -100,7 +100,6 @@ def zero_dim(mol, dim):
 def zero_z(mol):
     zeroed_mol = mol3D()
     zeroed_mol.copymol3D(mol)
-    TOL = 1e-1
     zmin = 1000
     for i, atoms in enumerate(mol.getAtoms()):
         coords = atoms.coords()
@@ -113,7 +112,6 @@ def zero_z(mol):
 def zero_x(mol):
     zeroed_mol = mol3D()
     zeroed_mol.copymol3D(mol)
-    TOL = 1e-1
     xmin = 1000
     for i, atoms in enumerate(mol.getAtoms()):
         coords = atoms.coords()
@@ -126,7 +124,6 @@ def zero_x(mol):
 def zero_y(mol):
     zeroed_mol = mol3D()
     zeroed_mol.copymol3D(mol)
-    TOL = 1e-1
     ymin = 1000
     for i, atoms in enumerate(mol.getAtoms()):
         coords = atoms.coords()
@@ -186,7 +183,7 @@ def grow_linear_step(chain, new_unit, dim, interv, conatom, freezhead):
     add_mol.translate(interv)
 
     add_mol.writexyz('precut.xyz')
-    #add_mol = remove_closest_h(add_mol,combined_mol)
+    # add_mol = remove_closest_h(add_mol,combined_mol)
     add_mol.writexyz('postcut.xyz')
     # combined_mol.printxyz()
     # add_mol.printxyz()
@@ -217,11 +214,11 @@ def chain_builder_supervisor(args, rundir):
     print('loading monomer')
     monomer = mol3D()
     monomer.OBMol = monomer.getOBMol(args.chain, convtype='smistring')
-#		monomer.OBMol.make3D('mmff94',0)
+    # monomer.OBMol.make3D('mmff94',0)
     monomer.convert2mol3D()
-#                monomer.writexyz('mono_nozero.xyz')
+    # monomer.writexyz('mono_nozero.xyz')
     monomer = zero_1st(monomer)
-#                monomer.writexyz('mono_zero_z.xyz')
+    # monomer.writexyz('mono_zero_z.xyz')
 
     conatom = len(args.chain)-1
     print(('connection atom is '+monomer.getAtom(conatom).symbol()))
@@ -272,12 +269,6 @@ def chain_builder_supervisor(args, rundir):
 
     my_dim = trim_H(my_dim, monomer.getAtom(len(args.chain)-1).coords())
 
-    basic_lengths = find_extents(my_dim)
-
-    basic_x = basic_lengths[0]
-    basic_y = basic_lengths[1]
-
-
 #                my_dim.writexyz('start.xyz')
 
     middle = mol3D()
@@ -295,8 +286,8 @@ def chain_builder_supervisor(args, rundir):
         end.OBMol = end.getOBMol(args.chain_head, convtype='smistring')
     else:
         end.OBMol = end.getOBMol(args.chain, convtype='smistring')
-    #end.OBMol = end.getOBMol("CC1COC(=O)O1",convtype='smistring')
-#		monomer.OBMol.make3D('mmff94',0)
+    # end.OBMol = end.getOBMol("CC1COC(=O)O1",convtype='smistring')
+    # monomer.OBMol.make3D('mmff94',0)
     end.convert2mol3D()
     end.writexyz('endi.xyz')
     end = zero_1st(end)
@@ -313,7 +304,7 @@ def chain_builder_supervisor(args, rundir):
         end = rotate_around_axis(end, [0, 0, 0], u, theta)
     end = trim_H(end, [0, 0, 0])
     end.printxyz()
-#		middle.writexyz('middle.xyz')
+    # middle.writexyz('middle.xyz')
     end.writexyz('end.xyz')
 
     repu = mol3D()
@@ -338,9 +329,9 @@ def chain_builder_supervisor(args, rundir):
     locked_atoms = my_dim.natoms - 1
     my_dim = grow_linear_step(my_dim, end, 0, interv,
                               conatom-1, freezhead=locked_atoms)
-#        my_dim.printxyz()
+    # my_dim.printxyz()
     my_dim.writexyz('poly.xyz')
-    #my_dim,en = chain_ffopt('',my_dim,[])
+    # my_dim,en = chain_ffopt('',my_dim,[])
     my_dim, en = ffopt('MMFF94', my_dim, [], 0, [], mlbonds=[],
                        frozenangles=[], nsteps=200, debug=False)
     my_dim.writexyz('polyf.xyz')

@@ -2,7 +2,6 @@ from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign
 from molSimplify.Informatics.graph_analyze import (get_lig_EN,
                                                    get_truncated_kier,
                                                    kier)
-from molSimplify.Classes.globalvars import globalvars
 import numpy as np
 
 
@@ -19,7 +18,7 @@ def generate_all_ligand_misc(mol, loud, custom_ligand_dict=False, force_legacy=F
     else:
         colnames = ['dent', 'charge']
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol)
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
@@ -132,7 +131,7 @@ def generate_all_ligand_misc_dimers(mol, loud, custom_ligand_dict=False):
     colnames = ['dent', 'maxDEN', 'ki', 'tki', 'charge']
     if not custom_ligand_dict:
         raise ValueError('No custom_ligand_dict provided!')
-        #liglist, ligdents, ligcons = ligand_breakdown(mol)
+        #liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True)
         # ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
         #    mol, liglist, ligdents, ligcons, loud, name=False)
     else:
@@ -164,15 +163,7 @@ def generate_all_ligand_misc_dimers(mol, loud, custom_ligand_dict=False):
     for ax_ligand_list, ax_con_int_list, n_ax, result_ax in zip(axligs, axcons, n_axs, result_axs):
         for i in range(0, n_ax):
             ax_ligand_list[i].mol.convert2OBMol()
-            if not (i == 0):
-                result_ax_dent += ax_ligand_list[i].dent
-                result_ax_maxdelen += get_lig_EN(
-                    ax_ligand_list[i].mol, ax_con_int_list[i])
-                result_ax_ki += kier(ax_ligand_list[i].mol)
-                result_ax_tki += get_truncated_kier(
-                    ax_ligand_list[i].mol, ax_con_int_list[i])
-                result_ax_charge += ax_ligand_list[i].mol.OBMol.GetTotalCharge()
-            else:
+            if i == 0:
                 result_ax_dent = ax_ligand_list[i].dent
                 result_ax_maxdelen = get_lig_EN(
                     ax_ligand_list[i].mol, ax_con_int_list[i])
@@ -180,6 +171,14 @@ def generate_all_ligand_misc_dimers(mol, loud, custom_ligand_dict=False):
                 result_ax_tki = get_truncated_kier(
                     ax_ligand_list[i].mol, ax_con_int_list[i])
                 result_ax_charge = ax_ligand_list[i].mol.OBMol.GetTotalCharge()
+            else:
+                result_ax_dent += ax_ligand_list[i].dent
+                result_ax_maxdelen += get_lig_EN(
+                    ax_ligand_list[i].mol, ax_con_int_list[i])
+                result_ax_ki += kier(ax_ligand_list[i].mol)
+                result_ax_tki += get_truncated_kier(
+                    ax_ligand_list[i].mol, ax_con_int_list[i])
+                result_ax_charge += ax_ligand_list[i].mol.OBMol.GetTotalCharge()
         # average axial results
         result_ax_dent = np.divide(result_ax_dent, n_ax)
         result_ax_maxdelen = np.divide(result_ax_maxdelen, n_ax)
@@ -197,19 +196,3 @@ def generate_all_ligand_misc_dimers(mol, loud, custom_ligand_dict=False):
     results_dictionary = {'colnames': colnames, 'result_ax1': result_ax1,
                           'result_ax2': result_ax2, 'result_ax3': result_ax3}
     return results_dictionary
-
-
-def get_lig_EN(mol, connection_atoms):
-    # calculate the maximum abs electronegativity
-    # difference between connection atom an all
-    # neighbors
-    max_EN = 0
-    globs = globalvars()
-    for atoms in connection_atoms:
-        this_atoms_neighbors = mol.getBondedAtomsSmart(atoms)
-        for bound_atoms in this_atoms_neighbors:
-            this_EN = float(globs.endict()[mol.getAtom(atoms).symbol(
-            )]) - float(globs.endict()[mol.getAtom(bound_atoms).symbol()])
-            if (abs(this_EN) >= max_EN):
-                max_EN = this_EN
-    return max_EN

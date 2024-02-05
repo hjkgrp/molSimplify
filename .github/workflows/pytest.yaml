@@ -1,0 +1,124 @@
+name: Pytest
+
+on:
+  push:
+    branches:
+      - "master"
+      - "main"
+  pull_request:
+    branches:
+      - "master"
+      - "main"
+
+jobs:
+  pytest_conda:
+    name: Pytest (conda) on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.7", "3.8"]
+    defaults:
+      run:
+        shell: bash -l {0}
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Additional info about the build
+      run: |
+        uname -a
+        df -h
+        ulimit -a
+    # Get date for the cache key
+    - name: Get current time
+      uses: josStorer/get-current-time@v2.0.2
+      id: current-time
+    - name: Cache conda env
+      uses: actions/cache@v3
+      id: cache
+      env:
+        # Increase this value to reset cache if mols.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: ~/conda_pkgs_dir
+        key:
+          # Key contains current year and month to ensure it is updated once a month
+          ${{ runner.os }}-py${{ matrix.python-version }}-conda-${{ steps.current-time.outputs.year }}-${{
+          steps.current-time.outputs.month }}-${{ hashFiles('devtools/conda-envs/mols.yml') }}-${{
+          env.CACHE_NUMBER }}
+
+    # More info on the whole conda setup: https://github.com/conda-incubator/setup-miniconda
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v2
+      id: conda-setup
+      with:
+        # mamba-version: "*" # uncomment to activate mamba
+        python-version: ${{ matrix.python-version }}
+        miniforge-variant: Mambaforge
+        channels: conda-forge,defaults
+        environment-file: devtools/conda-envs/mols.yml
+
+        activate-environment: molsimp
+        use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+
+    - name: Install package
+      run: |
+        pip install -e . --no-deps
+        pip install pytest-cov
+        conda list
+
+    - name: Run tests
+      run: |
+        pytest -v --cov=molSimplify --cov-report=xml
+
+    - name: Run doctest
+      # For now still excluding several subfolders and files
+      run: |
+        pytest --doctest-modules --ignore=molSimplify/Informatics/MOF --ignore=molSimplify/Informatics/protein --ignore=molSimplify/Scripts/in_b3lyp_usetc.py --ignore=molSimplify/Informatics/jupyter_vis.py --ignore=molSimplify/Informatics/macrocycle_synthesis.py --ignore=molSimplify/Informatics/organic_fingerprints.py molSimplify
+
+    - name: Upload coverage report to codecov
+      uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        directory: ./coverage/reports/
+        env_vars: OS,PYTHON
+        files: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        verbose: true
+
+    - name: Report Status
+      # Slack notifications only on the main repo
+      if: ${{job.status == 'failure' && github.event_name != 'pull_request' && github.repository == 'hjkgrp/molSimplify' }}
+      #uses: ravsamhq/notify-slack-action@v1
+      uses: 8398a7/action-slack@v3
+      with:
+        job_name: Pytest (conda) on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+        fields: message,commit,author,workflow,job,took
+        status: ${{ job.status }}
+      env:
+        SLACK_WEBHOOK_URL: ${{secrets.SLACK_WEBHOOK}}
+        #MATRIX_CONTEXT: ${{ toJson(matrix) }} # required
+
+  pytest_pip:
+    name: Pytest (pip) on ${{ matrix.os }}, Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.8"]
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install package
+      run: |
+        pip install -e .[dev]
+
+    - name: Run pytest
+      run: |
+        pytest -v

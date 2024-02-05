@@ -73,7 +73,7 @@ def mocoeff_c2s(mocoeffs_c, shell_types):
     Returns
     ----------
         mocoeffs_s: numpy array, scaled MO coeffs considering the basis function normalization difference.
-    '''
+    '''  # noqa W605 for the sqrt ACSII art in the description string
     pf1 = 1.0
     pf2 = np.sqrt(1.0 / 3.0)
     d_conv = np.array([

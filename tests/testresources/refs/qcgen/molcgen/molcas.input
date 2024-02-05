@@ -1,0 +1,16 @@
+# file created with molSimplify
+&gateway
+Coord=FeH2O6.xyz
+basis=H.ANO-rcc...3s1p.,O.ANO-rcc...4s3p2d1f.,Fe.ANO-rcc...7s6p5d3f2g1h.
+Group=Nosym
+&SEWARD
+CHOL
+R02O
+&RASSCF
+  charge=0
+  spin=1
+  nactel=10 0 0
+  frozen=11
+  ciroot=1 1 ;1
+  ras2=12
+  ITER=1000,100

@@ -264,4 +264,4 @@ alkaline_earth = set(["Be", "Mg", "Ca", "Sr", "Ba", "Ra"])
 main_group = set(["Al", "Ga", "Ge", "In", "Sn", "Sb", "Tl", "Pb", "Bi",
                   "Po", "At", "Cn", "Uut", "Fl", "Uup", "Lv", "Uus"])
 
-metals = main_group | alkaline_earth | alkali | transition_metals | metalloids | lanthanides 
+metals = main_group | alkaline_earth | alkali | transition_metals | metalloids | lanthanides

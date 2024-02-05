@@ -7,24 +7,28 @@
 
 
 import os
+import sys
 import re
 import shutil
 import string
 try:
     import pymol
-except:
+except ImportError:
     pass
-import openbabel
+try:
+    from openbabel import openbabel  # version 3 style import
+except ImportError:
+    import openbabel  # fallback to version 2
 
 from molSimplify.Classes.globalvars import (amassdict,
                                             glob,
                                             globalvars,
                                             mybash)
-from molSimplify.Scripts.molSimplify_io import (plugin_defs)
+from molSimplify.Scripts.io import plugin_defs
 
 
 def float_from_str(txt):
-    numeric_const_pattern = '[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
+    numeric_const_pattern = r'[-+]? (?: (?: \d* \. \d+ ) | (?: \d+ \.? ) )(?: [Ee] [+-]? \d+ ) ?'
     rx = re.compile(numeric_const_pattern, re.VERBOSE)
     float_arr = rx.findall(txt)
     if not len(float_arr):
@@ -157,16 +161,15 @@ def getsimilar(smi, nmols, dbselect, finger, squery, args):
     # get database files
     [dbsdf, dbfs] = setupdb(dbselect)
     print(('database set up :' + str(dbsdf) + ' || ' + str(dbfs)))
-    globs = globalvars()
     print(('Finding results similar, comparing to ' + smi))
 
-    obab = 'babel'
+    obab = 'obabel'
     if dbfs and args.dbfs:
         com = obab + ' ' + dbfs + ' ' + 'simres.smi -d -xf' + \
             finger + ' -s"' + smi + '" -al' + nmols
     else:
         mybash(obab + ' -isdf ' + dbsdf + ' -osdf -O tmp.sdf -d')
-        com = obab + ' tmp.sdf simres.smi -xf' + finger + ' -s"' + smi + '"'
+        com = obab + ' tmp.sdf -O simres.smi -xf' + finger + ' -s"' + smi + '"'
     # perform search using bash commandline
     print('Performing substructure search:')
     print(('running:  ' + str(com)))
@@ -185,13 +188,13 @@ def getsimilar(smi, nmols, dbselect, finger, squery, args):
         print(('number of lines in simres.smi: ' +
                str(mybash('cat simres.smi | wc -l'))))
 
-    #		com = obab+" -ismi simres.smi -osmi -O simres.smi -d --filter 'nsmartsmatches<="+args.dbmaxsmartsmatches+"'"
-    #		rint('running:  '+ str(com))
+    # com = obab+" -ismi simres.smi -osmi -O simres.smi -d --filter 'nsmartsmatches<="+args.dbmaxsmartsmatches+"'"
+    # print('running:  '+ str(com))
 
-    #		res = mybash(com)
-    #		print('number of lines in simres.smi after dxbsmartmatches: '+str(mybash('cat simres.smi | wc -l')))
+    # res = mybash(com)
+    # print('number of lines in simres.smi after dxbsmartmatches: '+str(mybash('cat simres.smi | wc -l')))
 
-    #		print res
+    # print res
     shutil.copy('simres.smi', 'afterfilteringsmarts.smi')
     # check output and print error if nothing was found
     if ('errors' in res):
@@ -212,33 +215,31 @@ def stripsalts(fname):
     rejected = ['@@H', '@H', "/", "\\"]
     accepted = acc0 + acc1
     if glob.glob(fname):
-        f = open(fname, 'r')
-        s = f.read().splitlines()
-        f.close()
+        with open(fname, 'r') as f:
+            s = f.read().splitlines()
     else:
         print(('not found fname ' + str(fname)))
 
         return 0
-    f = open(fname, 'w')
-    for i, ss in enumerate(s):
-        ss = ss.split('\t')[0]
-        for r in rejected:
-            if r in ss:
-                ss = ss.replace(r, '')
-        ls = ss.split('[')
-        for l in ls:
-            if ']' in l:
-                lq = l.split(']')[0]
-                if lq not in accepted:
-                    lq0 = '.[' + lq + ']'
-                    lq1 = '[' + lq + '].'
-                    if lq0 in ss:
-                        ss = ss.replace(lq0, '')
-                    elif lq1 in ss:
-                        ss = ss.replace(lq1, '')
-        ss = ss.split('.')[0]
-        f.write(ss + '\n')
-    f.close()
+    with open(fname, 'w') as f:
+        for i, ss in enumerate(s):
+            ss = ss.split('\t')[0]
+            for r in rejected:
+                if r in ss:
+                    ss = ss.replace(r, '')
+            ls = ss.split('[')
+            for li in ls:
+                if ']' in li:
+                    lq = li.split(']')[0]
+                    if lq not in accepted:
+                        lq0 = '.[' + lq + ']'
+                        lq1 = '[' + lq + '].'
+                        if lq0 in ss:
+                            ss = ss.replace(lq0, '')
+                        elif lq1 in ss:
+                            ss = ss.replace(lq1, '')
+            ss = ss.split('.')[0]
+            f.write(ss + '\n')
     return 0
 
 
@@ -277,25 +278,23 @@ def getels(smistr):
 def checkels(fname, allowedels):
     print(('Filtering by allowed elements:' + str(allowedels)))
     if glob.glob(fname):
-        f = open(fname, 'r')
-        s = f.read().splitlines()
-        f.close()
+        with open(fname, 'r') as f:
+            s = f.read().splitlines()
     else:
         return 0
-    f = open(fname, 'w')
-    nf = 0
-    for i, ss in enumerate(s):
-        ss = ss.split('\t')[0]
-        els = getels(ss)
-        flag = False
-        for el in els:
-            if el not in allowedels:
-                flag = True
-        # print(el)
-        if not flag:
-            f.write(ss + '\n')
-            nf = nf + 1
-    f.close()
+    with open(fname, 'w') as f:
+        nf = 0
+        for i, ss in enumerate(s):
+            ss = ss.split('\t')[0]
+            els = getels(ss)
+            flag = False
+            for el in els:
+                if el not in allowedels:
+                    flag = True
+            # print(el)
+            if not flag:
+                f.write(ss + '\n')
+                nf = nf + 1
     print(('Element filter returns', str(nf), 'results'))
     return 0
 
@@ -308,9 +307,7 @@ def checkels(fname, allowedels):
 #  @param outf Filename containing SMILES strings to be processed
 #  @param n Number of dissimilar molecules required
 def dissim(outf, n):
-    globs = globalvars()
-
-    obab = 'babel'
+    obab = 'obabel'
 
     # clone hitlist file
     hit_list_path = "hitlist.smi"
@@ -321,7 +318,7 @@ def dissim(outf, n):
         f.writelines(smiles_list)
 
     # generate fs of original hit list
-    mybash(obab + ' -ismi ' + hit_list_path + ' -osdf tmp.sdf')
+    mybash(obab + ' -ismi ' + hit_list_path + ' -osdf -O tmp.sdf')
     mybash(obab + ' tmp.sdf -ofs')
     # number of hits
     numcpds = mybash('obabel tmp.sdf -onul')
@@ -354,7 +351,7 @@ def dissim(outf, n):
                 for k in a:
                     try:
                         aa.append(float(k))
-                    except:
+                    except ValueError:
                         pass
                 a = aa
                 simsum = [x + y for x, y in zip(simsum, a)]
@@ -374,14 +371,12 @@ def dissim(outf, n):
             mybash(obab + ' tmp.sdf -ofs')
 
     # combine results into one file
-    f = open('dissimres.smi', 'w')
-    for i in range(n):
-        ff = open(str(i + 1) + '.smi', 'r')
-        s = ff.read().splitlines()
-        ff.close()
-        f.write(s[0] + '\n')
-        os.remove(str(i + 1) + '.smi')
-    f.close()
+    with open('dissimres.smi', 'w') as f:
+        for i in range(n):
+            with open(str(i + 1) + '.smi', 'r') as ff:
+                s = ff.read().splitlines()
+            f.write(s[0] + '\n')
+            os.remove(str(i + 1) + '.smi')
     return 0
 
 
@@ -397,37 +392,39 @@ def matchsmarts(smarts, outf, catoms, args):
     current_path = os.getcwd()
     print(('current path:', current_path))
     print(('file open:', outf))
-    f = open(outf, 'r')
-    s = f.read().splitlines()
-    f.close()
-    f = open(outf, 'w')
-    # print('in file is:', s)
-    moll = openbabel.OBMol()  # add
-    obConversion = openbabel.OBConversion()  # add
-    obConversion.SetInAndOutFormats("smi", "smi")  # add
-    # print('!!!s:', s)
-    max_atoms = int(float_from_str(args.dbatoms))
-    for i, mol in enumerate(s):
-        obConversion.ReadString(moll, mol)  # add
-        sm.Match(moll)
-        smm = list(sm.GetUMapList())
-        if 0 < len(smm) and len(mol) < max_atoms:
-            print(('#:', i))
-            print(('mol current:', mol))
-            print(('smm current', smm, len(smm)))
-            print(('catoms:', catoms))
-            print(('!!!dbatoms:', max_atoms))
-            pmatch = smm[0]
-            cc = ''
-            for at in catoms:
-                att = at - 1  # indexing
-                cc += str(pmatch[att]) + ','
-            # if i < nres:
-            f.write(mol + ' ' + cc[:-1] + '\n')
-            # f.write(s[i]+'\n')
-        else:
-            pass
-    f.close()
+    with open(outf, 'r') as f:
+        s = f.read().splitlines()
+
+    with open(outf, 'w') as f:
+        # print('in file is:', s)
+        moll = openbabel.OBMol()  # add
+        obConversion = openbabel.OBConversion()  # add
+        obConversion.SetInAndOutFormats("smi", "smi")  # add
+        # print('!!!s:', s)
+        # Set practically infinite size limit
+        max_atoms = sys.maxsize
+        if args.dbatoms:  # Overwrite max_atoms if dbatoms is given
+            max_atoms = int(float_from_str(args.dbatoms))
+        for i, mol in enumerate(s):
+            obConversion.ReadString(moll, mol)  # add
+            sm.Match(moll)
+            smm = list(sm.GetUMapList())
+            if 0 < len(smm) and len(mol) < max_atoms:
+                print(('#:', i))
+                print(('mol current:', mol))
+                print(('smm current', smm, len(smm)))
+                print(('catoms:', catoms))
+                print(('!!!dbatoms:', max_atoms))
+                pmatch = smm[0]
+                cc = ''
+                for at in catoms:
+                    att = at - 1  # indexing
+                    cc += str(pmatch[att]) + ','
+                # if i < nres:
+                f.write(mol + ' ' + cc[:-1] + '\n')
+                # f.write(s[i]+'\n')
+            else:
+                pass
     return 0
 
 
@@ -440,14 +437,12 @@ def dbsearch(rundir, args, globs):
     flag = False
 
     obab = 'obabel'
-    if args.gui:
-        from molSimplify.Classes.mWidgets import mQDialogWarn
-        from molSimplify.Classes.mWidgets import mQDialogInf
-    ### in any case do similarity search over indexed db ###
+    # in any case do similarity search over indexed db #
     outf = args.dbfname if args.dbfname else 'simres.smi'  # output file
     # convert to SMILES/SMARTS if file
     if not args.dbbase:
         if args.gui:
+            from molSimplify.Classes.mWidgets import mQDialogWarn
             qqb = mQDialogWarn('Warning', "No database file found within " +
                                globs.chemdbdir + '. Search not possible.')
             qqb.setParent(args.gui.DBWindow)
@@ -458,9 +453,8 @@ def dbsearch(rundir, args, globs):
     # print('similarity searching')
     # if '.smi' in args.dbsim:
     # if glob.glob(args.dbsim):
-    # f = open(args.dbsim,'r')
-    # smistr = f.read()
-    # f.close()
+    # with open(args.dbsim,'r') as f:
+    #     smistr = f.read()
     # else:
     # print 'File '+args.dbsim+' not existing. Check your input.'
     # print 'Similarity search terminating..'
@@ -483,9 +477,8 @@ def dbsearch(rundir, args, globs):
     if args.dbsmarts:
         if '.smi' in args.dbsmarts:
             if glob.glob(args.dbsmarts):
-                f = open(args.dbsmarts, 'r')
-                smistr = f.read()
-                f.close()
+                with open(args.dbsmarts, 'r') as f:
+                    smistr = f.read()
             else:
                 print(('File ' + args.dbsmarts +
                       ' does not exist. Check your input.'))
@@ -493,8 +486,6 @@ def dbsearch(rundir, args, globs):
                 return 1
         elif ('.mol' in args.dbsmarts or '.xyz' in args.dbsmarts):
             if glob.glob(args.dbsmarts):
-                ftype = args.dbsmarts.split('.')[-1]
-
                 smistr = pymol.write("smi")
             else:
                 print(('File ' + args.dbsmarts +
@@ -551,10 +542,11 @@ def dbsearch(rundir, args, globs):
         shutil.copy(plugin_path, 'plugindefines.txt')
         cmd = "sed -i '/nsmartsmatches/!b;n;c" + smistr + "' " + 'plugindefines.txt'
         mybash(cmd)
-    ### run substructure search ###
+    # run substructure search #
     nmols = '10000' if not args.dbnsearch else args.dbnsearch
     finger = 'FP2' if not args.dbfinger else args.dbfinger
     if int(nmols) > 3000 and args.gui:
+        from molSimplify.Classes.mWidgets import mQDialogInf
         qqb = mQDialogInf(
             'Warning', "Database search is going to take a few minutes. Please wait..OK?")
         qqb.setParent(args.gui.DBWindow)
@@ -563,13 +555,14 @@ def dbsearch(rundir, args, globs):
             smistr, nmols, args.dbbase, finger, squery, args)
         try:
             shutil.copy('simres.smi', outf)
-        except:
+        except (FileNotFoundError, shutil.SameFileError):
             pass
 
     if args.debug:
         print(('after similarity search, outf is ' + str(outputf)))
     if flag:
         if args.gui:
+            from molSimplify.Classes.mWidgets import mQDialogWarn
             qqb = mQDialogWarn('Warning', "No matches found in search..")
             qqb.setParent(args.gui.DBWindow)
         print("No matches found in search..")
@@ -581,16 +574,15 @@ def dbsearch(rundir, args, globs):
 
         print(('number of smiles strings BEFORE salt stripping: ' +
                mybash("cat " + outf + '| wc -l')))
-        flag = stripsalts(outf)
+        _ = stripsalts(outf)
         print(('number of smiles strings AFTER salt stripping: ' +
                mybash("cat " + outf + '| wc -l')))
-        # print('flag from salt stripping: ' + str(flag))
         print(('number of smiles strings BEFORE unique: ' +
                mybash("cat " + outf + '| wc -l')))
         cmd = obab + " -ismi " + outf + " -osmi -O " + outf + " --unique"
         # print('running:' + str(cmd))
         shutil.copy(outf, 'afterstrippingsalts.smi')
-        t = mybash(cmd)
+        _ = mybash(cmd)
         print(('number of smiles strings AFTER unique: ' +
                mybash("cat " + outf + '| wc -l')))
 
@@ -618,11 +610,11 @@ def dbsearch(rundir, args, globs):
     else:
         catoms = [1]
     # do pattern matching
-    nres = 50 if not args.dbresults else int(args.dbresults)
+    # nres = 50 if not args.dbresults else int(args.dbresults)
     if args.dbsmarts or args.dbhuman:
         print(('number of smiles strings BEFORE SMARTS filter: ' +
                mybash("cat " + outf + '| wc -l')))
-        flag = matchsmarts(smistr, outf, catoms, args)
+        _ = matchsmarts(smistr, outf, catoms, args)
         print(('number of smiles strings AFTER SMARTS filter: ' +
                mybash("cat " + outf + '| wc -l')))
     if args.debug:

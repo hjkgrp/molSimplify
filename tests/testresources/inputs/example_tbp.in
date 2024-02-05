@@ -1,0 +1,7 @@
+-core Fe
+-geo tbp
+-lig methyl water
+-ligocc 4,1
+-ligloc True
+-keepHs True
+-ffoption BA

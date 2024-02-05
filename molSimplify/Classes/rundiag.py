@@ -5,8 +5,6 @@
 #
 #  Department of Chemical Engineering, MIT
 
-from molSimplify.Classes.atom3D import atom3D
-from molSimplify.Classes.globalvars import globalvars
 
 class run_diag:
     """Class of run diagnostic information to automated decision making and property prediction
@@ -15,7 +13,6 @@ class run_diag:
     # Constructor
     #  @param self The object pointer
     def __init__(self):
-        globs = globalvars()
         self.sanity_is_set = False  # flag to indicate if properties
         # have been written to this file
         self.ANN_is_set = False
@@ -90,7 +87,7 @@ class run_diag:
         ----------
             dict_bl : dict, optional
                 Dictionary with ANN bond lengths.
-        
+
         """
         if not self.bl_is_set:
             self.bl_is_set = True
@@ -103,7 +100,7 @@ class run_diag:
         ----------
             mol : mol3D
                 mol3D class instance for optimized molecule.
-        
+
         """
         if not self.mol_is_set:
             self.mol_is_set = True
@@ -119,7 +116,7 @@ class run_diag:
         ----------
             path : str
                 Path for location to write the report.
-        
+
         """
         report = []
         if (not self.sanity_is_set) and (not self.ANN_is_set) and (not self.bl_is_set):

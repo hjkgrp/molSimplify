@@ -1,0 +1,9 @@
+-core co
+-geometry tertrahedral
+-coord 4
+-lig bipy bipy
+-ligocc 1 1
+-ff MMFF94
+-ffoption N
+-spin 1
+-oxstate II
