@@ -88,6 +88,10 @@ def tcgen(args, strfiles, method):
                  'spinmult': '1',
                  'charge': '0',
                  'gpus': '1',
+                 'dftgrid': '2',
+                 'dftd': 'd3',
+                 'nstep': '500',
+                 'precision': 'double'
                  }
     # if multiple methods requested generate c directories
     # Overwrite plus add any new dictionary keys from commandline input.
@@ -197,7 +201,7 @@ def tcgen(args, strfiles, method):
     # Now we're ready to start building the input file
     if not args.jobdir:
         for i, jobd in enumerate(jobdirs):
-            output = open(jobd+'/terachem_input', 'w')
+            output = open(jobd+'/' + coordfs[i][:-4] + '.in', 'w')
             output.write('# file created with %s\n' % globs.PROGRAM)
             jobparams['coordinates'] = coordfs[i]
             for keys in list(jobparams.keys()):
@@ -225,7 +229,7 @@ def tcgen(args, strfiles, method):
             if args.name:
                 output = open(jobd + '/'+args.name + '.in', 'w')
             else:
-                output = open(jobd+'/terachem_input', 'w')
+                output = open(jobd+'/' + coordfs[i][:-4] + '.in', 'w')
             output.write('# file created with %s\n' % globs.PROGRAM)
             jobparams['coordinates'] = coordfs[i]
             for keys in list(jobparams.keys()):

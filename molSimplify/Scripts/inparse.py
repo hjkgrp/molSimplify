@@ -1385,7 +1385,7 @@ def parseinputs_inputgen(*p):
     parser.add_argument(
         "-qccode", help="Code to use, only terachem (default), GAMESS and qchem are currently supported", default='terachem')
     parser.add_argument(
-        "-runtyp", help="Run type (energy - default, minimize)", default='energy')
+        "-runtyp", help="Run type (energy, minimize - default)", default='minimize')
     parser.add_argument(
         "-method", help="Terachem method (e.g. b3lyp - default)", default=['b3lyp'])
     parser.add_argument(

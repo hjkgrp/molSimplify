@@ -35,9 +35,10 @@ def sgejobgen(args, jobdirs):
             jobname = args.jname+str(args.jid)
             #jobname = jobname[:8]
         else:
-            jobname = 'job'+str(args.jid)
+            # jobname = 'job'+str(args.jid)
+            jobname = [f for f in os.listdir(job) if f.endswith('.xyz')][0][:-4]
         args.jid += 1
-        output = open(job+'/'+'jobscript', 'w')
+        output = open(job+'/'+jobname+'_jobscript', 'w')
         output.write('#$ -S /bin/bash\n')
         output.write('#$ -N %s\n' % (jobname))
         output.write('#$ -R y\n')
@@ -107,7 +108,7 @@ def sgejobgen(args, jobdirs):
                         tc = True
             if not tc:
                 output.write(
-                    'terachem terachem_input > $SGE_O_WORKDIR/opttest.out')
+                    'terachem ' + jobname + '.in > $SGE_O_WORKDIR/' + jobname + '.out')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
             qch = False
@@ -163,9 +164,10 @@ def slurmjobgen(args, jobdirs):
             jobname = args.jname+str(args.jid)
             jobname = jobname[:8]
         else:
-            jobname = 'job'+str(args.jid)
+            # jobname = 'job'+str(args.jid)
+            jobname = [f for f in os.listdir(job) if f.endswith('.xyz')][0][:-4]
         args.jid += 1
-        output = open(job+'/'+'jobscript', 'w')
+        output = open(job+'/'+jobname+'_jobscript', 'w')
         output.write('#!/bin/bash\n')
         output.write('#SBATCH --job-name=%s\n' % (jobname))
         output.write('#SBATCH --output=batch.log\n')
@@ -214,7 +216,7 @@ def slurmjobgen(args, jobdirs):
                     if 'terachem' in jc:
                         tc = True
             if not tc:
-                output.write('terachem terachem_input > tc.out')
+                output.write('terachem ' + jobname + '.in > ' + jobname + '.out')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
             qch = False
