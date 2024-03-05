@@ -90,6 +90,15 @@ def tcgen(args, strfiles, method):
                  'charge': '0',
                  'gpus': '1',
                  }
+    if args.jobmanager:
+        jobparams.update(
+            {
+                'dftgrid': '2',
+                'dftd': 'd3',
+                'nstep': '500',
+                'precision': 'double'
+            }
+        )
     # if multiple methods requested generate c directories
     # Overwrite plus add any new dictionary keys from commandline input.
     for xyzf in strfiles:
@@ -198,7 +207,10 @@ def tcgen(args, strfiles, method):
     # Now we're ready to start building the input file
     if not args.jobdir:
         for i, jobd in enumerate(jobdirs):
-            with open(jobd+'/terachem_input', 'w') as output:
+            output_name = "terachem_input"
+            if args.jobmanager:
+                output_name = coordfs[i][:-4] + '.in'
+            with open(f'{jobd}/{output_name}', 'w') as output:
                 output.write('# file created with %s\n' % globs.PROGRAM)
                 jobparams['coordinates'] = coordfs[i]
                 for keys in list(jobparams.keys()):
@@ -222,11 +234,12 @@ def tcgen(args, strfiles, method):
     elif args.jobdir:
         for i, jobd in enumerate(jobdirs):
             print(('jobd is ' + jobd))
+            output_filename = "terachem_input"
             if args.name:
-                output_filename = jobd + '/'+args.name + '.in'
-            else:
-                output_filename = jobd+'/terachem_input'
-            with open(output_filename, 'w') as output:
+                output_filename = args.name + '.in'
+            elif args.jobmanager:
+                output_filename = coordfs[i][:-4] + '.in'
+            with open(f'{jobd}/{output_filename}', 'w') as output:
                 output.write('# file created with %s\n' % globs.PROGRAM)
                 jobparams['coordinates'] = coordfs[i]
                 for keys in list(jobparams.keys()):

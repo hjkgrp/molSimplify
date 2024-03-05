@@ -8,7 +8,7 @@
 # Generates jobscripts for SGE queueing system
 #  @param args Namespace of arguments
 #  @param jobdirs Subdirectories for jobscript placement
-
+import os
 
 def sgejobgen(args, jobdirs):
     # consolidate lists
@@ -27,6 +27,8 @@ def sgejobgen(args, jobdirs):
         if args.jname:
             jobname = args.jname+str(args.jid)
             # jobname = jobname[:8]
+        elif args.jobmanager:
+            jobname = [f for f in os.listdir(job) if f.endswith('.xyz')][0][:-4]
         else:
             jobname = 'job'+str(args.jid)
         args.jid += 1
@@ -102,8 +104,13 @@ def sgejobgen(args, jobdirs):
                     if 'terachem' in jc:
                         tc = True
             if not tc:
+                terachem_in = "terachem_input"
+                terachem_out = "opttest.out"
+                if args.jobmanager:
+                    terachem_in = f"{jobname}.in"
+                    terachem_out = f"{jobname}.out"
                 output.append(
-                    'terachem terachem_input > $SGE_O_WORKDIR/opttest.out\n')
+                    f'terachem {terachem_in} > $SGE_O_WORKDIR/{terachem_out}\n')
             output.append('\nsleep 30\n')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
@@ -136,7 +143,10 @@ def sgejobgen(args, jobdirs):
         else:
             print(
                 'Not supported QC code requested. Please input execution command manually')
-        with open(job+'/'+'jobscript', 'w') as f:
+        output_name = "jobscript"
+        if args.jobmanager:
+            output_name = f"{jobname}_jobscript"
+        with open(f'{job}/{output_name}', 'w') as f:
             f.writelines(output)
 
 # Generates jobscripts for SLURM queueing system
@@ -160,7 +170,9 @@ def slurmjobgen(args, jobdirs):
         # form jobscript identifier
         if args.jname:
             jobname = args.jname+str(args.jid)
-            jobname = jobname[:8]
+            # jobname = jobname[:8]
+        elif args.jobmanager:
+            jobname = [f for f in os.listdir(job) if f.endswith('.xyz')][0][:-4]
         else:
             jobname = 'job'+str(args.jid)
         args.jid += 1
@@ -213,7 +225,12 @@ def slurmjobgen(args, jobdirs):
                     if 'terachem' in jc:
                         tc = True
             if not tc:
-                output.append('terachem terachem_input > tc.out\n')
+                terachem_in = "terachem_input"
+                terachem_out = "tc.out"
+                if args.jobmanager:
+                    terachem_in = f"{jobname}.in"
+                    terachem_out = f"{jobname}.out"
+                output.append(f'terachem {terachem_in} > {terachem_out}\n')
         elif args.qccode and ('gam' in args.qccode.lower() or 'qch' in args.qccode.lower()):
             gm = False
             qch = False
@@ -243,5 +260,8 @@ def slurmjobgen(args, jobdirs):
         else:
             print(
                 'No supported QC code requested. Please input execution command manually')
-        with open(job+'/'+'jobscript', 'w') as f:
+        output_name = "jobscript"
+        if args.jobmanager:
+            output_name = f"{jobname}_jobscript"
+        with open(f'{job}/{output_name}', 'w') as f:
             f.writelines(output)

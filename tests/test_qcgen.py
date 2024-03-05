@@ -18,7 +18,8 @@ def test_qcgen_defaults(resource_path_root, gen_function, default_name, tmpdir):
                      method=None, oxstate='II', remoption=None, gbasis=None,
                      correlation=None, unrestricted=None, bsep=None,
                      ngauss=None, ndfunc=None, npfunc=None, sysoption=None,
-                     ctrloption=None, scfoption=None, statoption=None)
+                     ctrloption=None, scfoption=None, statoption=None,
+                     jobmanager=False)
     xyzfile = resource_path_root / "inputs" / "qcgen" / "FeH2O6.xyz"
     # Copy xyz file to tmpdir
     shutil.copy(xyzfile, tmpdir / 'FeH2O6.xyz')

@@ -1113,7 +1113,9 @@ def parseinputs_basic(*p):
         "-coord", help="coordination such as 4,5,6", action="store_true")
     parser.add_argument("-geometry", help=f"geometry; currently available ones are {', '.join(getgeoms()[2])} which correspond to {', '.join(getgeoms()[1])}", action="store_true")
     parser.add_argument("-geo", help=f"geometry; currently available ones are {', '.join(getgeoms()[2])} which correspond to {', '.join(getgeoms()[1])}", action="store_true")
-    parser.add_argument("-lig", help="ligands to be included in complex; ligands.dict options display with command `molsimplify -h liganddict`")
+    parser.add_argument(
+        "-lig",
+        help="ligands to be included in complex; ligands.dict options display with command `molsimplify -h liganddict`")
     parser.add_argument(
         "-ligocc", help="number of corresponding ligands", action="store_true")  # e.g. 1,2,1
     parser.add_argument("-spin", help="Spin multiplicity (e.g., 1 for singlet)")
@@ -1190,6 +1192,8 @@ def parseinputs_advanced(*p):
         "-stereos", help='works in combination with -isomers. generates a mirror image of each isomer complex')
     parser.add_argument(
         "-reportonly", help='add this flag if you just want the report, without actual structure generation. Currently does not support pentadentates.')
+    parser.add_argument(
+        "-jobmanager", help='use jobmanager naming convention.', default=False)
     if len(p) == 1:  # only one input, printing help only
         args = parser.parse_args()
         return args
@@ -1277,14 +1281,18 @@ def parseinputs_slabgen(*p):
 def parseinputs_autocorr(*p):
     parser = p[0]
     parser.add_argument(
-        '-correlate',help="path to file for analysis, should contain name,value,folder where name.xyz geo is located on each line")  # 0
+        '-correlate',
+        help="path to file for analysis, should contain name,value,folder where name.xyz geo is located on each line")
     parser.add_argument(
         '-lig_only', action="store_true",
         help="set to true to force only whole ligand descriptors (if metal is constant etc)")  # 1
     parser.add_argument(
         '-simple', help="set to true to force only simple default autocorrelations")  # 1
     parser.add_argument(
-        '-max_descriptors', help="maxium number of descriptors to to use, not reccomended. The algorithm chooses the most representative set and removing some of these can degrade the model")  # 0
+        '-max_descriptors',
+        help="maxium number of descriptors to to use, not reccomended. "
+        "The algorithm chooses the most representative set and removing some of these can degrade the model"
+    )  # 0
     if len(p) == 1:  # only one input, printing help only
         args = parser.parse_args()
         return args
@@ -1644,7 +1652,10 @@ def parseinputs_ligdict(*p):
     available_ligands = getligs().split(' ')
     available_ligands.sort()  # Sorting the ligands in alphabetical order
     available_ligands = "\n".join(available_ligands)  # Converting back from a list to a string
-    available_ligands = "ligands to be included in complex; available ligands in the ligands dictionary at molSimplify/molSimplify/Ligands/ligands.dict are: \n%s}" % available_ligands
+    available_ligands = (
+        "ligands to be included in complex; available ligands in the ligands dictionary at "
+        "molSimplify/molSimplify/Ligands/ligands.dict are: \n%s}" % available_ligands
+    )
 
     parser.add_argument(
         "-lig LIG", help=available_ligands, action="store_true")
