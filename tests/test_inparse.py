@@ -41,7 +41,8 @@ def test_parseinputs_advanced(monkeypatch):
                     charge=None, decoration=False, decoration_index=False,
                     distort='0', genall=False, isomers=None, langles=False,
                     ligalign=False, nconfs='1', oldANN=None, pangles=False,
-                    reportonly=None, scoreconfs=False, stereos=None)
+                    reportonly=None, scoreconfs=False, stereos=None,
+                    jobmanager=False)
     assert args.__dict__ == defaults
 
 

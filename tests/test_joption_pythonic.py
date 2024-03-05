@@ -18,7 +18,7 @@ def test_joption_pythonic(tmpdir, resource_path_root):
         '-modules': "cuda,terachem",
         '-joption': "-fin terachem_input, -fin *.xyz, -fout scr/"
     }
-    startgen_pythonic(input_dict_homo, write=1)
+    startgen_pythonic(input_dict_homo, write=True)
     with open(str(tmpdir) + "/" + out_dir, 'r') as f_in:
         data1 = f_in.readlines()
     with open(resource_path_root / "refs" / "joption_pythonic_jobscript", 'r') as f_in:
