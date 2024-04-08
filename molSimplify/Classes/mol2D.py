@@ -1,5 +1,6 @@
 import networkx as nx
 import numpy as np
+import os
 from packaging import version
 from molSimplify.Classes.globalvars import globalvars
 
@@ -53,10 +54,11 @@ class Mol2D(nx.Graph):
     @classmethod
     def from_mol2_file(cls, filename):
         mol = cls()
-
-        with open(filename, "r") as fin:
-            lines = fin.readlines()
-
+        if os.path.exists(str(filename)):
+            with open(filename, "r") as fin:
+                lines = fin.readlines()
+        else:
+            lines = filename.readlines()
         # Read counts line:
         sp = lines[2].split()
         n_atoms = int(sp[0])
