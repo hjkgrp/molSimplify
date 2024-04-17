@@ -67,6 +67,9 @@ def addtoldb(smimol, sminame, smident, smicat, smigrps, smictg, ffopt, smichg=No
         else:
             cats = [int(a)-1 for a in ccats]
         cs = [str(a) for a in cats]
+        # allows for pi-bonded ligands to be added
+        if smident == 1 and len(cs) > 1:
+            cs.append('pi')
         css = ' '.join(cs)
         # convert to unicode
         smimol = unicodedata.normalize(
