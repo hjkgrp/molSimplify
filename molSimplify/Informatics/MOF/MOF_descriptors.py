@@ -841,7 +841,7 @@ def dist_mat_comp(X):
 def detect_1D_rod(molcif, allatomtypes, cpar, logpath, name, adj_matrix, fcoords, cell_v):
     """
     Writes to the log file if the MOF is likely to contain a 1D rod.
-    1D rod: metals ions connected to form an infinite chain. 
+    1D rod: metals ions connected to form an infinite chain.
     Metals at most separated by one atom bondwise (e.g., M-O-M)
 
     Parameters
@@ -857,7 +857,7 @@ def detect_1D_rod(molcif, allatomtypes, cpar, logpath, name, adj_matrix, fcoords
     name : str
         The name of the cif being analyzed.
     adj_matrix : scipy.sparse.csr.csr_matrix
-        1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).   
+        1 represents a bond, 0 represents no bond. Shape is (number of atoms, number of atoms).
     fcoords : numpy.ndarray
         The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
     cell_v : numpy.ndarray
@@ -868,18 +868,18 @@ def detect_1D_rod(molcif, allatomtypes, cpar, logpath, name, adj_matrix, fcoords
     None
 
     """
-    
+
     # Assumption: If a MOF contains 1D rod SBUs, all SBUs in the MOF are 1D rods
     # Thus, can just branch out from an arbitrary metal in the MOF for the check
 
     metal_idxs = molcif.findMetal(transition_metals_only=False)
     current_idx = metal_idxs[0] # arbitrary metal
     current_pos = fcoords[current_idx]
-    
+
     # List of fractional coordinates of metal atoms in the current prospective 1D rod
     metal_pos = [
     list(current_pos),
-    ] 
+    ]
 
     idxs_to_check = []
 
@@ -927,8 +927,8 @@ def detect_1D_rod(molcif, allatomtypes, cpar, logpath, name, adj_matrix, fcoords
 
     metal_pos = np.array(metal_pos)
     max_dist = max(
-        max(metal_pos[:,0]) - min(metal_pos[:,0]), 
-        max(metal_pos[:,1]) - min(metal_pos[:,1]), 
+        max(metal_pos[:,0]) - min(metal_pos[:,0]),
+        max(metal_pos[:,1]) - min(metal_pos[:,1]),
         max(metal_pos[:,2]) - min(metal_pos[:,2]),
         )
 
