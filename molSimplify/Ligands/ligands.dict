@@ -255,28 +255,3 @@ valine:valine.mol,Val,3,build functionalize aminoacid,BA,0
 valineB:valine.mol,Val,3 17,build functionalize aminoacid,BA,0
 water:water.mol,wat,0,build small,BA,0
 x:x.mol,x,0,all small,N,0
-CN01:CN01.xyz,CN01,7 2, build bidentate, A, -1
-CN02:CN02.xyz,CN02,9 6, build bidentate, A, -1
-CN03:CN03.xyz,CN03,9 3, build bidentate, A, -1
-CN04:CN04.xyz,CN04,9 3, build bidentate, A, -1
-CN05:CN05.xyz,CN05,1 10, build bidentate, A, -1
-CN06:CN06.xyz,CN06,7 2, build bidentate, A, -1
-CN07:CN07.xyz,CN07,7 6, build bidentate, A, -1
-NN01:NN01.xyz,NN01,5 14, build bidentate, A, 0
-NN02:NN02.xyz,NN02,14 23, build bidentate, A, 0
-NN03:NN03.xyz,NN03,16 25, build bidentate, A, 0
-NN04:NN04.xyz,NN04,20 29, build bidentate, A, 0
-NN05:NN05.xyz,NN05,2 27, build bidentate, A, 0
-NN06:NN06.xyz,NN06,18 27, build bidentate, A, 0
-NN07:NN07.xyz,NN07,2 26, build bidentate, A, 0
-NN08:NN08.xyz,NN08,2 25, build bidentate, A, 0
-NN09:NN09.xyz,NN09,4 11, build bidentate, A, 0
-NN10:NN10.xyz,NN10,2 21, build bidentate, A, 0
-NN11:NN11.xyz,NN11,16 19, build bidentate, A, 0
-NN12:NN12.xyz,NN12,24 27, build bidentate, A, 0
-NN13:NN13.xyz,NN13,2 21, build bidentate, A, 0
-NN14:NN14.xyz,NN14,2 26, build bidentate, A, 0
-NN15:NN15.xyz,NN15,2 25, build bidentate, A, 0
-NN16:NN16.xyz,NN16,2 25, build bidentate, A, 0
-NN17:NN17.xyz,NN17,2 33, build bidentate, A, 0
-NN18:NN18.xyz,NN18,14 23, build bidentate, A, 0
