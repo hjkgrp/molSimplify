@@ -140,7 +140,7 @@ def checkinput(args, calctype="base"):
             if args.coord and (not args.geometry or (args.geometry not in geomnames and args.geometry not in geomshorts)):
                 print(('WARNING: No or unknown coordination geometry specified. Defining coordination geometry based on found coordination number: ' +
                       globs.defaultgeometry[int(args.coord)][1]))
-                args.geometry = globs.defaultgeometry[int(args.coord)][0]
+                args.geometry = globs.defaultgeometry[int(args.coord)][1]
             if args.geometry and not args.coord:
                 if args.geometry not in geomnames and args.geometry not in geomshorts:
                     print(
