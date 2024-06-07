@@ -600,7 +600,7 @@ class globalvars(metaclass=Singleton):
         # Default geometries for each coordination number if none specified
         self.defaultgeometry = {8: ('sqap', 'square_antiprismatic'), 7: ('pbp', 'pentagonal_bipyramidal'),
                                 6: ('oct', 'octahedral'), 5: ('tbp', 'trigonal bipyramidal'), 4: ('thd', 'tetrahedral'),
-                                3: ('trigonal planar', 'tpl'), 2: ('linear', 'li'), 1: ('one', 'one')}
+                                3: ('tpl', 'trigonal planar'), 2: ('li', 'linear'), 1: ('one', 'one')}
         # Default oxidation states for elements
         self.defaultoxstate = {
             'au': 'I', 'gold': 'I', 'scandium': 'III', 'sc': 'III', 'ti': 'IV', 'titanium': 'IV'}
