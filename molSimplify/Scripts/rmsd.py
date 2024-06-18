@@ -484,7 +484,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     - translating them both such that the center of mass is at the origin
     - projecting the coordinates onto the principal axes
     - reordering x, y, z such that Ixx < Iyy < Izz
-    (will allow for 180degree rotations about x, y, z, as well as 
+    (will allow for 180degree rotations about x, y, z, as well as
     reflections about the xy, xz, yz, and all three of those planes)
 
     Parameters
@@ -503,7 +503,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
         rmsd : float
             Resulting RMSD from aligning and rotating.
     """
-    
+
     mol1_atoms = mol1.symvect()
     cm1 = mol1.centermass()
     pmom1, P1 = mol1.principal_moments_of_inertia(return_transform=True)
@@ -517,7 +517,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     #note: the above aligns the largest moment of inertia with z, the smallest with x
     #does not account for whether it is aligned with + or - part of an axis
     #so, have to allow for 180deg rotations and reflections as well
-    
+
     rmsd = np.inf
     x_rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]]) #180 about x
     y_rot = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #180 about y
@@ -525,7 +525,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     x_ref = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) #reflect about yz
     y_ref = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) #reflect about xz
     z_ref = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]]) #reflect about xy
-    a_ref = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]]) #reflect all 3 
+    a_ref = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]]) #reflect all 3
     transformations = [
         np.eye(3), #no change
         x_rot, y_rot, z_rot,
