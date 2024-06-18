@@ -2532,6 +2532,32 @@ class mol3D:
             if distance(cm, atom.coords()) > maxd:
                 maxd = distance(cm, atom.coords())
         return maxd
+    
+    def moments_of_inertia(self):
+        """
+        Determines the moments of inertia for the object, in the specified coordinates
+        (after centering about the center of mass)
+
+        Returns
+        -------
+            I : np.array
+                Moments of inertia tensor
+        """
+        I = np.zeros((3, 3))
+        #center about the center of mass
+        cm = self.centermass()
+        for atom in self.atoms:
+            atom.setcoords(np.array(atom.coords()) - cm)
+            I[0, 0] += atom.mass * (atom.coords()[1]**2 + atom.coords()[2]**2) #xx
+            I[1, 1] += atom.mass * (atom.coords()[0]**2 + atom.coords()[2]**2) #yy
+            I[2, 2] += atom.mass * (atom.coords()[0]**2 + atom.coords()[1]**2) #zz
+            I[0, 1] -= atom.mass * (atom.coords()[0] * atom.coords()[1]) #xy
+            I[1, 0] -= atom.mass * (atom.coords()[0] * atom.coords()[1]) #yx
+            I[0, 2] -= atom.mass * (atom.coords()[2] * atom.coords()[0]) #xz
+            I[2, 0] -= atom.mass * (atom.coords()[2] * atom.coords()[0]) #zx
+            I[1, 2] -= atom.mass * (atom.coords()[1] * atom.coords()[2]) #yz
+            I[2, 1] -= atom.mass * (atom.coords()[1] * atom.coords()[2]) #zy
+        return I
 
     def overlapcheck(self, mol, silence=False):
         """
@@ -2630,6 +2656,39 @@ class mol3D:
             if len(error_idx[i]) > 0:
                 molBOMat[error_idx[i].tolist()[0], error_idx[i].tolist()[1]] = 1
         return (molBOMat)
+    
+    def principal_moments_of_inertia(self, return_transform=False):
+        """
+        Returns the diagonalized moments of inertia tensor, and optionally the
+        matrices required to diagonalize this tensor.
+
+        Parameters
+        ----------
+            return_transform : bool
+                Flag for if the matrices used to diagonalize I should be returned.
+                Default is False.
+        Returns
+        -------
+            pmom : np.array
+                3x1 array of the principal moments of inertia, in the provided Cartesian frame.
+            P : np.array
+                Rotation matrix to rotate original molecule (after reordering using index_arr)
+                in order to have the axes correspond to the principal moments of inertia
+                Use by running atom.setcoords(P.dot(atom.coords())) for each atom
+
+        """
+        I = self.moments_of_inertia()
+        #diagonalize the moments of inertia
+        eigvals, eigvecs = np.linalg.eig(I)
+        D = np.linalg.inv(eigvecs) @ I @ eigvecs
+        pmom = np.diag(D)
+        #transformation for the original coordinates defined as inverse of eigenvectors
+        P = np.linalg.inv(eigvecs)
+
+        if return_transform:
+            return pmom, P
+        else:
+            return pmom
 
     def printxyz(self):
         """

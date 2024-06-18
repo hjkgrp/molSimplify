@@ -372,7 +372,8 @@ def reorder_distance(p_atoms, q_atoms, p_coord, q_coord):
 
 
 def rmsd_reorder_rotate(p_atoms, q_atoms, p_coord, q_coord,
-                        rotation="kabsch", reorder="hungarian"):
+                        rotation="kabsch", reorder="hungarian",
+                        translate=True):
     """Reorder and rotate for RMSD.
 
     Parameters
@@ -389,6 +390,10 @@ def rmsd_reorder_rotate(p_atoms, q_atoms, p_coord, q_coord,
             Rotation method. Default is kabsch.
         reorder : str, optional
             Reorder method. Default is hungarian.
+        translate : bool, optional
+            Whether or not the molecules should be translated
+            such that their centroid is at the origin.
+            Default is True.
 
     Returns
     -------
@@ -404,11 +409,11 @@ def rmsd_reorder_rotate(p_atoms, q_atoms, p_coord, q_coord,
         print(("Warning: Atom types do not match!",
                np.unique(p_atoms), np.unique(q_atoms)))
         return 1000
-
-    p_cent = centroid(p_coord)
-    q_cent = centroid(q_coord)
-    p_coord -= p_cent
-    q_coord -= q_cent
+    if translate:
+        p_cent = centroid(p_coord)
+        q_cent = centroid(q_coord)
+        p_coord -= p_cent
+        q_coord -= q_cent
 
     # set rotation method
     if rotation.lower() == "kabsch":
@@ -472,6 +477,77 @@ def rigorous_rmsd(mol1, mol2, rotation: str = "kabsch",
                                       rotation=rotation, reorder=reorder)
     return result_rmsd
 
+def align_rmsd(mol1, mol2, rotation: str = "kabsch",
+               reorder: str = "hungarian") -> float:
+    """
+    Computes the RMSD between 2 mol objects after:
+    - translating them both such that the center of mass is at the origin
+    - projecting the coordinates onto the principal axes
+    - reordering x, y, z such that Ixx < Iyy < Izz
+
+    Parameters
+    ----------
+        mol1 : mol3D
+            mol3D instance of initial molecule.
+        mol2 : np.mol3D
+            mol3D instance of final molecule.
+        rotation : str, optional
+            Rotation method. Default is kabsch.
+        reorder : str, optional
+            Reorder method. Default is hungarian.
+
+    Returns
+    -------
+        rmsd : float
+            Resulting RMSD from aligning and rotating.
+    """
+    
+    mol1_atoms = mol1.symvect()
+    cm1 = mol1.centermass()
+    pmom1, P1 = mol1.principal_moments_of_inertia(return_transform=True)
+    for atom in mol1.atoms:
+        atom.setcoords(np.array(atom.coords()) - cm1) #center
+        atom.setcoords(P1.dot(atom.coords())) #project onto principal moments
+        atom.setcoords(np.array(atom.coords())[np.argsort(pmom1)].flatten())
+    mol1_coords = mol1.coordsvect()
+
+    #note: the above aligns the largest moment of inertia with z, the smallest with x
+    #does not account for whether it is aligned with + or - part of an axis
+    #so, have to allow for 180deg rotations and reflections as well
+    
+    rmsd = np.inf
+    x_rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]]) #180 about x
+    y_rot = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #180 about y
+    z_rot = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]) #180 about z
+    x_ref = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) #reflect about yz
+    y_ref = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) #reflect about xz
+    z_ref = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]]) #reflect about xy
+    a_ref = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]]) #reflect all 3 
+    transformations = [
+        np.eye(3), #no change
+        x_rot, y_rot, z_rot,
+        x_ref, y_ref, z_ref, a_ref
+    ]
+    mol2_atoms = mol2.symvect()
+    cm2 = mol2.centermass()
+    pmom2, P2 = mol2.principal_moments_of_inertia(return_transform=True)
+    for atom in mol2.atoms:
+        atom.setcoords(np.array(atom.coords()) - cm2) #center
+        atom.setcoords(P2.dot(atom.coords())) #project onto principal moments
+        atom.setcoords(np.array(atom.coords())[np.argsort(pmom2)].flatten())
+    for transformation in transformations:
+        for atom in mol2.atoms:
+            atom.setcoords(transformation @ np.array(atom.coords()))
+        mol2_coords = mol2.coordsvect()
+        #revert rotations
+        for atom in mol2.atoms:
+            atom.setcoords(np.linalg.inv(transformation) @ np.array(atom.coords()))
+
+        result_rmsd = rmsd_reorder_rotate(mol1_atoms, mol2_atoms, mol1_coords, mol2_coords,
+                                          rotation=rotation, reorder=reorder, translate=True)
+        if result_rmsd < rmsd:
+            rmsd = result_rmsd
+    return rmsd
 
 def test_case():
     p_atoms = np.array(["N", "H", "H", "H"])
