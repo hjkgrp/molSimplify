@@ -2532,7 +2532,7 @@ class mol3D:
             if distance(cm, atom.coords()) > maxd:
                 maxd = distance(cm, atom.coords())
         return maxd
-    
+
     def moments_of_inertia(self):
         """
         Determines the moments of inertia for the object, in the specified coordinates
@@ -2656,7 +2656,7 @@ class mol3D:
             if len(error_idx[i]) > 0:
                 molBOMat[error_idx[i].tolist()[0], error_idx[i].tolist()[1]] = 1
         return (molBOMat)
-    
+
     def principal_moments_of_inertia(self, return_transform=False):
         """
         Returns the diagonalized moments of inertia tensor, and optionally the
