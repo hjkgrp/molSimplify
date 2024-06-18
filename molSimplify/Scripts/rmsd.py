@@ -484,6 +484,8 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     - translating them both such that the center of mass is at the origin
     - projecting the coordinates onto the principal axes
     - reordering x, y, z such that Ixx < Iyy < Izz
+    (will allow for 180degree rotations about x, y, z, as well as 
+    reflections about the xy, xz, yz, and all three of those planes)
 
     Parameters
     ----------
@@ -508,6 +510,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     for atom in mol1.atoms:
         atom.setcoords(np.array(atom.coords()) - cm1) #center
         atom.setcoords(P1.dot(atom.coords())) #project onto principal moments
+        #sort the coordinates so that the largest princiipal moment is first
         atom.setcoords(np.array(atom.coords())[np.argsort(pmom1)].flatten())
     mol1_coords = mol1.coordsvect()
 
@@ -534,12 +537,13 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     for atom in mol2.atoms:
         atom.setcoords(np.array(atom.coords()) - cm2) #center
         atom.setcoords(P2.dot(atom.coords())) #project onto principal moments
+        #sort the coordinates so that the largest princiipal moment is first
         atom.setcoords(np.array(atom.coords())[np.argsort(pmom2)].flatten())
     for transformation in transformations:
         for atom in mol2.atoms:
             atom.setcoords(transformation @ np.array(atom.coords()))
         mol2_coords = mol2.coordsvect()
-        #revert rotations
+        #revert transformations
         for atom in mol2.atoms:
             atom.setcoords(np.linalg.inv(transformation) @ np.array(atom.coords()))
 

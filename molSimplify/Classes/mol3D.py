@@ -2672,7 +2672,7 @@ class mol3D:
             pmom : np.array
                 3x1 array of the principal moments of inertia, in the provided Cartesian frame.
             P : np.array
-                Rotation matrix to rotate original molecule (after reordering using index_arr)
+                Rotation matrix to rotate original molecule
                 in order to have the axes correspond to the principal moments of inertia
                 Use by running atom.setcoords(P.dot(atom.coords())) for each atom
 
