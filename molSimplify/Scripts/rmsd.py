@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 from scipy.spatial.distance import cdist
-
+from molSimplify.Scripts.align import project_onto_principal_axes, rotate_onto_principal_axes
+from itertools import combinations
 
 def rmsd(V, W):
     """Calculate Root-mean-square deviation from two sets of vectors V and W.
@@ -477,12 +478,13 @@ def rigorous_rmsd(mol1, mol2, rotation: str = "kabsch",
                                       rotation=rotation, reorder=reorder)
     return result_rmsd
 
-def align_rmsd(mol1, mol2, rotation: str = "kabsch",
-               reorder: str = "hungarian") -> float:
+def align_rmsd_project(mol1, mol2, rotation: str = "kabsch",
+               reorder: str = "hungarian", verbose=False) -> float:
     """
     Computes the RMSD between 2 mol objects after:
     - translating them both such that the center of mass is at the origin
     - projecting the coordinates onto the principal axes
+        Note that the projection may lead to reflections, which will break chirality.
     - reordering x, y, z such that Ixx < Iyy < Izz
     (will allow for 180degree rotations about x, y, z, as well as
     reflections about the xy, xz, yz, and all three of those planes)
@@ -497,6 +499,9 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
             Rotation method. Default is kabsch.
         reorder : str, optional
             Reorder method. Default is hungarian.
+        verbose : bool, optional
+            Will show a warning if the principal moments of inertia are close in magnitude,
+            which could indicate an undesired ordering of the axes.
 
     Returns
     -------
@@ -505,18 +510,7 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     """
 
     mol1_atoms = mol1.symvect()
-    cm1 = mol1.centermass()
-    pmom1, P1 = mol1.principal_moments_of_inertia(return_transform=True)
-    for atom in mol1.atoms:
-        atom.setcoords(np.array(atom.coords()) - cm1) #center
-        atom.setcoords(P1.dot(atom.coords())) #project onto principal moments
-        #sort the coordinates so that the largest princiipal moment is first
-        atom.setcoords(np.array(atom.coords())[np.argsort(pmom1)].flatten())
-    mol1_coords = mol1.coordsvect()
-
-    #note: the above aligns the largest moment of inertia with z, the smallest with x
-    #does not account for whether it is aligned with + or - part of an axis
-    #so, have to allow for 180deg rotations and reflections as well
+    mol1_coords = project_onto_principal_axes(mol1)
 
     rmsd = np.inf
     x_rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]]) #180 about x
@@ -525,33 +519,124 @@ def align_rmsd(mol1, mol2, rotation: str = "kabsch",
     x_ref = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, 1]]) #reflect about yz
     y_ref = np.array([[1, 0, 0], [0, -1, 0], [0, 0, 1]]) #reflect about xz
     z_ref = np.array([[1, 0, 0], [0, 1, 0], [0, 0, -1]]) #reflect about xy
-    a_ref = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, -1]]) #reflect all 3
     transformations = [
         np.eye(3), #no change
         x_rot, y_rot, z_rot,
-        x_ref, y_ref, z_ref, a_ref
+        x_rot@y_rot, x_rot@z_rot, y_rot@z_rot,
+        x_rot@y_rot@z_rot,
+        x_ref, y_ref, z_ref,
+        x_ref@y_ref, x_ref@z_ref, y_ref@z_ref,
+        x_ref@y_ref@z_ref
     ]
-    mol2_atoms = mol2.symvect()
-    cm2 = mol2.centermass()
-    pmom2, P2 = mol2.principal_moments_of_inertia(return_transform=True)
-    for atom in mol2.atoms:
-        atom.setcoords(np.array(atom.coords()) - cm2) #center
-        atom.setcoords(P2.dot(atom.coords())) #project onto principal moments
-        #sort the coordinates so that the largest princiipal moment is first
-        atom.setcoords(np.array(atom.coords())[np.argsort(pmom2)].flatten())
-    for transformation in transformations:
-        for atom in mol2.atoms:
-            atom.setcoords(transformation @ np.array(atom.coords()))
-        mol2_coords = mol2.coordsvect()
-        #revert transformations
-        for atom in mol2.atoms:
-            atom.setcoords(np.linalg.inv(transformation) @ np.array(atom.coords()))
 
-        result_rmsd = rmsd_reorder_rotate(mol1_atoms, mol2_atoms, mol1_coords, mol2_coords,
+    mol2_atoms = mol2.symvect()
+    mol2_coords = project_onto_principal_axes(mol2)
+
+    for transformation in transformations:
+        transformed_mol2_coords = np.vstack([transformation @ mol2_coords[i, :] for i in range(len(mol2_coords))])
+
+        result_rmsd = rmsd_reorder_rotate(mol1_atoms, mol2_atoms, mol1_coords, transformed_mol2_coords,
                                           rotation=rotation, reorder=reorder, translate=True)
         if result_rmsd < rmsd:
             rmsd = result_rmsd
+
+    if verbose:
+        cutoff = 10 #How close moments have to be for a warning
+        pmom1 = mol1.principal_moments_of_inertia()
+        if np.abs(pmom1[0] - pmom1[1]) < cutoff or np.abs(pmom1[0] - pmom1[2]) < cutoff or np.abs(pmom1[1] - pmom1[2]) < cutoff:
+            print('The principal moments of the first mol3D are close in magnitude, and are:')
+            print(pmom1)
+            print('This may lead to improper orientation in some cases.')
+        pmom2 = mol2.principal_moments_of_inertia()
+        if np.abs(pmom2[0] - pmom2[1]) < cutoff or np.abs(pmom2[0] - pmom2[2]) < cutoff or np.abs(pmom2[1] - pmom2[2]) < cutoff:
+            print('The principal moments of the second mol3D are close in magnitude, and are:')
+            print(pmom2)
+            print('This may lead to improper orientation in some cases.')
+
+        #Can address improper rotations by also allowing 90 degree rotations, combinations (including 180 rotations as well)
+        
     return rmsd
+
+def align_rmsd_rotate(mol1, mol2, rotation: str = "kabsch",
+               reorder: str = "hungarian", verbose=False) -> float:
+    """
+    Computes the RMSD between 2 mol objects after:
+    - translating them both such that the center of mass is at the origin
+    - rotating them onto their principal axes
+    (will require 6 evaluations due to possible 180 degree rotations)
+
+    Parameters
+    ----------
+        mol1 : mol3D
+            mol3D instance of initial molecule.
+        mol2 : np.mol3D
+            mol3D instance of final molecule.
+        rotation : str, optional
+            Rotation method. Default is kabsch.
+        reorder : str, optional
+            Reorder method. Default is hungarian.
+        verbose : bool, optional
+            Will show a warning if the principal moments of inertia are close in magnitude,
+            which could indicate an undesired ordering of the axes.
+
+    Returns
+    -------
+        rmsd : float
+            Resulting RMSD from aligning and rotating.
+    """
+
+    #for the first mol object, get the symbols and atoms
+    mol1_atoms = mol1.symvect()
+    mol1_coords = rotate_onto_principal_axes(mol1)
+
+    for idx, atom in enumerate(mol1.atoms):
+        atom.setcoords(mol1_coords[idx, :])
+    #print(mol1.writexyz(None, symbsonly=True, writestring=True))
+
+    mol2_atoms = mol2.symvect()
+    mol2_coords = rotate_onto_principal_axes(mol2)
+
+    for idx, atom in enumerate(mol2.atoms):
+        atom.setcoords(mol2_coords[idx, :])
+    #print(mol2.writexyz(None, symbsonly=True, writestring=True))
+
+    #allow 180 degree rotations about each axis to catch if aligned to different sides
+    rmsd = np.inf
+    x_rot = np.array([[1, 0, 0], [0, -1, 0], [0, 0, -1]]) #180 about x
+    y_rot = np.array([[-1, 0, 0], [0, 1, 0], [0, 0, -1]]) #180 about y
+    z_rot = np.array([[-1, 0, 0], [0, -1, 0], [0, 0, 1]]) #180 about z
+    transformations = [
+        np.eye(3), #no change
+        x_rot, y_rot, z_rot,
+        x_rot@y_rot, x_rot@z_rot, y_rot@z_rot,
+        x_rot@y_rot@z_rot
+    ]
+
+    for transformation in transformations:
+        transformed_mol2_coords = np.vstack([transformation @ mol2_coords[i, :] for i in range(len(mol2_coords))])
+
+        result_rmsd = rmsd_reorder_rotate(mol1_atoms, mol2_atoms, mol1_coords, transformed_mol2_coords,
+                                          rotation=rotation, reorder=reorder, translate=True)
+        if result_rmsd < rmsd:
+            rmsd = result_rmsd
+    
+    if verbose:
+        cutoff = 10 #How close moments have to be for a warning
+        pmom1 = mol1.principal_moments_of_inertia()
+        if np.abs(pmom1[0] - pmom1[1]) < cutoff or np.abs(pmom1[0] - pmom1[2]) < cutoff or np.abs(pmom1[1] - pmom1[2]) < cutoff:
+            print('The principal moments of the first mol3D are close in magnitude, and are:')
+            print(pmom1)
+            print('This may lead to improper orientation in some cases.')
+        pmom2 = mol2.principal_moments_of_inertia()
+        if np.abs(pmom2[0] - pmom2[1]) < cutoff or np.abs(pmom2[0] - pmom2[2]) < cutoff or np.abs(pmom2[1] - pmom2[2]) < cutoff:
+            print('The principal moments of the second mol3D are close in magnitude, and are:')
+            print(pmom2)
+            print('This may lead to improper orientation in some cases.')
+
+        #Can address improper rotations by also allowing 90 degree rotations, combinations (including 180 rotations as well)
+        
+    return rmsd
+
 
 def test_case():
     p_atoms = np.array(["N", "H", "H", "H"])

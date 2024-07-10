@@ -2543,10 +2543,13 @@ class mol3D:
             I : np.array
                 Moments of inertia tensor
         """
+        copy = mol3D()
+        copy.copymol3D(self)
+
         I = np.zeros((3, 3))
         #center about the center of mass
         cm = self.centermass()
-        for atom in self.atoms:
+        for atom in copy.atoms:
             atom.setcoords(np.array(atom.coords()) - cm)
             I[0, 0] += atom.mass * (atom.coords()[1]**2 + atom.coords()[2]**2) #xx
             I[1, 1] += atom.mass * (atom.coords()[0]**2 + atom.coords()[2]**2) #yy
@@ -2657,10 +2660,10 @@ class mol3D:
                 molBOMat[error_idx[i].tolist()[0], error_idx[i].tolist()[1]] = 1
         return (molBOMat)
 
-    def principal_moments_of_inertia(self, return_transform=False):
+    def principal_moments_of_inertia(self, return_eigvecs=False):
         """
-        Returns the diagonalized moments of inertia tensor, and optionally the
-        matrices required to diagonalize this tensor.
+        Returns the principal moments of inertia, and optionally
+        the eigenvectors defining the principal axes.
 
         Parameters
         ----------
@@ -2671,22 +2674,18 @@ class mol3D:
         -------
             pmom : np.array
                 3x1 array of the principal moments of inertia, in the provided Cartesian frame.
-            P : np.array
-                Rotation matrix to rotate original molecule
-                in order to have the axes correspond to the principal moments of inertia
-                Use by running atom.setcoords(P.dot(atom.coords())) for each atom
+            eigvecs : np.array
+                3x3 array where each column is an eigenvector.
 
         """
         I = self.moments_of_inertia()
         #diagonalize the moments of inertia
-        eigvals, eigvecs = np.linalg.eig(I)
+        eigvals, eigvecs = np.linalg.eigh(I)
         D = np.linalg.inv(eigvecs) @ I @ eigvecs
         pmom = np.diag(D)
-        #transformation for the original coordinates defined as inverse of eigenvectors
-        P = np.linalg.inv(eigvecs)
 
-        if return_transform:
-            return pmom, P
+        if return_eigvecs:
+            return pmom, eigvecs
         else:
             return pmom
 
