@@ -1,4 +1,4 @@
-# import matplotlib.pyplot as plt
+from typing import Callable
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
 from packaging import version
