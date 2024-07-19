@@ -183,7 +183,7 @@ ox:oxalate.mol,oxate,1 4,build bidentate,A,-2
 oxo:oxygen.mol,oxo,0,build small,N,-2
 pcy3:PCy3.mol,pcy3,0,build bulky big,BA,0
 pentacyanopentadienide:pentacyanocyclopentadienide.mol,pcyanopent,1,build bulky,A,-1
-pf3:phosphorustrifluoride.mol,pf3,1,build small,BA,0
+pf3:pf3.mol2,pf3,1,build small,BA,0
 ph2-:ph2-.mol,ph2-,0,build functionalize small,N,-1
 ph3:ph3.mol,ph3,0,build functionalize small,N,0
 phen:phen.mol,phen,9 12,build bidentate,BA,0
