@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Scripts.geometry import rotate_around_axis
-from molSimplify.Scripts.rmsd import rigorous_rmsd, quaternion_rotate, align_rmsd
+from molSimplify.Scripts.rmsd import rigorous_rmsd, quaternion_rotate, align_rmsd_rotate
 from scipy.spatial.transform import Rotation
 
 
@@ -52,13 +52,13 @@ def test_methane_rotation(atol=1e-3):
     # rotate 180 degrees around the z axis
     mol2 = rotate_around_axis(mol2, [0.0, 0.0, 0.0], [0.0, 0.0, 1.0], 180)
     #assert rigorous_rmsd(mol1, mol2, reorder='none') < atol
-    assert align_rmsd(mol1, mol2, reorder='none') < atol
+    assert align_rmsd_rotate(mol1, mol2, reorder='none') < atol
 
     #assert rigorous_rmsd(mol1, mol2, reorder='hungarian') < atol
-    assert align_rmsd(mol1, mol2, reorder='hungarian') < atol
+    assert align_rmsd_rotate(mol1, mol2, reorder='hungarian') < atol
 
 def test_tbpd_rotation(atol=1e-3):
-    """Designed to test align_rmsd and show how rigorous_rmsd can fail"""
+    """Designed to test align_rmsd_rotate and show how rigorous_rmsd can fail"""
     xyz_string = (
         """
         Fe 0 0 0
@@ -89,7 +89,7 @@ def test_tbpd_rotation(atol=1e-3):
     #mol2 = rotate_around_axis(mol2, [0.0, 0.0, 0.0], 2*np.pi*np.random.rand(3), 180)
 
     assert rigorous_rmsd(mol1, mol2, reorder='none') < atol
-    assert align_rmsd(mol1, mol2, reorder='hungarian') < atol
+    assert align_rmsd_rotate(mol1, mol2, reorder='hungarian') < atol
 
 
 def test_quaternion_rotate(atol=1e-3):
