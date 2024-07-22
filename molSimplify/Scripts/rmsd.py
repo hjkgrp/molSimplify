@@ -448,8 +448,8 @@ def rmsd_reorder_rotate(p_atoms, q_atoms, p_coord, q_coord,
         result_rmsd = rotation_method(p_coord, q_coord)
     return result_rmsd
 
-def reorder_rotate(p_atoms, q_atoms, p_coord, q_coord, 
-                   rotation="kabsch", reorder="hungarian", 
+def reorder_rotate(p_atoms, q_atoms, p_coord, q_coord,
+                   rotation="kabsch", reorder="hungarian",
                    translate=True):
     """Reorders atoms pairwise and rotates structures onto one another.
 
@@ -616,9 +616,9 @@ def align_rmsd_project(mol_p, mol_q, rotation: str = "kabsch",
 
         #Iterate for the specified number of iterations
         for i in range(iterations):
-            transformed_molq_coords = reorder_rotate(molp_atoms, molq_atoms, molp_coords, transformed_molq_coords, 
+            transformed_molq_coords = reorder_rotate(molp_atoms, molq_atoms, molp_coords, transformed_molq_coords,
                                                      rotation=rotation, reorder=reorder, translate=True)
-            
+
             if i == iterations-1:
                 #for the final iteration, compute the RMSD and compare
                 result_rmsd = rmsd(molp_coords, transformed_molq_coords)
@@ -699,9 +699,9 @@ def align_rmsd_rotate(mol_p, mol_q, rotation: str = "kabsch",
 
         #Iterate for the specified number of iterations
         for i in range(iterations):
-            transformed_molq_coords = reorder_rotate(molp_atoms, molq_atoms, molp_coords, transformed_molq_coords, 
+            transformed_molq_coords = reorder_rotate(molp_atoms, molq_atoms, molp_coords, transformed_molq_coords,
                                                      rotation=rotation, reorder=reorder, translate=True)
-            
+
             if i == iterations-1:
                 #for the final iteration, compute the RMSD and compare
                 result_rmsd = rmsd(molp_coords, transformed_molq_coords)
