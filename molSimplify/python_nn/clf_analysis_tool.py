@@ -1,4 +1,4 @@
-# import matplotlib.pyplot as plt
+from typing import Callable
 import numpy as np
 from sklearn.metrics.pairwise import pairwise_distances
 from packaging import version
@@ -105,7 +105,7 @@ def get_layer_outputs(model, layer_index, input,
                                  [model.layers[layer_index].output])
         nn_outputs = get_outputs([input, training_flag])[0]
     else:
-        partial_model = Model(model.inputs, model.layers[layer_index].output)
+        partial_model = Model(model.inputs, model.layers[layer_index].output)  # type: Callable
         nn_outputs = partial_model([input], training=training_flag).numpy()  # runs the model in training mode
     return nn_outputs
 

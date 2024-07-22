@@ -1,6 +1,6 @@
 [project]
 name = "molSimplify"
-version = "v1.7.4"
+version = "v1.7.5"
 license = {file = "LICENSE"}
 readme = "README.md"
 dependencies = [
@@ -41,10 +41,12 @@ build-backend = "setuptools.build_meta"
 where = ["."]
 
 [tool.setuptools.package-data]
-"molSimplify.Data" = ["*.dat"]
-"molSimplify.Bind" = ["*.dat"]
-"molSimplify.Ligands" = ["*.dict", "*.mol", "*.xyz", "*.smi"]
+"molSimplify.Bind" = ["*.dat", "*.dict"]
+"molSimplify.Cores" = ["*.dict"]
+"molSimplify.Data" = ["*.dat", "*.dict"]
+"molSimplify.Ligands" = ["*.dict", "*.mol", "*.smi", "*.xyz"]
+"molSimplify.Substrates" = ["*.dict", "*.mol", "*.xyz"]
 "molSimplify.icons" = ["*.png"]
-"molSimplify.python_nn" = ["*.csv"]
 "molSimplify.python_krr" = ["*.csv"]
+"molSimplify.python_nn" = ["*.csv"]
 "molSimplify.tf_nn" = ["*/*"]

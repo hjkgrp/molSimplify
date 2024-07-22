@@ -486,7 +486,7 @@ def align_rmsd_project(mol_p, mol_q, rotation: str = "kabsch",
     - projecting the coordinates onto the principal axes
         Note that the projection may lead to reflections, which will break chirality.
     - reordering x, y, z such that Ixx < Iyy < Izz
-    (will allow for 180degree rotations about x, y, z, as well as
+    (will allow for 180 degree rotations about x, y, z, as well as
     reflections about the xy, xz, yz, and all three of those planes)
 
     Parameters
@@ -628,7 +628,6 @@ def align_rmsd_rotate(mol_p, mol_q, rotation: str = "kabsch",
         #Can address improper rotations by also allowing 90 degree rotations, combinations (including 180 rotations as well)
         
     return rmsd
-
 
 def test_case():
     p_atoms = np.array(["N", "H", "H", "H"])
