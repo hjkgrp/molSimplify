@@ -554,7 +554,7 @@ def align_rmsd_project(mol_p, mol_q, rotation: str = "kabsch",
             print('This may lead to improper orientation in some cases.')
 
         #Can address improper rotations by also allowing 90 degree rotations, combinations (including 180 rotations as well)
-        
+
     return rmsd
 
 def align_rmsd_rotate(mol_p, mol_q, rotation: str = "kabsch",
@@ -611,7 +611,7 @@ def align_rmsd_rotate(mol_p, mol_q, rotation: str = "kabsch",
                                           rotation=rotation, reorder=reorder, translate=True)
         if result_rmsd < rmsd:
             rmsd = result_rmsd
-    
+
     if verbose:
         cutoff = 10 #How close moments have to be for a warning
         pmom1 = mol_p.principal_moments_of_inertia()
@@ -626,7 +626,7 @@ def align_rmsd_rotate(mol_p, mol_q, rotation: str = "kabsch",
             print('This may lead to improper orientation in some cases.')
 
         #Can address improper rotations by also allowing 90 degree rotations, combinations (including 180 rotations as well)
-        
+
     return rmsd
 
 def test_case():

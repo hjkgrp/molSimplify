@@ -159,7 +159,7 @@ def rotate_onto_principal_axes(mol):
         error = np.sum(np.abs(off_diag))
         if error < min_error:
             proper_coords = coords
-    
+
     return proper_coords
 
 
@@ -190,5 +190,5 @@ def project_onto_principal_axes(mol):
     coords = np.vstack([P @ coords[i, :] for i in range(len(coords))])
     #Reorder the columns so that the largest axis is in the z spot
     coords = coords[:, np.argsort(eigvals)]
-    
+
     return coords
