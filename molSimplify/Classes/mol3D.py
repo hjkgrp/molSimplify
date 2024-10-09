@@ -27,6 +27,7 @@ from molSimplify.Scripts.geometry import (distance, connectivity_match,
                                           rotate_around_axis)
 from molSimplify.Scripts.rmsd import rigorous_rmsd, kabsch_rmsd, kabsch_rotate
 from itertools import permutations
+from collections import Counter
 
 try:
     import PyQt5  # noqa: F401
@@ -2826,7 +2827,7 @@ class mol3D:
             ss += "%s \t%f\t%f\t%f\n" % (atom.sym, xyz[0], xyz[1], xyz[2])
         return (ss)
 
-    def readfromxyz(self, filename: str, ligand_unique_id=False, read_final_optim_step=False):
+    def readfromxyz(self, filename: str, ligand_unique_id=False, read_final_optim_step=False, readstring=False):
         """
         Read XYZ into a mol3D class instance.
 
@@ -2841,41 +2842,68 @@ class mol3D:
             read_final_optim_step : boolean
                 if there are multiple geometries in the xyz file
                 (after an optimization run) use only the last one
+            readstring : boolean
+                Flag for deciding whether a string of xyz file is being passed as the filename
         """
 
         globs = globalvars()
         amassdict = globs.amass()
         self.graph = []
         self.xyzfile = filename
-        with open(filename, 'r') as f:
-            s = f.read().splitlines()
-        try:
-            atom_count = int(s[0])
-        except ValueError:
-            atom_count = 0
-        start = 2
-        if read_final_optim_step:
-            start = len(s) - int(s[0])
-        for line in s[start:start+atom_count]:
-            line_split = line.split()
-            # If the split line has more than 4 elements, only elements 0 through 3 will be used.
-            # this means that it should work with any XYZ file that also stores something like mulliken charge
-            # Next, this looks for unique atom IDs in files
-            if len(line_split) > 0:
-                lm = re.search(r'\d+$', line_split[0])
-                # if the string ends in digits m will be a Match object, or None otherwise.
-                if line_split[0] in list(amassdict.keys()) or ligand_unique_id:
-                    atom = atom3D(line_split[0], [float(line_split[1]), float(
-                        line_split[2]), float(line_split[3])])
-                elif lm is not None:
-                    print(line_split)
-                    symb = re.sub(r'\d+', '', line_split[0])
-                    atom = atom3D(symb, [float(line_split[1]), float(line_split[2]), float(line_split[3])],
-                                  name=line_split[0])
-                else:
-                    print('cannot find atom type')
-                    sys.exit()
-                self.addAtom(atom)
+        if not readstring:
+            with open(filename, 'r') as f:
+                s = f.read().splitlines()
+            try:
+                atom_count = int(s[0])
+            except ValueError:
+                atom_count = 0
+            start = 2
+            if read_final_optim_step:
+                start = len(s) - int(s[0])
+            for line in s[start:start+atom_count]:
+                line_split = line.split()
+                # If the split line has more than 4 elements, only elements 0 through 3 will be used.
+                # this means that it should work with any XYZ file that also stores something like mulliken charge
+                # Next, this looks for unique atom IDs in files
+                if len(line_split) > 0:
+                    lm = re.search(r'\d+$', line_split[0])
+                    # if the string ends in digits m will be a Match object, or None otherwise.
+                    if line_split[0] in list(amassdict.keys()) or ligand_unique_id:
+                        atom = atom3D(line_split[0], [float(line_split[1]), float(
+                            line_split[2]), float(line_split[3])])
+                    elif lm is not None:
+                        print(line_split)
+                        symb = re.sub(r'\d+', '', line_split[0])
+                        atom = atom3D(symb, [float(line_split[1]), float(line_split[2]), float(line_split[3])],
+                                      name=line_split[0])
+                    else:
+                        print('cannot find atom type')
+                        sys.exit()
+                    self.addAtom(atom)
+        else:
+            s = filename.split('\n')
+            try:
+                s.remove('')
+            except ValueError:
+                pass
+            s = [str(val) + '\n' for val in s]
+            for line in s[0:]:
+                line_split = line.split()
+                if len(line_split) == 4 and line_split[0]:
+                    # this looks for unique atom IDs in files
+                    lm = re.search(r'\d+$', line_split[0])
+                    # if the string ends in digits m will be a Match object, or None otherwise.
+                    if lm is not None:
+                        symb = re.sub(r'\d+', '', line_split[0])
+                        atom = atom3D(symb, [float(line_split[1]), float(line_split[2]), float(line_split[3])],
+                                      name=line_split[0])
+                    elif line_split[0] in list(amassdict.keys()):
+                        atom = atom3D(line_split[0], [float(line_split[1]), float(
+                            line_split[2]), float(line_split[3])])
+                    else:
+                        print('cannot find atom type')
+                        sys.exit()
+                    self.addAtom(atom)
 
     def readfrommol(self, filename):
         """
@@ -3051,7 +3079,7 @@ class mol3D:
                 String of XYZ file.
         """
 
-        # print('!!!!', filename)
+        # print('Deprecated: use readfromxyz(readstring=True)
         globs = globalvars()
         amassdict = globs.amass()
         self.graph = []
@@ -4148,7 +4176,6 @@ class mol3D:
         """
 
         from molSimplify.Informatics.graph_analyze import obtain_truncation_metal
-        from molSimplify.Classes.ligand import ligand_breakdown  # , ligand_assign
         flag_match = True
         self.my_mol_trunc = mol3D()
         self.my_mol_trunc.copymol3D(self)
@@ -6054,6 +6081,187 @@ class mol3D:
 
         # return minimum RMSD, maximum pairwise distance in that structure
         return current_min, max_dist
+
+    def get_symmetry(tmc_mol, verbose=True, max_allowed_dev=30):
+        """
+        Classify transition metal complexes (TMCs) according to symmetry group
+
+        Parameters
+        ----------
+            tmc_mol : mol3D
+                mol3D instance of TMC with unknown symmetry group.
+            verbose: bool
+                Flag for returning warning when TMC exhibits high deviation from closest symmetry group. Default is True.
+            max_allowed_dev: float
+                Maximum allowed deviation before warning is triggered (degrees). Default is 30.
+
+        Returns
+        -------
+            symmetry_dict : dictionary
+                Dictionary storing assigned symmetry class and devations from all possible symmetry classes.
+        """
+        from molSimplify.Classes.ligand import ligand_breakdown
+        from molSimplify.Classes.mol2D import Mol2D
+        metal_idx = tmc_mol.findMetal()
+        if len(metal_idx) != 1:
+            raise ValueError('Function only supported for mononuclear TMCs.')
+
+        metal_idx = metal_idx[0]
+        tmc_atoms = [i for i in range(tmc_mol.natoms)]
+        lig_list, lig_dents, lig_catoms = ligand_breakdown(tmc_mol)
+        if set(lig_dents) != {1}:
+            raise ValueError('Function only supported for TMCs with all monodentate ligands.')
+
+        geometry_type = tmc_mol.get_geometry_type_distance()['geometry']
+        if geometry_type != 'octahedral':
+            raise ValueError('Function only supported for octahedral TMCs. Detected geometry is ' + geometry_type + '.')
+
+        # get graph hash of each ligand to identify number of unique ligands
+        ligand_hashes = []
+        for ligand in lig_list:
+            ligand_mol = mol3D()
+            ligand_mol.copymol3D(tmc_mol)
+            ligand_mol.deleteatoms(Alist=[i for i in tmc_atoms if i not in ligand])
+            ligand_hashes.append(Mol2D().from_mol3d(mol3d=ligand_mol).graph_hash())
+
+        # determine number of unique ligands
+        unique_ligands = dict(sorted(Counter(ligand_hashes).items(), key=lambda x: x[1]))
+        if len(unique_ligands) > 3:
+            raise ValueError('Function only supported for TMCs with up to 3 unique ligands.')
+
+        # one unique ligand: assign as homoleptic
+        if len(unique_ligands) == 1:
+            symmetry = 'homoleptic'
+            symmetry_dict = {'symmetry': symmetry}
+
+        # two unique ligands: consider cis, trans, fac, mer, and monoheteroleptic symmetry groups
+        if len(unique_ligands) == 2:
+            # calculate ratio between ligands
+            unique_ligand_ratio = list(unique_ligands.values())[1] / list(unique_ligands.values())[0]
+            lig2_indices = [index for index, value in enumerate(ligand_hashes) if
+                            value == list(unique_ligands.keys())[0]]
+            lig2_catoms = [lig_catoms[idx][0] for idx in lig2_indices]
+
+            if unique_ligand_ratio == 5:
+                symmetry = 'monoheteroleptic'
+                symmetry_dict = {'symmetry': symmetry}
+
+            elif unique_ligand_ratio == 2:
+                # find angle between coordinating atoms of less represented (i.e., minority) ligand and metal
+                lig2_angle = tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1])
+                # classify complex as cis or trans based on deviation from ideal angle
+                cis_dev = np.abs(lig2_angle - 90)
+                trans_dev = np.abs(lig2_angle - 180)
+                if cis_dev < trans_dev:
+                    symmetry = 'cis'
+                else:
+                    symmetry = 'trans'
+                if verbose and min(cis_dev, trans_dev) > max_allowed_dev:
+                    print('Warning: high deviation from ideal symmetry, manual inspection recommended')
+                symmetry_dict = {'symmetry': symmetry, 'cis_dev': cis_dev, 'trans_dev': trans_dev}
+
+            elif unique_ligand_ratio == 1:
+                # find angle between coordinating atoms of first ligand and metal
+                lig2_angles = np.array((tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                        tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig2_catoms[2]),
+                                        tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[2])))
+                lig2_angles.sort()
+                # classify complex as fac or mer based on deviation from ideal angle
+                fac_dev_avg = np.average(np.abs(lig2_angles - 90))
+                mer_dev_avg = np.average(np.abs(
+                    np.concatenate((np.array(lig2_angles)[0:2] - 90, np.array([np.array(lig2_angles)[2] - 180])))))
+                if fac_dev_avg < mer_dev_avg:
+                    symmetry = 'fac'
+                else:
+                    symmetry = 'mer'
+                if verbose and min(fac_dev_avg, mer_dev_avg) > max_allowed_dev:
+                    print('Warning: high deviation from ideal symmetry, manual inspection recommended')
+                symmetry_dict = {'symmetry': symmetry, 'fac_dev': fac_dev_avg, 'mer_dev': mer_dev_avg}
+
+        # three unique ligands: consider cis asymmetric (CA), double cis symmetric (DCS), trans asymmetric (TA),
+        # double trans symmetric (DTS), equatorial asymmetric (EA), fac asymmetric (FA), mer asymmetric trans (MAT),
+        # and mer asymmetric cis (MAC) symmetry groups
+        if len(unique_ligands) == 3:
+            # calculate ratio between ligands
+            # ratios stored as follows: L1:L2, L2:L3, L1:L3
+            unique_ligand_ratios = [list(unique_ligands.values())[2] / list(unique_ligands.values())[1],
+                                    list(unique_ligands.values())[1] / list(unique_ligands.values())[0],
+                                    list(unique_ligands.values())[2] / list(unique_ligands.values())[0]]
+
+            lig1_indices = [index for index, value in enumerate(ligand_hashes) if
+                            value == list(unique_ligands.keys())[2]]
+            lig1_catoms = [lig_catoms[idx][0] for idx in lig1_indices]
+
+            lig2_indices = [index for index, value in enumerate(ligand_hashes) if
+                            value == list(unique_ligands.keys())[1]]
+            lig2_catoms = [lig_catoms[idx][0] for idx in lig2_indices]
+
+            lig3_indices = [index for index, value in enumerate(ligand_hashes) if
+                            value == list(unique_ligands.keys())[0]]
+            lig3_catoms = [lig_catoms[idx][0] for idx in lig3_indices]
+
+            if unique_ligand_ratios == [4, 1, 4]:
+                # find angle between coordinating atoms of less represented (i.e., minority) ligand and metal
+                lig23_angle = tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig3_catoms[0])
+                # classify complex as CA or TA based on deviation from ideal angle
+                CA_dev = np.abs(lig23_angle - 90)
+                TA_dev = np.abs(lig23_angle - 180)
+                if CA_dev < TA_dev:
+                    symmetry = 'cis asymmetric'
+                else:
+                    symmetry = 'trans asymmetric'
+                if verbose and min(CA_dev, TA_dev) > max_allowed_dev:
+                    print('Warning: high deviation from ideal symmetry, manual inspection recommended')
+                symmetry_dict = {'symmetry': symmetry, 'cis_asymmetric_dev': CA_dev, 'trans_asymmetric_dev': TA_dev}
+
+            elif unique_ligand_ratios == [1, 1, 1]:
+                # find all angles between coordinating atoms of all ligands and metal
+                lig_angles = np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                                       tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                       tmc_mol.getAngle(idx0=lig3_catoms[0], idx1=metal_idx, idx2=lig3_catoms[1])))
+                lig_angles.sort()
+                # classify complex as DCS, DCT, or EA based on deviation from ideal angle
+                DCS_dev_avg = np.average(np.abs(lig_angles - 90))
+                DCT_dev_avg = np.average(np.abs(lig_angles - 180))
+                EA_dev_avg = np.average(
+                    np.abs(np.concatenate((np.array(lig_angles)[0:2] - 90, np.array([lig_angles[2] - 180])))))
+                if min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == DCS_dev_avg:
+                    symmetry = 'double cis symmetric'
+                elif min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == DCT_dev_avg:
+                    symmetry = 'double trans symmetric'
+                elif min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == EA_dev_avg:
+                    symmetry = 'equatorial asymmetric'
+                if verbose and min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) > max_allowed_dev:
+                    print('Warning: high deviation from ideal symmetry, manual inspection recommended')
+                symmetry_dict = {'symmetry': symmetry, 'double_cis_symmetric_dev': DCS_dev_avg,
+                                 'double_trans_symmetric_dev': DCS_dev_avg, 'equatorial_asymmetric_dev': EA_dev_avg}
+
+            elif unique_ligand_ratios == [3 / 2, 2, 3]:
+                # find all angles between coordinating atoms of all L1 and L2 type ligands and metal
+                lig_angles = np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                                       tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig1_catoms[2]),
+                                       tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]),
+                                       tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1])))
+                lig_angles.sort()
+                # classify complex as FA, MAT, or MAC based on deviation from ideal angle
+                FA_dev_avg = np.average(np.abs(lig_angles - 90))
+                MAT_dev_avg = np.average(
+                    np.abs(np.concatenate((np.array(lig_angles)[0:2] - 90, np.array(lig_angles[2:] - 180)))))
+                MAC_dev_avg = np.average(
+                    np.abs(np.concatenate((np.array(lig_angles)[0:3] - 90, np.array(lig_angles[3:] - 180)))))
+
+                if min(FA_dev_avg, MAT_dev_avg, MAC_dev_avg) == FA_dev_avg:
+                    symmetry = 'fac asymmetric'
+                elif min(FA_dev_avg, MAT_dev_avg, MAC_dev_avg) == MAT_dev_avg:
+                    symmetry = 'mer asymmetric trans'
+                elif min(FA_dev_avg, MAT_dev_avg, MAC_dev_avg) == MAC_dev_avg:
+                    symmetry = 'mer asymmetric cis'
+                if verbose and min(FA_dev_avg, MAT_dev_avg, MAC_dev_avg) > max_allowed_dev:
+                    print('Warning: high deviation from ideal symmetry, manual inspection recommended')
+                symmetry_dict = {'symmetry': symmetry, 'fac_asymmetric_dev': FA_dev_avg,
+                                 'mer_asymmetric_trans_dev': MAT_dev_avg, 'mer_asymmetric_cis_dev': MAC_dev_avg}
+
+        return symmetry_dict
 
     def get_features(self, lac=True, force_generate=False, eq_sym=False,
                      use_dist=False, NumB=False, Gval=False, size_normalize=False,

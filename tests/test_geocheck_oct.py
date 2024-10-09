@@ -1,6 +1,6 @@
 import pytest
 import helperFuncs as hp
-
+from molSimplify.Classes.ligand import ligand_breakdown
 
 @pytest.mark.parametrize("testName", [
     "all_flying_away",

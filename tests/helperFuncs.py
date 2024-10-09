@@ -9,6 +9,7 @@ from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import (dict_oneempty_check_st,
                                             oneempty_angle_ref)
 from molSimplify.Classes.mol3D import mol3D
+from molSimplify.Classes.ligand import ligand_breakdown
 from typing import Dict
 from contextlib import contextmanager
 from pathlib import Path
