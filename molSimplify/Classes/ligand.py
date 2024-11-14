@@ -9,7 +9,8 @@ from itertools import combinations
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.globalvars import bondivdw, vdwrad
 from molSimplify.utils.decorators import deprecated
-
+import networkx as nx
+from molSimlpify.Scripts.nx_helpers import mol3D_to_networkx
 
 # Ligand class for postprocessing DFT results by measuring ligand properties
 class ligand:
