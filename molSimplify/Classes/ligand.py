@@ -2332,7 +2332,7 @@ def get_lig_symmetry(mol, loud=False, htol=3):
 
 def smart_breakdown(mol,dummy_bool=False):
     """Breaks down TMCs into their ligand components.
-    
+
     Parameters
     ----------
         mol : mol3D
@@ -2341,9 +2341,9 @@ def smart_breakdown(mol,dummy_bool=False):
             Flag for producing a result with dummy atoms.
     Returns
     -------
-        dict of nx_graphs : 
+        dict of nx_graphs :
             ligand dictionaries
-    
+
     """
     # get networkx graph representations
     g=mol3D_to_networkx(mol,get_symbols=False,get_bond_order=False,get_bond_distance=False)
@@ -2381,7 +2381,7 @@ def smart_breakdown(mol,dummy_bool=False):
                 submol.getAtom(metal_index).mutate(newType='X')
         else:
             # create a mol3D of just the atoms in the subgraph and get the new mol2
-            submol=mol.create_mol_with_inds(listed_nodes)   
+            submol=mol.create_mol_with_inds(listed_nodes)
         # connecting atoms cont
         bridging_data['catoms'] = {}
         for met in met_ca_d:
