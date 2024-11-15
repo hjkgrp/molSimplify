@@ -15,6 +15,7 @@ except ImportError:
 import random
 import itertools
 import numpy as np
+import networkx as nx
 from typing import Any, List, Tuple, Dict, Union, Optional
 from argparse import Namespace
 from molSimplify.Scripts.distgeom import GetConf
