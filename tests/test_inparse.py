@@ -10,7 +10,8 @@ def test_parseinputfile_empty():
     defaults = {'skipANN': False, 'oldANN': False,
                 'dbvdent': False, 'dbvconns': False,
                 'dbvhyb': False, 'dbvlinks': False,
-                'rprompt': False, 'rundir': f'{os.getcwd()}/Runs'}
+                'rprompt': False, 'rundir': f'{os.getcwd()}/Runs',
+                'overwrite': False,}
 
     args = Namespace()
     parseinputfile(args, inputfile_str=' ')
