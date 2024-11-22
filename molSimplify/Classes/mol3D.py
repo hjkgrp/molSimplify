@@ -3814,7 +3814,10 @@ class mol3D:
                 if atom.sym == 'X':
                     self.deleteatom(i)
         if not len(self.graph):
-            self.createMolecularGraph()
+            if self.bo_dict:
+                self.graph = self.graph_from_bodict(self.bo_dict)
+            else:
+                self.createMolecularGraph()
         if not self.bo_dict and not force:
             self.convert2OBMol2()
         csg = csgraph.csgraph_from_dense(self.graph)
@@ -3863,6 +3866,9 @@ class mol3D:
                 atom_types_mol2 = ''
             type_ind = atom_types.index(atom.sym)
             atom_coords = atom.coords()
+            if atom.sym == 'P':
+                pass
+                #print(atom_coords)
             ss += str(i+1) + ' ' + atom.sym+str(int(atom_type_numbers[type_ind])) + '\t' + \
                 '{}  {}  {} '.format(atom_coords[0], atom_coords[1], atom_coords[2]) + \
                 atom.sym + atom_types_mol2 + '\t' + atom_groups[i] + \
@@ -3875,14 +3881,20 @@ class mol3D:
             bondorders = True
         else:
             bondorders = False
+
         for i, b1 in enumerate(bonds[0]):
-            b2 = bonds[1][i]
-            if b2 > b1 and not bondorders:
-                ss += str(bond_count)+' '+str(b1+1) + ' ' + str(b2+1) + ' 1\n'
-                bond_count += 1
-            elif b2 > b1 and bondorders:
+            if not bondorders:
+                b2 = bonds[1][i]
+                if b2 > b1:
+                    ss += str(bond_count)+' '+str(b1+1) + ' ' + str(b2+1) + ' 1\n'
+                    bond_count += 1
+        if bondorders:
+            for bond in self.bo_dict:
+                b1 = bond[0]
+                b2 = bond[1]
                 ss += str(bond_count)+' '+str(b1+1) + ' ' + str(b2+1) + \
                     ' {}\n'.format(self.bo_dict[(int(b1), int(b2))])
+                bond_count += 1
         ss += '@<TRIPOS>SUBSTRUCTURE\n'
         unique_group_names = np.unique(atom_group_names)
         for i, name in enumerate(unique_group_names):
@@ -3898,7 +3910,7 @@ class mol3D:
                     filename = filename.split('.')[0]+'.mol2'
             with open(filename, 'w') as file1:
                 file1.write(ss)
-
+                
     def closest_H_2_metal(self, delta=0):
         """
         Get closest hydrogen atom to metal.
