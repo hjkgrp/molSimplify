@@ -6103,24 +6103,32 @@ class mol3D:
         # return minimum RMSD, maximum pairwise distance in that structure
         return current_min, max_dist
 
-    def get_symmetry(tmc_mol, verbose=True, max_allowed_dev=30):
+    def get_symmetry(tmc_mol, verbose=True, max_allowed_dev=30, details=False):
         """
-        Classify transition metal complexes (TMCs) according to symmetry group
+        Classify octahedral transition metal complexes (TMCs) according to symmetry
 
         Parameters
         ----------
-            tmc_mol : mol3D
-                mol3D instance of TMC with unknown symmetry group.
+            tmc_mol: mol3D
+                mol3D instance of TMC with unknown symmetry
             verbose: bool
-                Flag for returning warning when TMC exhibits high deviation from closest symmetry group. Default is True.
+                Flag for returning warning when TMC exhibits high deviation from closest symmetry
+                Default=True
             max_allowed_dev: float
-                Maximum allowed deviation before warning is triggered (degrees). Default is 30.
+                Maximum allowed deviation before warning is triggered (degrees)
+                Default=30
+            details: bool
+                Flag for returning detailed lists of unique ligands and coordinating atoms, intended for use with flip_symmetry()
+                Default=False
 
         Returns
         -------
-            symmetry_dict : dictionary
-                Dictionary storing assigned symmetry class and devations from all possible symmetry classes.
+            symmetry_dict: dict
+                Dictionary storing assigned symmetry class and deviations from all possible symmetry classes
+            detailed_dict: dict
+                Dictionary storing indices of metal, ligand atoms, and ligand coordinating atoms, only returned if details=True
         """
+
         from molSimplify.Classes.ligand import ligand_breakdown
         from molSimplify.Classes.mol2D import Mol2D
         metal_idx = tmc_mol.findMetal()
@@ -6145,7 +6153,8 @@ class mol3D:
             ligand_mol.deleteatoms(Alist=[i for i in tmc_atoms if i not in ligand])
             ligand_hashes.append(Mol2D().from_mol3d(mol3d=ligand_mol).graph_hash())
 
-        # determine number of unique ligands
+        # determine number of unique ligands, sorted in ascending order
+        # sort is stable, so in the case of ties, original order is preserved
         unique_ligands = dict(sorted(Counter(ligand_hashes).items(), key=lambda x: x[1]))
         if len(unique_ligands) > 3:
             raise ValueError('Function only supported for TMCs with up to 3 unique ligands.')
@@ -6156,18 +6165,25 @@ class mol3D:
             symmetry_dict = {'symmetry': symmetry}
 
         # two unique ligands: consider cis, trans, fac, mer, and monoheteroleptic symmetry groups
-        if len(unique_ligands) == 2:
+        elif len(unique_ligands) == 2:
             # calculate ratio between ligands
-            unique_ligand_ratio = list(unique_ligands.values())[1] / list(unique_ligands.values())[0]
-            lig2_indices = [index for index, value in enumerate(ligand_hashes) if
-                            value == list(unique_ligands.keys())[0]]
+            unique_ligand_ratios = list(unique_ligands.values())[1] / list(unique_ligands.values())[0]
+            lig2_indices = [index for index, value in enumerate(ligand_hashes) if value == list(unique_ligands.keys())[0]]
+            lig2_atoms = [lig_list[idx] for idx in lig2_indices]
             lig2_catoms = [lig_catoms[idx][0] for idx in lig2_indices]
 
-            if unique_ligand_ratio == 5:
+            lig1_indices = [index for index, value in enumerate(ligand_hashes) if value == list(unique_ligands.keys())[1]]
+            lig1_atoms = [lig_list[idx] for idx in lig1_indices]
+            lig1_catoms = [lig_catoms[idx][0] for idx in lig1_indices]
+
+            lig3_atoms = False
+            lig3_catoms = False
+
+            if unique_ligand_ratios == 5:
                 symmetry = 'monoheteroleptic'
                 symmetry_dict = {'symmetry': symmetry}
 
-            elif unique_ligand_ratio == 2:
+            elif unique_ligand_ratios == 2:
                 # find angle between coordinating atoms of less represented (i.e., minority) ligand and metal
                 lig2_angle = tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1])
                 # classify complex as cis or trans based on deviation from ideal angle
@@ -6181,7 +6197,7 @@ class mol3D:
                     print('Warning: high deviation from ideal symmetry, manual inspection recommended')
                 symmetry_dict = {'symmetry': symmetry, 'cis_dev': cis_dev, 'trans_dev': trans_dev}
 
-            elif unique_ligand_ratio == 1:
+            elif unique_ligand_ratios == 1:
                 # find angle between coordinating atoms of first ligand and metal
                 lig2_angles = np.array((tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
                                         tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig2_catoms[2]),
@@ -6202,8 +6218,8 @@ class mol3D:
         # three unique ligands: consider cis asymmetric (CA), double cis symmetric (DCS), trans asymmetric (TA),
         # double trans symmetric (DTS), equatorial asymmetric (EA), fac asymmetric (FA), mer asymmetric trans (MAT),
         # and mer asymmetric cis (MAC) symmetry groups
-        if len(unique_ligands) == 3:
-            # calculate ratio between ligands
+        elif len(unique_ligands) == 3:
+            # calculate ratio between ligands sorted in ascending order (L1 = unique_ligands[2] = most abundant)
             # ratios stored as follows: L1:L2, L2:L3, L1:L3
             unique_ligand_ratios = [list(unique_ligands.values())[2] / list(unique_ligands.values())[1],
                                     list(unique_ligands.values())[1] / list(unique_ligands.values())[0],
@@ -6211,14 +6227,17 @@ class mol3D:
 
             lig1_indices = [index for index, value in enumerate(ligand_hashes) if
                             value == list(unique_ligands.keys())[2]]
+            lig1_atoms = [lig_list[idx] for idx in lig1_indices]
             lig1_catoms = [lig_catoms[idx][0] for idx in lig1_indices]
 
             lig2_indices = [index for index, value in enumerate(ligand_hashes) if
                             value == list(unique_ligands.keys())[1]]
+            lig2_atoms = [lig_list[idx] for idx in lig2_indices]
             lig2_catoms = [lig_catoms[idx][0] for idx in lig2_indices]
 
             lig3_indices = [index for index, value in enumerate(ligand_hashes) if
                             value == list(unique_ligands.keys())[0]]
+            lig3_atoms = [lig_list[idx] for idx in lig3_indices]
             lig3_catoms = [lig_catoms[idx][0] for idx in lig3_indices]
 
             if unique_ligand_ratios == [4, 1, 4]:
@@ -6243,19 +6262,19 @@ class mol3D:
                 lig_angles.sort()
                 # classify complex as DCS, DCT, or EA based on deviation from ideal angle
                 DCS_dev_avg = np.average(np.abs(lig_angles - 90))
-                DCT_dev_avg = np.average(np.abs(lig_angles - 180))
+                DTS_dev_avg = np.average(np.abs(lig_angles - 180))
                 EA_dev_avg = np.average(
                     np.abs(np.concatenate((np.array(lig_angles)[0:2] - 90, np.array([lig_angles[2] - 180])))))
-                if min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == DCS_dev_avg:
+                if min(DCS_dev_avg, DTS_dev_avg, EA_dev_avg) == DCS_dev_avg:
                     symmetry = 'double cis symmetric'
-                elif min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == DCT_dev_avg:
+                elif min(DCS_dev_avg, DTS_dev_avg, EA_dev_avg) == DTS_dev_avg:
                     symmetry = 'double trans symmetric'
-                elif min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) == EA_dev_avg:
+                elif min(DCS_dev_avg, DTS_dev_avg, EA_dev_avg) == EA_dev_avg:
                     symmetry = 'equatorial asymmetric'
-                if verbose and min(DCS_dev_avg, DCT_dev_avg, EA_dev_avg) > max_allowed_dev:
+                if verbose and min(DCS_dev_avg, DTS_dev_avg, EA_dev_avg) > max_allowed_dev:
                     print('Warning: high deviation from ideal symmetry, manual inspection recommended')
                 symmetry_dict = {'symmetry': symmetry, 'double_cis_symmetric_dev': DCS_dev_avg,
-                                 'double_trans_symmetric_dev': DCS_dev_avg, 'equatorial_asymmetric_dev': EA_dev_avg}
+                                 'double_trans_symmetric_dev': DTS_dev_avg, 'equatorial_asymmetric_dev': EA_dev_avg}
 
             elif unique_ligand_ratios == [3 / 2, 2, 3]:
                 # find all angles between coordinating atoms of all L1 and L2 type ligands and metal
@@ -6282,7 +6301,426 @@ class mol3D:
                 symmetry_dict = {'symmetry': symmetry, 'fac_asymmetric_dev': FA_dev_avg,
                                  'mer_asymmetric_trans_dev': MAT_dev_avg, 'mer_asymmetric_cis_dev': MAC_dev_avg}
 
-        return symmetry_dict
+        if details:
+            detailed_dict = {'num_unique_ligands': len(unique_ligands), 'unique_ligand_ratios': unique_ligand_ratios,
+                             'metal_idx': metal_idx, 'lig1_atoms': lig1_atoms, 'lig1_catoms': lig1_catoms,
+                             'lig2_atoms': lig2_atoms, 'lig2_catoms': lig2_catoms,
+                             'lig3_atoms': lig3_atoms, 'lig3_catoms': lig3_catoms}
+            return symmetry_dict, detailed_dict
+        else:
+            return symmetry_dict
+
+    def flip_symmetry(tmc_mol, verbose=True, max_allowed_dev=30, target_symmetry=False):
+        """
+        Flip octahedral transition metal complexes (TMCs) to opposite symmetry group.
+        Example: cis to trans, fac to mer, etc.
+
+        Parameters
+        ----------
+            tmc_mol: mol3D
+                mol3D instance of TMC
+            verbose: bool
+                Flag for returning warning when TMC exhibits high deviation from closest symmetry
+                Default=True
+            max_allowed_dev: float
+                Maximum allowed deviation before warning is triggered (degrees)
+                Default=30
+            target_symmetry: str
+                Target symmetry for complex to be transformed to, only defined for num_unique_ligands == 3
+                Default=False
+
+        Returns
+        -------
+            tmc_mol: mol3D
+                returns self, a mol3D object with flipped symmetry
+        """
+
+        symmetry_dict, detailed_dict, = tmc_mol.get_symmetry(verbose=verbose,
+                                                             max_allowed_dev=max_allowed_dev,
+                                                             details=True)
+        symmetry = symmetry_dict['symmetry']
+
+        num_unique_ligands = detailed_dict['num_unique_ligands']
+        unique_ligand_ratios = detailed_dict['unique_ligand_ratios']
+        metal_idx = detailed_dict['metal_idx']
+        lig1_atoms = detailed_dict['lig1_atoms']
+        lig1_catoms = detailed_dict['lig1_catoms']
+        lig2_atoms = detailed_dict['lig2_atoms']
+        lig2_catoms = detailed_dict['lig2_catoms']
+        lig3_atoms = detailed_dict['lig3_atoms']
+        lig3_catoms = detailed_dict['lig3_catoms']
+
+        if num_unique_ligands == 1:
+            raise ValueError('Function not defined for homoleptic complexes')
+
+        # two unique ligands: consider cis/trans and fac/mer conversions
+        elif num_unique_ligands == 2:
+            if unique_ligand_ratios == 5:
+                raise ValueError('Function not defined for monoheteroleptic complexes')
+
+            # cis/trans conversion
+            elif unique_ligand_ratios == 2:
+                # idx of ligand type 1 to be swapped
+                # only relevant for cis-->trans conversion, since trans-->cis can be accomplished by switching any two distinct ligands
+                swap_idx_1 = np.argmin(
+                    np.abs(np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[3], idx1=metal_idx, idx2=lig2_catoms[1]))) - 180))
+                # idx of ligand type 2 to be swapped
+                # swapping any ligand2 is valid as long as ligand1 is chosen to be orthogonal to it
+                swap_idx_2 = 0
+
+            # fac/mer conversion
+            elif unique_ligand_ratios == 1:
+                if symmetry == 'mer':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmin(
+                        np.abs(np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                                         tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]))) - 180)) + 1
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = np.argmin(
+                        np.abs(np.array((tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                                         tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[2]))) - 180)) + 1
+                elif symmetry == 'fac':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmin(
+                        np.abs(np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig2_catoms[0]),
+                                         tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig2_catoms[0]),
+                                         tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig2_catoms[0]))) - 90))
+                    # idx of ligand type 2 to be swapped
+                    # swapping any ligand2 is valid as long as ligand1 is chosen to be orthogonal to it
+                    swap_idx_2 = 0
+
+            vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+            vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+            atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+            vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+            vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+            for atom_idx in atoms_to_move:
+                vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(
+                    tmc_mol.atoms[metal_idx].coords())
+                vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+        # three unique ligands: consider cis asymmetric (CA)/trans asymmetric (TA),
+        # double cis symmetric (DCS)/ double trans symmetric (DTS)/equatorial asymmetric (EA),
+        # and fac asymmetric (FA)/mer asymmetric trans (MAT)/mer asymmetric cis (MAC) conversions
+        elif num_unique_ligands == 3:
+            # CA/TA conversion
+            if unique_ligand_ratios == [4, 1, 4]:
+                # idx of ligand type 1 to be swapped
+                # only relevant for CA-->TA conversion, since TA-->CA can be accomplished by switching any two distinct ligands
+                swap_idx_1 = np.argmin(
+                    np.abs(np.array((tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig3_catoms[0]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig3_catoms[0]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig3_catoms[0]),
+                                     tmc_mol.getAngle(idx0=lig1_catoms[3], idx1=metal_idx, idx2=lig3_catoms[0]))) - 180))
+                # idx of ligand type 2 to be swapped
+                swap_idx_2 = 0
+                vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+                vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                for atom_idx in atoms_to_move:
+                    vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(
+                        tmc_mol.atoms[metal_idx].coords())
+                    vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                    reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                    tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+            # DCS/DTS/EA conversion
+            elif unique_ligand_ratios == [1, 1, 1]:
+                # warning: moves L3 to axial position by default, using ligand sorting order from get_symmetry()
+                if target_symmetry not in ['DCS', 'DTS', 'EA']:
+                    raise ValueError("target_symmetry must be either 'DCS', 'DTS', or 'EA' for TMCs with 3 unique ligands in given stoichiometry")
+                elif target_symmetry == 'EA' and symmetry == 'double trans symmetric':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = 0
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = 0
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+                    vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                    for atom_idx in atoms_to_move:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(
+                            tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+                elif target_symmetry == 'EA' and symmetry == 'double cis symmetric':
+                    # warning: moves L3 to axial position by default, using ligand sorting order from get_symmetry()
+                    # idx of ligand type 2 to be swapped (that which forms 90° angles with both ligands of type 1)
+                    swap_idx_2 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig2_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig2_catoms[0]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig2_catoms[1]))) - 90)))))
+                    # idx of ligand type 3 to be swapped (that which forms 90° angles with both ligands of type 2)
+                    swap_idx_3 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig3_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig3_catoms[0]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig3_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig3_catoms[1]))) - 90)))))
+                    vec1 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig2_atoms[swap_idx_2] + lig3_atoms[swap_idx_3]
+                    vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                    for atom_idx in atoms_to_move:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+                elif target_symmetry == 'DTS' and symmetry == 'equatorial asymmetric':
+                    # figure out which ligands are axial
+                    axial_idx = np.argmin(np.abs(np.array((
+                        tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                        tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                        tmc_mol.getAngle(idx0=lig3_catoms[0], idx1=metal_idx, idx2=lig3_catoms[1]))) - 180))
+                    # figure out which ligands are not axial
+                    equatorial_idx = [val for val in range(3) if val != axial_idx]
+                    all_ligand_catoms = [lig1_catoms, lig2_catoms, lig3_catoms]
+                    all_ligand_atoms = [lig1_atoms, lig2_atoms, lig3_atoms]
+                    # idx of equatorial ligand 1 to be swapped. choose arbitarily then choose swap_idx_2 based on this
+                    swap_idx_1 = 0
+                    # idx of equatorial ligand 2 to be swapped
+                    swap_idx_2 = np.argmin(np.abs(np.array((
+                        tmc_mol.getAngle(idx0=all_ligand_catoms[equatorial_idx[0]][swap_idx_1], idx1=metal_idx,
+                                         idx2=all_ligand_catoms[equatorial_idx[1]][0]),
+                        tmc_mol.getAngle(idx0=all_ligand_catoms[equatorial_idx[0]][swap_idx_1], idx1=metal_idx,
+                                         idx2=all_ligand_catoms[equatorial_idx[1]][1]))) - 90))
+
+                    vec1 = np.array(tmc_mol.atoms[all_ligand_catoms[equatorial_idx[0]][swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[all_ligand_catoms[equatorial_idx[1]][swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = all_ligand_atoms[equatorial_idx[0]][swap_idx_1] + all_ligand_atoms[equatorial_idx[1]][swap_idx_2]
+                    vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                    for atom_idx in atoms_to_move:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+                elif target_symmetry == 'DTS' and symmetry == 'double cis symmetric':
+                    # idx of ligand type 1 to be swapped (that which forms 90° angles with both ligands of type 3)
+                    swap_idx_1 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig3_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig3_catoms[1]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig3_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig3_catoms[1]))) - 90)))))
+                    # idx of ligand type 2 to be swapped (that which forms 90° angles with both ligands of type 1)
+                    swap_idx_2 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[1]))) - 90)))))
+                    # idx of ligand type 3 to be swapped (that which forms 90° angles with both ligands of type 2)
+                    swap_idx_3 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig3_catoms[0], idx1=metal_idx, idx2=lig2_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig3_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig3_catoms[1], idx1=metal_idx, idx2=lig2_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig3_catoms[1], idx1=metal_idx, idx2=lig2_catoms[1]))) - 90)))))
+                    # first reflection
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move_a = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+                    vec_reflect_a = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect_a = vec_reflect_a / np.linalg.norm(vec_reflect_a, 2)
+                    for atom_idx in atoms_to_move_a:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect_a) * vec_reflect_a
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+                    # second reflection
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec3 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move_b = lig1_atoms[swap_idx_1] + lig3_atoms[swap_idx_3]
+                    vec_reflect_b = vec1 / np.linalg.norm(vec1, 2) + vec3 / np.linalg.norm(vec3, 2)
+                    vec_reflect_b = vec_reflect_b / np.linalg.norm(vec_reflect_b, 2)
+                    for atom_idx in atoms_to_move_b:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect_b) * vec_reflect_b
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+                elif target_symmetry == 'DCS' and symmetry == 'double trans symmetric':
+                    # these operations can result in unique chiral structures
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = 0
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = 0
+                    # idx of ligand type 3 to be swapped
+                    swap_idx_3 = 0
+                    # first reflection
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move_a = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+                    vec_reflect_a = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect_a = vec_reflect_a / np.linalg.norm(vec_reflect_a, 2)
+                    for atom_idx in atoms_to_move_a:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect_a) * vec_reflect_a
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+                    # second reflection
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec3 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move_b = lig1_atoms[swap_idx_1] + lig3_atoms[swap_idx_3]
+                    vec_reflect_b = vec1 / np.linalg.norm(vec1, 2) + vec3 / np.linalg.norm(vec3, 2)
+                    vec_reflect_b = vec_reflect_b / np.linalg.norm(vec_reflect_b, 2)
+                    for atom_idx in atoms_to_move_b:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect_b) * vec_reflect_b
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+                elif target_symmetry == 'DCS' and symmetry == 'equatorial asymmetric':
+                    # these operations can result in unique chiral structures
+                    # figure out which ligands are axial
+                    axial_idx = np.argmin(np.abs(np.array((
+                        tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                        tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig2_catoms[1]),
+                        tmc_mol.getAngle(idx0=lig3_catoms[0], idx1=metal_idx, idx2=lig3_catoms[1]))) - 180))
+                    # figure out which ligands are not axial
+                    equatorial_idx = [val for val in range(3) if val != axial_idx]
+                    all_ligand_catoms = [lig1_catoms, lig2_catoms, lig3_catoms]
+                    all_ligand_atoms = [lig1_atoms, lig2_atoms, lig3_atoms]
+                    vec1 = np.array(tmc_mol.atoms[all_ligand_catoms[axial_idx][0]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[all_ligand_catoms[equatorial_idx[0]][0]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = all_ligand_atoms[axial_idx][0] + all_ligand_atoms[equatorial_idx[0]][0]
+                    vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                    vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                    for atom_idx in atoms_to_move:
+                        vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                        vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                        reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                        tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+            # FA/MAT/MAC conversion
+            elif unique_ligand_ratios == [3 / 2, 2, 3]:
+                if target_symmetry not in ['FA', 'MAT', 'MAC']:
+                    raise ValueError("target_symmetry must be either 'FA', 'MAT', or 'MAC' for TMCs with 3 unique ligands in given stoichiometry")
+                elif target_symmetry == 'FA' and symmetry == 'mer asymmetric trans':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmax(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig1_catoms[1]))) - 90)))))
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = 0
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+
+                elif target_symmetry == 'FA' and symmetry == 'mer asymmetric cis':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmax(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig1_catoms[1]))) - 90)))))
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = np.argmin(np.array((
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)))))
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+
+                elif target_symmetry == 'MAT' and symmetry == 'fac asymmetric':
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmin(np.abs(np.array((
+                        tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig2_catoms[0]),
+                        tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig2_catoms[0]),
+                        tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig2_catoms[0]))) - 180))
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = 1
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig1_atoms[swap_idx_1] + lig2_atoms[swap_idx_2]
+
+                elif target_symmetry == 'MAT' and symmetry == 'mer asymmetric cis':
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = np.argmax(np.array(
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[0], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90)),
+                        np.average(np.abs(np.array((
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[0]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[1]),
+                            tmc_mol.getAngle(idx0=lig2_catoms[1], idx1=metal_idx, idx2=lig1_catoms[2]))) - 90))))
+                    # idx of ligand type 3 to be swapped
+                    swap_idx_3 = 0
+                    vec1 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig2_atoms[swap_idx_2] + lig3_atoms[swap_idx_3]
+
+                elif target_symmetry == 'MAC' and symmetry == 'fac asymmetric':
+                    # these operations can result in unique chiral structures
+                    # idx of ligand type 1 to be swapped
+                    swap_idx_1 = np.argmin(np.abs(np.array((
+                        tmc_mol.getAngle(idx0=lig1_catoms[0], idx1=metal_idx, idx2=lig3_catoms[0]),
+                        tmc_mol.getAngle(idx0=lig1_catoms[1], idx1=metal_idx, idx2=lig3_catoms[0]),
+                        tmc_mol.getAngle(idx0=lig1_catoms[2], idx1=metal_idx, idx2=lig3_catoms[0]))) - 90))
+                    # idx of ligand type 3 to be swapped
+                    swap_idx_3 = 0
+                    vec1 = np.array(tmc_mol.atoms[lig1_catoms[swap_idx_1]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig1_atoms[swap_idx_1] + lig3_atoms[swap_idx_3]
+
+                elif target_symmetry == 'MAC' and symmetry == 'mer asymmetric trans':
+                    # idx of ligand type 2 to be swapped
+                    swap_idx_2 = 0
+                    # idx of ligand type 3 to be swapped
+                    swap_idx_3 = 0
+                    vec1 = np.array(tmc_mol.atoms[lig2_catoms[swap_idx_2]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec2 = np.array(tmc_mol.atoms[lig3_catoms[swap_idx_3]].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    atoms_to_move = lig2_atoms[swap_idx_2] + lig3_atoms[swap_idx_3]
+
+                vec_reflect = vec1 / np.linalg.norm(vec1, 2) + vec2 / np.linalg.norm(vec2, 2)
+                vec_reflect = vec_reflect / np.linalg.norm(vec_reflect, 2)
+                for atom_idx in atoms_to_move:
+                    vec_atoms = np.array(tmc_mol.atoms[atom_idx].coords()) - np.array(tmc_mol.atoms[metal_idx].coords())
+                    vec_proj = np.dot(vec_atoms, vec_reflect) * vec_reflect
+                    reflected_coords = np.array(tmc_mol.atoms[metal_idx].coords()) + 2 * vec_proj - vec_atoms
+                    tmc_mol.atoms[atom_idx].setcoords(reflected_coords)
+
+        return tmc_mol
 
     def get_features(self, lac=True, force_generate=False, eq_sym=False,
                      use_dist=False, NumB=False, Gval=False, size_normalize=False,
