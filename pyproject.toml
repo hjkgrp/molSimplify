@@ -1,6 +1,6 @@
 [project]
 name = "molSimplify"
-version = "v1.7.5"
+version = "v1.7.6"
 license = {file = "LICENSE"}
 readme = "README.md"
 dependencies = [
