@@ -3910,7 +3910,7 @@ class mol3D:
                     filename = filename.split('.')[0]+'.mol2'
             with open(filename, 'w') as file1:
                 file1.write(ss)
-                
+
     def closest_H_2_metal(self, delta=0):
         """
         Get closest hydrogen atom to metal.
