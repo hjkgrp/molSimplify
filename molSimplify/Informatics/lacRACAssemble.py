@@ -9,7 +9,7 @@
 from __future__ import print_function
 import numpy as np
 from molSimplify.Classes.ligand import ligand_breakdown
-from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
+from molSimplify.Classes.ligand import ligand_assign_consistent
 from molSimplify.Classes.globalvars import globalvars
 
 globs = globalvars()
@@ -17,7 +17,7 @@ globs = globalvars()
 
 def get_descriptor_vector(this_complex, custom_ligand_dict=False,
                           ox_modifier=False, NumB=False, Gval=False,
-                          lacRACs=True, loud=False, metal_ind=None,
+                          loud=False, metal_ind=None,
                           smiles_charge=False, eq_sym=False,
                           use_dist=False, size_normalize=False,
                           alleq=False, MRdiag_dict={}, depth=3):
@@ -43,9 +43,6 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
             Use Number of Bonds as additional RAC, by default False
         Gval : bool, optional
             Use group number as RAC, by default False
-        lacRACs : bool, optional
-            Use ligand_assign_consistent (lac) to represent mol3D given
-            if False, use ligand_assign (older), default True
         loud : bool, optional
             Print debugging information, by default False
         metal_ind : bool, optional
@@ -79,13 +76,9 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
         liglist, ligdents, ligcons = ligand_breakdown(this_complex, BondedOct=True) # Complex is assumed to be octahedral
         # print(liglist, ligdents, ligcons)
         if not alleq:
-            if lacRACs:
-                from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
-            else:
-                from molSimplify.Classes.ligand import ligand_assign as ligand_assign
             ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, \
                 ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, \
-                built_ligand_list = ligand_assign(this_complex, liglist, ligdents, ligcons, loud, eq_sym_match=eq_sym)
+                built_ligand_list = ligand_assign_consistent(this_complex, liglist, ligdents, ligcons, loud, eq_sym_match=eq_sym)
         else:
             from molSimplify.Classes.ligand import ligand_assign_alleq
             ax_ligand_list, eq_ligand_list, ax_con_int_list, eq_con_int_list = ligand_assign_alleq(
@@ -206,7 +199,7 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
 
 
 def get_descriptor_derivatives(this_complex, custom_ligand_dict=False, ox_modifier=False,
-                               lacRACs=True, depth=4, loud=False, metal_ind=None):
+                               depth=4, loud=False, metal_ind=None):
     """ Calculate and return all derivatives of RACs for a given octahedral complex.
 
     Parameters
@@ -225,9 +218,6 @@ def get_descriptor_derivatives(this_complex, custom_ligand_dict=False, ox_modifi
             dict, used to modify prop vector (e.g. for adding
             ONLY used with  ox_nuclear_charge ox or charge)
             {"Fe":2, "Co": 3} etc, by default False
-        lacRACs : bool, optional
-            Use ligand_assign_consistent (lac) to represent mol3D given
-            if False, use ligand_assign (older), default True
         depth : int, optional
             depth of RACs to calculate, by default 4
         loud : bool, optional
@@ -244,14 +234,10 @@ def get_descriptor_derivatives(this_complex, custom_ligand_dict=False, ox_modifi
 
     """
     if not custom_ligand_dict:
-        if lacRACs:
-            from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
-        else:
-            from molSimplify.Classes.ligand import ligand_assign as ligand_assign
         liglist, ligdents, ligcons = ligand_breakdown(this_complex, BondedOct=True) # Complex is assumed to be octahedral
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list,
          ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list,
-         built_ligand_list) = ligand_assign(this_complex, liglist, ligdents, ligcons, loud)
+         built_ligand_list) = ligand_assign_consistent(this_complex, liglist, ligdents, ligcons, loud)
         custom_ligand_dict = {'ax_ligand_list': ax_ligand_list,
                               'eq_ligand_list': eq_ligand_list,
                               'ax_con_int_list': ax_con_int_list,
@@ -1338,7 +1324,7 @@ def generate_all_ligand_misc(mol, loud, custom_ligand_dict=False, smiles_charge=
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, \
-            ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
+            ax_con_list, eq_con_list, built_ligand_list = ligand_assign_consistent(
                 mol, liglist, ligdents, ligcons, loud)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -1463,7 +1449,7 @@ def generate_all_ligand_autocorrelations(mol, loud, depth=4, flag_name=False,
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list,
-         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_consistent(
             mol, liglist, ligdents, ligcons, loud)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -1582,7 +1568,7 @@ def generate_all_ligand_autocorrelation_derivatives(mol, loud, depth=4, flag_nam
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, \
-            ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
+            ax_con_list, eq_con_list, built_ligand_list = ligand_assign_consistent(
                 mol, liglist, ligdents, ligcons, loud)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -1715,7 +1701,7 @@ def generate_all_ligand_deltametrics(mol, loud, depth=4, flag_name=False,
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list,
-         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(mol, liglist, ligdents, ligcons, loud)
+         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_consistent(mol, liglist, ligdents, ligcons, loud)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
         eq_ligand_list = custom_ligand_dict["eq_ligand_list"]
@@ -1807,7 +1793,7 @@ def generate_all_ligand_deltametric_derivatives(mol, loud, depth=4, flag_name=Fa
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, \
-            ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
+            ax_con_list, eq_con_list, built_ligand_list = ligand_assign_consistent(
                 mol, liglist, ligdents, ligcons, loud)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -2191,8 +2177,150 @@ def generate_metal_ox_deltametric_derivatives(oxmodifier, mol, loud, depth=4, oc
     results_dictionary = {'colnames': colnames, 'results': result}
     return results_dictionary
 
+
 def get_metal_index(mol):
     metal_idx = mol.findMetal()
     if len(metal_idx) > 1:
         print('More than one metal in mol object. Choosing the first one.')
     return metal_idx[0]
+
+
+def generate_atomonly_autocorrelations(mol, atomIdx, loud, depth=4, oct=True, NumB=False, Gval=False, polarizability=False):
+    # # this function gets autocorrelations for a molecule starting
+    # # in one single atom only
+    # Inputs:
+    #       mol - mol3D class
+    #       atomIdx - int, index of atom3D class; or list of indices
+    #       loud - bool, print output
+    result = list()
+    colnames = []
+    allowed_strings = ['electronegativity', 'nuclear_charge', 'ident', 'topology', 'size']
+    labels_strings = ['chi', 'Z', 'I', 'T', 'S']
+    if Gval:
+        allowed_strings += ['group_number']
+        labels_strings += ['Gval']
+    if NumB:
+        allowed_strings += ["num_bonds"]
+        labels_strings += ["NumB"]
+    if polarizability:
+        allowed_strings += ['polarizability']
+        labels_strings += ['alpha']
+    # print('The selected connection type is ' + str(mol.getAtom(atomIdx).symbol()))
+    for ii, properties in enumerate(allowed_strings):
+        atom_only_ac = atom_only_autocorrelation(mol, properties, depth, atomIdx, oct=oct)
+        this_colnames = []
+        for i in range(0, depth + 1):
+            this_colnames.append(labels_strings[ii] + '-' + str(i))
+        colnames.append(this_colnames)
+        result.append(atom_only_ac)
+    results_dictionary = {'colnames': colnames, 'results': result}
+    return results_dictionary
+
+
+def generate_atomonly_deltametrics(mol, atomIdx, loud, depth=4, oct=True, NumB=False, Gval=False, polarizability=False):
+    # # this function gets deltametrics for a molecule starting
+    # # in one single atom only
+    # Inputs:
+    #       mol - mol3D class
+    #       atomIdx - int, index of atom3D class
+    #       loud - bool, print output
+    result = list()
+    colnames = []
+    allowed_strings = ['electronegativity', 'nuclear_charge', 'ident', 'topology', 'size']
+    labels_strings = ['chi', 'Z', 'I', 'T', 'S']
+    if Gval:
+        allowed_strings += ['group_number']
+        labels_strings += ['Gval']
+    if NumB:
+        allowed_strings += ["num_bonds"]
+        labels_strings += ["NumB"]
+    if polarizability:
+        allowed_strings += ["polarizability"]
+        labels_strings += ["alpha"]
+    # print('The selected connection type is ' + str(mol.getAtom(atomIdx).symbol()))
+    for ii, properties in enumerate(allowed_strings):
+        atom_only_ac = atom_only_deltametric(mol, properties, depth, atomIdx, oct=oct)
+        this_colnames = []
+        for i in range(0, depth + 1):
+            this_colnames.append(labels_strings[ii] + '-' + str(i))
+        colnames.append(this_colnames)
+        result.append(atom_only_ac)
+    results_dictionary = {'colnames': colnames, 'results': result}
+    return results_dictionary
+
+
+def generate_multimetal_autocorrelations(mol, loud, depth=4, oct=True, flag_name=False, polarizability=False, Gval=False):
+    # oct - bool, if complex is octahedral, will use better bond checks
+    result = list()
+    colnames = []
+    allowed_strings = ['electronegativity', 'nuclear_charge', 'ident', 'topology', 'size']
+    labels_strings = ['chi', 'Z', 'I', 'T', 'S']
+    if Gval:
+        allowed_strings += ['group_number']
+        labels_strings += ['Gval']
+    if polarizability:
+        allowed_strings += ['polarizability']
+        labels_strings += ['alpha']
+    for ii, properties in enumerate(allowed_strings):
+        metal_ac = multimetal_only_autocorrelation(mol, properties, depth, oct=oct)
+        this_colnames = []
+        for i in range(0, depth + 1):
+            this_colnames.append(labels_strings[ii] + '-' + str(i))
+        colnames.append(this_colnames)
+        result.append(metal_ac)
+    if flag_name:
+        results_dictionary = {'colnames': colnames, 'results_mc_ac': result}
+    else:
+        results_dictionary = {'colnames': colnames, 'results': result}
+    return results_dictionary
+
+
+def multimetal_only_autocorrelation(mol, prop, d, oct=True, catoms=None,
+                                    func=autocorrelation, modifier=False):
+    autocorrelation_vector = np.zeros(d + 1)
+    n_met = len(mol.findMetal())
+    w = construct_property_vector(mol, prop, oct=oct, modifier=modifier)
+    for metal_ind in mol.findMetal():
+        autocorrelation_vector += func(mol, w, metal_ind, d, oct=oct, catoms=catoms)
+    autocorrelation_vector = np.divide(autocorrelation_vector, n_met)
+    return (autocorrelation_vector)
+
+
+def generate_multimetal_deltametrics(mol, loud, depth=4, oct=True, flag_name=False, polarizability=False, Gval=False):
+    #   oct - bool, if complex is octahedral, will use better bond checks
+    result = list()
+    colnames = []
+    allowed_strings = ['electronegativity', 'nuclear_charge', 'ident', 'topology', 'size']
+    labels_strings = ['chi', 'Z', 'I', 'T', 'S']
+    if Gval:
+        allowed_strings += ['group_number']
+        labels_strings += ['Gval']
+    if polarizability:
+        allowed_strings += ['polarizability']
+        labels_strings += ['alpha']
+    for ii, properties in enumerate(allowed_strings):
+        metal_ac = multimetal_only_deltametric(mol, properties, depth, oct=oct)
+        this_colnames = []
+        for i in range(0, depth + 1):
+            this_colnames.append(labels_strings[ii] + '-' + str(i))
+        colnames.append(this_colnames)
+        result.append(metal_ac)
+    if flag_name:
+        results_dictionary = {'colnames': colnames, 'results_mc_del': result}
+    else:
+        results_dictionary = {'colnames': colnames, 'results': result}
+    return results_dictionary
+
+
+def multimetal_only_deltametric(mol, prop, d, oct=True, catoms=None,
+                                func=deltametric, modifier=False):
+    deltametric_vector = np.zeros(d + 1)
+    n_met = len(mol.findMetal())
+
+    w = construct_property_vector(mol, prop, oct=oct, modifier=modifier)
+    for metal_ind in mol.findMetal():
+        deltametric_vector += func(mol, w, metal_ind, d, oct=oct,
+                                   catoms=catoms)
+    deltametric_vector = np.divide(deltametric_vector, n_met)
+    return (deltametric_vector)
+    

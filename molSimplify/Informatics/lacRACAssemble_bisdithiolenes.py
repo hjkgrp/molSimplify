@@ -10,6 +10,7 @@ from molSimplify.Informatics.lacRACAssemble import (generate_all_ligand_autocorr
                                                     generate_metal_ox_deltametrics,
                                                     generate_all_ligand_deltametrics
                                                     )
+from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
 
 globs = globalvars()
 
@@ -62,7 +63,7 @@ def lig_assign_bisdithiolene(inmol, liglist, ligdents, ligcons):
 
 def get_descriptor_vector(this_complex, custom_ligand_dict=False,
                           ox_modifier=False, NumB=False, Gval=False,
-                          lacRACs=True, loud=False, metal_ind=None,
+                          loud=False, metal_ind=None,
                           smiles_charge=False, eq_sym=False,
                           use_dist=False, size_normalize=False):
     """ Calculate and return all geo-based RACs for a given octahedral complex (featurize).
@@ -87,9 +88,6 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
             Use Number of Bonds as additional RAC, by default False
         Gval : bool, optional
             Use group number as RAC, by default False
-        lacRACs : bool, optional
-            Use ligand_assign_consistent (lac) to represent mol3D given
-            if False, use ligand_assign (older), default True
         loud : bool, optional
             Print degubbging information, by default False
         metal_ind : bool, optional
@@ -110,15 +108,11 @@ def get_descriptor_vector(this_complex, custom_ligand_dict=False,
     descriptors = []
     # Generate custom_ligand_dict if one not passed!
     if not custom_ligand_dict:
-        if lacRACs:
-            from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
-        else:
-            from molSimplify.Classes.ligand import ligand_assign as ligand_assign
         liglist, ligdents, ligcons = ligand_breakdown(this_complex, BondedOct=True) # Complex is assumed to be octahedral
         if sum(ligdents) == 6:
             (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list,
              ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list,
-             built_ligand_list) = ligand_assign(this_complex, liglist,
+             built_ligand_list) = ligand_assign_consistent(this_complex, liglist,
                                                 ligdents, ligcons, loud,
                                                 eq_sym_match=eq_sym)
             custom_ligand_dict = {'ax_ligand_list': ax_ligand_list,

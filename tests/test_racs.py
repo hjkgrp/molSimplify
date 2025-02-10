@@ -2,9 +2,9 @@ import pytest
 import pickle
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.ligand import ligand
-from molSimplify.Informatics.RACassemble import create_OHE
 from molSimplify.Informatics.lacRACAssemble import get_descriptor_vector
 from molSimplify.Scripts.io import lig_load
+from molSimplify.Informatics.RACassemble import create_OHE
 
 
 @pytest.mark.parametrize('xyz_path, ref_path', [

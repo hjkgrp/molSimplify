@@ -51,7 +51,7 @@ from molSimplify.Classes.globalvars import (elementsbynum,
                                             globalvars,
                                             romans,
                                             )
-from molSimplify.Informatics.decoration_manager import (decorate_ligand)
+from molSimplify.Informatics.decoration_manager import decorate_ligand
 from molSimplify.Classes.ligand import ligand as ligand_class
 import logging
 

@@ -9,8 +9,7 @@ from typing import Tuple, List, Dict
 from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
-from molSimplify.Informatics.RACassemble import append_descriptors
-from molSimplify.Informatics.autocorrelation import (
+from molSimplify.Informatics.lacRACAssemble import (
     generate_atomonly_autocorrelations,
     generate_atomonly_deltametrics,
     generate_full_complex_autocorrelations,
@@ -81,6 +80,36 @@ def get_primitive(datapath, writepath, occupancy_tolerance=1):
 
 
 '''<<<< END OF CODE TO COMPUTE PRIMITIVE UNIT CELLS >>>>'''
+
+# # utility to build standardly formated RACS
+#  @param descriptor_names RAC names, will be appended to
+#  @param descriptors RAC, will be appended to
+#  @param list_of_names names, will be added
+#  @param list_of_props types of RACs
+#  @param prefix RAC prefix
+#  @param suffix RAC suffix
+#  @return descriptor_names updated names
+#  @return descriptors updated RACs
+def append_descriptors(descriptor_names, descriptors, list_of_names,
+                       list_of_props, prefix, suffix):
+    try:
+        basestring
+    except NameError:
+        basestring = str
+
+    for names in list_of_names:
+        if not isinstance(names, basestring):
+            names = ["-".join([prefix, str(i), suffix]) for i in names]
+            descriptor_names += names
+        else:
+            names = "-".join([prefix, str(names), suffix])
+            descriptor_names.append(names)
+    for values in list_of_props:
+        if not isinstance(names, basestring):
+            descriptors.extend(values)
+        else:
+            descriptors.append(values)
+    return descriptor_names, descriptors
 
 def load_sbu_lc_descriptors(sbupath: str) -> Tuple[str, pd.DataFrame, pd.DataFrame]:
     """
