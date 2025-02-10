@@ -1,4 +1,4 @@
-from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign_consistent
+from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign_original
 from molSimplify.Informatics.graph_analyze import (get_lig_EN,
                                                    get_truncated_kier,
                                                    kier)
@@ -19,7 +19,7 @@ def generate_all_ligand_misc(mol, loud, custom_ligand_dict=False, force_legacy=F
         colnames = ['dent', 'charge']
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
-        ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign_consistent(
+        ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list = ligand_assign_original(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]

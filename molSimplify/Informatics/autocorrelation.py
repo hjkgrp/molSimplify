@@ -1,6 +1,6 @@
 import numpy as np
 from molSimplify.Classes.mol3D import mol3D
-from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign
+from molSimplify.Classes.ligand import ligand_breakdown, ligand_assign_original
 from molSimplify.Scripts.geometry import distance
 from molSimplify.Classes.globalvars import globalvars
 
@@ -777,7 +777,7 @@ def find_ligand_autocorrelations_oct(mol, prop, loud, depth, name=False,
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list,
          eq_natoms_list, ax_con_int_list, eq_con_int_list,
-         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+         ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -842,7 +842,7 @@ def find_ligand_autocorrelation_derivatives_oct(mol, prop, loud, depth, name=Fal
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
-         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -915,7 +915,7 @@ def find_ligand_autocorrs_and_deltametrics_oct_dimers(mol, prop, loud, depth, na
         raise ValueError('No custom ligand dict provided!')
         # liglist, ligdents, ligcons = ligand_breakdown(mol)
         # ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list,
-        # ax_con_list, eq_con_list, built_ligand_list = ligand_assign(
+        # ax_con_list, eq_con_list, built_ligand_list = ligand_assign_original(
         #    mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax1_ligand_list = custom_ligand_dict["ax1_ligand_list"]
@@ -982,7 +982,7 @@ def find_ligand_deltametrics_oct(mol, prop, loud, depth, name=False, oct=True, c
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
-         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -1025,7 +1025,7 @@ def find_ligand_deltametric_derivatives_oct(mol, prop, loud, depth, name=False, 
     if not custom_ligand_dict:
         liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
-         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+         eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
             mol, liglist, ligdents, ligcons, loud, name=False)
     else:
         ax_ligand_list = custom_ligand_dict["ax_ligand_list"]
@@ -1065,7 +1065,7 @@ def find_mc_eq_ax_deltametrics_oct(mol, prop, loud, depth, name=False, oct=True,
     # Calculate mc/ax, mc/eq deltametrics.
     liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
     (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
-     eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+     eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
         mol, liglist, ligdents, ligcons, loud, name=False)
     # shape reduce
     ax_con_list = [x[0] for x in ax_con_list]
@@ -1083,7 +1083,7 @@ def find_mc_eq_ax_autocorrelation_oct(mol, prop, loud, depth, name=False, oct=Tr
     # Calculate mc/ax, mc/eq deltametrics.
     liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=oct)
     (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list,
-     eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign(
+     eq_con_int_list, ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_original(
         mol, liglist, ligdents, ligcons, loud, name=False)
     # shape reduce
     ax_con_list = [x[0] for x in ax_con_list]
