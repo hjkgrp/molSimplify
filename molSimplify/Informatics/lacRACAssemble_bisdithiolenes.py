@@ -10,7 +10,7 @@ from molSimplify.Informatics.lacRACAssemble import (generate_all_ligand_autocorr
                                                     generate_metal_ox_deltametrics,
                                                     generate_all_ligand_deltametrics
                                                     )
-from molSimplify.Classes.ligand import ligand_assign_consistent as ligand_assign
+from molSimplify.Classes.ligand import ligand_assign_consistent
 
 globs = globalvars()
 
