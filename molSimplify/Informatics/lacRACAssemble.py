@@ -2323,4 +2323,4 @@ def multimetal_only_deltametric(mol, prop, d, oct=True, catoms=None,
                                    catoms=catoms)
     deltametric_vector = np.divide(deltametric_vector, n_met)
     return (deltametric_vector)
-    
+
