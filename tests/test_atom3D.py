@@ -90,17 +90,19 @@ def test_setcoords(coords):
 
 
 @pytest.mark.parametrize(
-	"sym, mass",
+	"sym, mass, atno, rad",
 	[
-	("B", 10.83),
-	("Tc", 98.9),
-	("Cs", 132.9055),
+	("B", 10.83, 5, 0.85),
+	("Tc", 98.9, 43, 1.56),
+	("Cs", 132.9055, 55, 2.32),
 	])
-def test_mutate(sym, mass):
+def test_mutate(sym, mass, atno, rad):
 	my_atom = atom3D()
 	my_atom.mutate(newType=sym)
 	assert sym == my_atom.symbol()
 	assert mass == my_atom.mass
+	assert atno == my_atom.atno
+	assert rad == my_atom.rad
 
 
 @pytest.mark.parametrize(

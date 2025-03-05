@@ -125,7 +125,7 @@ def test_readfromxyz(resource_path_root):
     for atom, ref in zip(mol.atoms, atoms_ref):
         assert (atom.symbol(), atom.coords()) == ref
 
-    # Test read_final_optim_step
+    # Test read_final_optim_step.
     mol = mol3D()
     mol.readfromxyz(xyz_file, read_final_optim_step=True)
 
@@ -137,6 +137,23 @@ def test_readfromxyz(resource_path_root):
         ("F", [-0.0599967119, -1.9420284092, 0.0000133671]),
         ("F", [-0.0600235008, 0.0000085354, 1.9418467918]),
         ("F", [-0.0599958059, -0.0000082485, -1.9418293370]),
+    ]
+
+    for atom, ref in zip(mol.atoms, atoms_ref):
+        assert (atom.symbol(), atom.coords()) == ref
+
+    # Test readstring.
+    my_str = '3\n\n\
+    O         -5.34667        1.94740        0.01871\n\
+    H         -4.35735        1.91881       -0.01321\n\
+    H         -5.63604        1.31549       -0.68666\n'
+    mol = mol3D()
+    mol.readfromxyz(my_str, readstring=True)
+
+    atoms_ref = [
+        ("O", [-5.34667, 1.94740, 0.01871]),
+        ("H", [-4.35735, 1.91881, -0.01321]),
+        ("H", [-5.63604, 1.31549, -0.68666]),
     ]
 
     for atom, ref in zip(mol.atoms, atoms_ref):
@@ -485,6 +502,9 @@ def test_createMolecularGraph(resource_path_root, name, oct_flag):
     reference_path = resource_path_root / "refs" / "json" / "createMolecularGraph" / f"{name}_oct_{oct_flag}_graph.json"
     with open(reference_path, 'r') as f:
         reference_graph = json.load(f)
+
+    # For saving np arrays to json, need to cast to list.
+    # Convert back for comparison.
     reference_graph = np.array(reference_graph)
 
     assert np.array_equal(reference_graph, mol.get_graph())
@@ -590,6 +610,9 @@ def test_assign_graph_from_net(resource_path_root, name, return_graph):
     reference_path = resource_path_root / "refs" / "json" / "assign_graph_from_net" / f"{name}_graph.json"
     with open(reference_path, 'r') as f:
         reference_graph = json.load(f)
+
+    # For saving np arrays to json, need to cast to list.
+    # Convert back for comparison.
     reference_graph = np.array(reference_graph)
 
     assert np.array_equal(reference_graph, graph)
@@ -625,6 +648,9 @@ def test_convert2OBMol(resource_path_root, name, force_clean_flag):
     # assert reference_dict['Bond4GetBeginAtomIdx'] == mol.OBMol.GetBond(4).GetBeginAtomIdx()
     # assert reference_dict['Bond4GetEndAtomIdx'] == mol.OBMol.GetBond(4).GetEndAtomIdx()
 
+    # Seems version of Open Babel changes the ordering of bonds (e.g., which
+    # bond is at index 4).
+
 
 @pytest.mark.parametrize(
     "name",
@@ -641,6 +667,9 @@ def test_convert2OBMol2(resource_path_root, name):
     reference_path = resource_path_root / "refs" / "json" / "convert2OBMol2" /  f"{name}_BO_mat.json"
     with open(reference_path, 'r') as f:
         reference_BO_mat = json.load(f)
+
+    # For saving np arrays to json, need to cast to list.
+    # Convert back for comparison.
     reference_BO_mat = np.array(reference_BO_mat)
 
     mol = mol3D()
@@ -660,29 +689,197 @@ def test_convert2OBMol2(resource_path_root, name):
     assert np.array_equal(reference_BO_mat, mol.BO_mat)
 
 
-# def test_delete_atom(resource_path_root):
-#     pass
+@pytest.mark.parametrize(
+    "name, canonicalize, use_mol2, correct_smiles",
+    [
+    ('phenanthroline', True, True, 'c1ccc2c(n1)c1ncccc1cc2'),
+    ('phenanthroline', True, False, 'c1ccc2c(n1)c1ncccc1cc2'),
+    ('phenanthroline', False, True, 'c1c2c(ncc1)c1c(cc2)cccn1'),
+    ('phenanthroline', False, False, 'c1c2c(ncc1)c1c(cc2)cccn1'),
+    ('taurine', True, True, 'NCCS([O])([O])O'),
+    ('taurine', True, False, 'NCCS(O)([O])[O]'),
+    ('taurine', False, True, 'S([O])([O])(O)CCN'),
+    ('taurine', False, False, 'S([O])([O])(O)CCN'),
+    ])
+def test_get_smiles(resource_path_root, name, canonicalize, use_mol2, correct_smiles):
+    xyz_file = resource_path_root / "inputs" / "xyz_files" / f"{name}.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+    smiles = mol.get_smiles(canonicalize=canonicalize, use_mol2=use_mol2)
+    assert smiles == correct_smiles
 
 
-# def test_delete_atoms(resource_path_root):
-#     pass
+@pytest.mark.parametrize(
+    "name, correct_answer",
+    [
+    ('caffeine', [-4.41475,-0.30732,0]),
+    ('HKUST-1_sbu', [-4.64738,-2.68238,7.59]),
+    ]
+    )
+def test_centermass(resource_path_root, name, correct_answer):
+    xyz_file = resource_path_root / "inputs" / "xyz_files" / f"{name}.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+    center_of_mass = mol.centermass()
+    assert np.allclose(center_of_mass, correct_answer, atol=1e-5)
 
 
-# def test_get_smiles(resource_path_root):
-#     pass
+@pytest.mark.parametrize(
+    "name, bonddict",
+    [
+    ("benzene", True),
+    ("benzene", False),
+    ("caffeine", True),
+    ("caffeine", False),
+    ]
+    )
+def test_populateBOMatrix(resource_path_root, name, bonddict):
+    xyz_file = resource_path_root / "inputs" / "xyz_files" / f"{name}.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+    mol.convert2OBMol()
+    molBOMat = mol.populateBOMatrix(bonddict=bonddict)
+
+    if bonddict:
+        reference_path = resource_path_root / "refs" / "json" / "populateBOMatrix" /  f"{name}_bo_dict_{bonddict}.json"
+        with open(reference_path, 'r') as f:
+            reference_bo_dict = json.load(f)
+        # Needed to adjust the reference dictionary in order
+        # to save to json.
+        # So, need to adjust this dictionary for the
+        # comparison.
+        mod_bo_dict = {str(k): v for k, v in mol.bo_dict.items()}
+        assert mod_bo_dict == reference_bo_dict
+
+    reference_path = resource_path_root / "refs" / "json" / "populateBOMatrix" /  f"{name}_molBOMat.json"
+    with open(reference_path, 'r') as f:
+        reference_BOMat = json.load(f)
+
+    # For saving np arrays to json, need to cast to list.
+    # Convert back for comparison.
+    assert np.array_equal(molBOMat, np.array(reference_BOMat))
 
 
-# def test_populateBOMatrix(resource_path_root):
-#     pass
+@pytest.mark.parametrize(
+    "name, idx, bo_dict_flag, graph_flag",
+    [
+    ("FIrpic", 13, True, True),
+    ("FIrpic", 13, True, False),
+    ("FIrpic", 13, False, True),
+    ("FIrpic", 13, False, False),
+    ("penicillin", 16, True, True),
+    ("penicillin", 16, True, False),
+    ("penicillin", 16, False, True),
+    ("penicillin", 16, False, False),
+    ]
+    )
+def test_deleteatom(resource_path_root, name, idx, bo_dict_flag, graph_flag):
+    xyz_file = resource_path_root / "inputs" / "xyz_files" / f"{name}.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+
+    reference_path = resource_path_root / "refs" / "json" / "deleteatom" /  f"{name}_bo_dict_{bo_dict_flag}_graph_{graph_flag}.json"
+    with open(reference_path, 'r') as f:
+        reference_dict = json.load(f)
+
+    if bo_dict_flag:
+        mol.convert2OBMol()
+        mol.populateBOMatrix(bonddict=True)
+    if graph_flag:
+        mol.createMolecularGraph(oct=False)
+
+    mol.deleteatom(idx)
+
+    assert mol.natoms == len(mol.atoms)
+    assert mol.mass == reference_dict['mass']
+    assert mol.natoms == reference_dict['natoms']
+    assert len(mol.atoms) == reference_dict['len_atoms']
+
+    if mol.bo_dict:
+        # Needed to adjust the reference dictionary in order
+        # to save to json.
+        # So, need to adjust this dictionary for the
+        # comparison.
+        mod_bo_dict = {str(k): v for k, v in mol.bo_dict.items()}
+    else:
+        mod_bo_dict = {}
+    assert mod_bo_dict == reference_dict['bo_dict']
+
+    if len(mol.graph):
+        # For saving np arrays to json, need to cast to list.
+        # Convert back for comparison.
+        assert np.array_equal(mol.graph, np.array(reference_dict['graph']))
+    else:
+        assert mol.graph == reference_dict['graph']
 
 
+@pytest.mark.parametrize(
+    "name, idxs, bo_dict_flag, graph_flag",
+    [
+    ("FIrpic", [13, 40, 27, 21], True, True),
+    ("FIrpic", [13, 21, 27, 40], True, True),
+    ("FIrpic", [13, 40, 27, 21], True, False),
+    ("FIrpic", [13, 40, 27, 21], False, True),
+    ("FIrpic", [13, 40, 27, 21], False, False),
+    ("penicillin", [16, 6, 12, 34], True, True),
+    ("penicillin", [16, 6, 12, 34], True, False),
+    ("penicillin", [16, 6, 12, 34], False, True),
+    ("penicillin", [16, 6, 12, 34], False, False),
+    ]
+    )
+def test_deleteatoms(resource_path_root, name, idxs, bo_dict_flag, graph_flag):
+    xyz_file = resource_path_root / "inputs" / "xyz_files" / f"{name}.xyz"
+    mol = mol3D()
+    mol.readfromxyz(xyz_file)
+
+    reference_path = resource_path_root / "refs" / "json" / "deleteatoms" /  f"{name}_bo_dict_{bo_dict_flag}_graph_{graph_flag}.json"
+    with open(reference_path, 'r') as f:
+        reference_dict = json.load(f)
+
+    if bo_dict_flag:
+        mol.convert2OBMol()
+        mol.populateBOMatrix(bonddict=True)
+    if graph_flag:
+        mol.createMolecularGraph(oct=False)
+
+    mol.deleteatoms(idxs)
+
+    assert mol.natoms == len(mol.atoms)
+    assert mol.mass == reference_dict['mass']
+    assert mol.natoms == reference_dict['natoms']
+    assert len(mol.atoms) == reference_dict['len_atoms']
+
+    if mol.bo_dict:
+        # Needed to adjust the reference dictionary in order
+        # to save to json.
+        # So, need to adjust this dictionary for the
+        # comparison.
+        mod_bo_dict = {str(k): v for k, v in mol.bo_dict.items()}
+    else:
+        mod_bo_dict = {}
+    assert mod_bo_dict == reference_dict['bo_dict']
+
+    if len(mol.graph):
+        # For saving np arrays to json, need to cast to list.
+        # Convert back for comparison.
+        assert np.array_equal(mol.graph, np.array(reference_dict['graph']))
+    else:
+        assert mol.graph == reference_dict['graph']
+
+
+# TODO hapticity_compounds/BOWROX_comp_0.mol2
+# TODO io/formaldehyde.mol2
 # def test_readfrommol2(resource_path_root):
 #     pass
+# TODO readstring
+# TODO check graph, bo_graph, bo_graph_trunc, bo_dict
 
 
 # def test_writemol2(resource_path_root, tmp_path):
 #     pass
+# TODO writestring, ignoreX
 
 
 # def test_writexyz(resource_path_root, tmp_path):
 #     pass
+# TODO writestring, withgraph, no_tabs, ignoreX
