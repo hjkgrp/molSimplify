@@ -145,12 +145,11 @@ def autocorrelation(mol, prop_vec, orig, d, oct=True, use_dist=False, size_norma
                 result_vector[hopped] += prop_vec[orig] * prop_vec[inds]
             else:
                 this_dist = mol.getDistToMetal(orig, inds)
-                if size_normalize:
-                    result_vector[hopped] += prop_vec[orig] * prop_vec[inds] / (this_dist * mol.natoms)
-                else:
-                    result_vector[hopped] += prop_vec[orig] * prop_vec[inds] / (this_dist)
+                result_vector[hopped] += prop_vec[orig] * prop_vec[inds] / this_dist
             historical_set.update(active_set)
         active_set = new_active_set
+        if size_normalize:
+            result_vector[hopped] /= mol.natoms
     return (result_vector)
 
 
@@ -238,7 +237,6 @@ def deltametric(mol, prop_vec, orig, d, oct=True, use_dist=False, size_normalize
     hopped = 0
     active_set = set([orig])
     historical_set = set()
-    result_vector[hopped] = 0.00
     while hopped < (d):
         hopped += 1
         new_active_set = set()
@@ -253,12 +251,11 @@ def deltametric(mol, prop_vec, orig, d, oct=True, use_dist=False, size_normalize
                 result_vector[hopped] += prop_vec[orig] - prop_vec[inds]
             else:
                 this_dist = mol.getDistToMetal(orig, inds)
-                if size_normalize:
-                    result_vector[hopped] += (prop_vec[orig] - prop_vec[inds]) / (this_dist * mol.natoms + 1e-6)
-                else:
-                    result_vector[hopped] += (prop_vec[orig] - prop_vec[inds]) / (this_dist + 1e-6)
+                result_vector[hopped] += (prop_vec[orig] - prop_vec[inds]) / (this_dist + 1e-6)
             historical_set.update(active_set)
         active_set = new_active_set
+        if size_normalize:
+            result_vector[hopped] /= mol.natoms
     return (result_vector)
 
 
@@ -1592,7 +1589,6 @@ def deltametric_catoms(mol, prop_vec, orig, d, oct=True, catoms=None):
     hopped = 0
     active_set = set([orig])
     historical_set = set()
-    result_vector[hopped] = 0.00
     while hopped < (d):
         hopped += 1
         new_active_set = set()

@@ -743,7 +743,7 @@ def test_createMolecularGraph(resource_path_root, name, oct_flag):
     # Convert back for comparison.
     reference_graph = np.array(reference_graph)
 
-    assert np.array_equal(reference_graph, mol.get_graph())
+    assert np.array_equal(reference_graph, mol.graph)
 
 
 @pytest.mark.parametrize(
@@ -857,7 +857,7 @@ def test_assign_graph_from_net(resource_path_root, name, return_graph):
         graph = mol.assign_graph_from_net(net_file, return_graph=return_graph)
     else:
         mol.assign_graph_from_net(net_file, return_graph=return_graph)
-        graph = mol.get_graph()
+        graph = mol.graph
 
     reference_path = resource_path_root / "refs" / "json" / "test_mol3D" / "assign_graph_from_net" / f"{name}_graph.json"
     with open(reference_path, 'r') as f:

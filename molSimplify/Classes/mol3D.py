@@ -4363,6 +4363,8 @@ class mol3D:
     def get_graph(self):
         """
         Return the graph attribute of the molecule.
+        It is faster to just use mol.graph though,
+        where mol is the mol3D object.
 
         Parameters
         ----------
