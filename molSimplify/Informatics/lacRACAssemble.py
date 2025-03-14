@@ -743,7 +743,7 @@ def generate_all_ligand_autocorrelation_derivatives_lac(mol, loud=False, depth=4
 def generate_all_ligand_deltametrics_lac(mol, loud=False, depth=4, flag_name=False,
                                      custom_ligand_dict=False, NumB=False, Gval=False,
                                      use_dist=False, size_normalize=False, MRdiag_dict={},
-                                     transition_metals_only=transition_metals_only):
+                                     transition_metals_only=True):
     """
     Utility for generating all ligand-based deltametric autocorrelations for a complex.
 
