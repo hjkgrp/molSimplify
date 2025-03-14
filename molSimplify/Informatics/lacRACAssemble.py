@@ -182,7 +182,7 @@ def get_descriptor_vector(this_complex,
                                                           custom_ligand_dict=custom_ligand_dict,
                                                           NumB=NumB, Gval=Gval, use_dist=use_dist,
                                                           size_normalize=size_normalize,
-                                                          MRdiag_dict=MRdiag_dict, 
+                                                          MRdiag_dict=MRdiag_dict,
                                                           transition_metals_only=transition_metals_only)
     if not alleq:
         descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
