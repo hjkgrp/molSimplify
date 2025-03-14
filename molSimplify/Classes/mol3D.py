@@ -3912,7 +3912,8 @@ class mol3D:
 
     def get_features(self, lac=True, force_generate=False, eq_sym=False,
                      use_dist=False, NumB=False, Gval=False, size_normalize=False,
-                     alleq=False, strict_cutoff=False, catom_list=None, MRdiag_dict={}, depth=3):
+                     alleq=False, strict_cutoff=False, catom_list=None, MRdiag_dict={},
+                     depth=3, transition_metals_only=True):
         """
         Get geo-based RAC features for this complex (if octahedral).
 
@@ -3942,6 +3943,8 @@ class mol3D:
                 Keys are ligand identifiers, values are MR diagnostics like E_corr.
             depth : int, optional
                 The depth of the RACs (how many bonds out the RACs go).
+            transition_metals_only : bool, optional
+                Flag if only transition metals counted as metals, by default True.
 
         Returns
         -------
@@ -3954,12 +3957,13 @@ class mol3D:
         if not len(self.graph):
             self.createMolecularGraph(strict_cutoff=strict_cutoff, catom_list=catom_list)
         if not force_generate:
-            geo_type = self.get_geometry_type()
+            geo_type = self.get_geometry_type(transition_metals_only=transition_metals_only)
             print("geotype: ", geo_type)
         if force_generate or geo_type['geometry'] == 'octahedral':
             names, racs = get_descriptor_vector(self, lacRACs=lac, eq_sym=eq_sym, use_dist=use_dist,
                                                 NumB=NumB, Gval=Gval, size_normalize=size_normalize,
-                                                alleq=alleq, MRdiag_dict=MRdiag_dict, depth=depth)
+                                                alleq=alleq, MRdiag_dict=MRdiag_dict, depth=depth,
+                                                transition_metals_only=transition_metals_only)
             results = dict(zip(names, racs))
         else:
             print("Warning: Featurization not yet implemented for non-octahedral complexes. Return a empty dict.")

@@ -46,7 +46,7 @@ def get_descriptor_vector(this_complex,
                           smiles_charge=False, eq_sym=False,
                           use_dist=False, size_normalize=False,
                           alleq=False, MRdiag_dict={},
-                          depth=3,
+                          depth=3, transition_metals_only=True,
                           ):
     """
     Calculate and return all geo-based RACs for a given octahedral complex (featurize).
@@ -90,6 +90,8 @@ def get_descriptor_vector(this_complex,
             Keys are ligand identifiers, values are MR diagnostics like E_corr.
         depth : int, optional
             The depth of the RACs (how many bonds out the RACs go).
+        transition_metals_only : bool, optional
+            Flag if only transition metals counted as metals, by default True.
 
     Returns
     -------
@@ -104,8 +106,13 @@ def get_descriptor_vector(this_complex,
     descriptors = []
     # Generate custom_ligand_dict if one not passed!
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(this_complex, BondedOct=True) # Complex is assumed to be octahedral
-        if not alleq:
+        liglist, ligdents, ligcons = ligand_breakdown(this_complex,
+        BondedOct=True, transition_metals_only=transition_metals_only) # Complex is assumed to be octahedral
+        if alleq:
+            from molSimplify.Classes.ligand import ligand_assign_alleq
+            ax_ligand_list, eq_ligand_list, ax_con_int_list, eq_con_int_list = ligand_assign_alleq(
+                this_complex, liglist, ligdents, ligcons)
+        else:
             if lacRACs:
                 assignment_func = ligand_assign_consistent
             else:
@@ -113,10 +120,7 @@ def get_descriptor_vector(this_complex,
             ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, \
                 ax_con_int_list, eq_con_int_list, ax_con_list, eq_con_list, \
                 built_ligand_list = assignment_func(this_complex, liglist, ligdents, ligcons, loud, eq_sym_match=eq_sym)
-        else:
-            from molSimplify.Classes.ligand import ligand_assign_alleq
-            ax_ligand_list, eq_ligand_list, ax_con_int_list, eq_con_int_list = ligand_assign_alleq(
-                this_complex, liglist, ligdents, ligcons)
+
         custom_ligand_dict = {'ax_ligand_list': ax_ligand_list,
                               'eq_ligand_list': eq_ligand_list,
                               'ax_con_int_list': ax_con_int_list,
@@ -124,7 +128,8 @@ def get_descriptor_vector(this_complex,
     # misc descriptors
     results_dictionary = generate_all_ligand_misc(this_complex, loud=False,
                                                   custom_ligand_dict=custom_ligand_dict,
-                                                  smiles_charge=smiles_charge)
+                                                  smiles_charge=smiles_charge,
+                                                  transition_metals_only=transition_metals_only)
     descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                        results_dictionary['colnames'],
                                                        results_dictionary['result_ax'],
@@ -140,7 +145,8 @@ def get_descriptor_vector(this_complex,
                                                                 modifier=ox_modifier, NumB=NumB,
                                                                 Gval=Gval, use_dist=use_dist,
                                                                 size_normalize=size_normalize,
-                                                                MRdiag_dict=MRdiag_dict)
+                                                                MRdiag_dict=MRdiag_dict,
+                                                                transition_metals_only=transition_metals_only)
     descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                        results_dictionary['colnames'],
                                                        results_dictionary['results'],
@@ -151,7 +157,8 @@ def get_descriptor_vector(this_complex,
                                                               custom_ligand_dict=custom_ligand_dict,
                                                               NumB=NumB, Gval=Gval, use_dist=use_dist,
                                                               size_normalize=size_normalize,
-                                                              MRdiag_dict=MRdiag_dict)
+                                                              MRdiag_dict=MRdiag_dict,
+                                                              transition_metals_only=transition_metals_only)
     if not alleq:
         descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                            results_dictionary['colnames'],
@@ -175,7 +182,8 @@ def get_descriptor_vector(this_complex,
                                                           custom_ligand_dict=custom_ligand_dict,
                                                           NumB=NumB, Gval=Gval, use_dist=use_dist,
                                                           size_normalize=size_normalize,
-                                                          MRdiag_dict=MRdiag_dict)
+                                                          MRdiag_dict=MRdiag_dict, 
+                                                          transition_metals_only=transition_metals_only)
     if not alleq:
         descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                            results_dictionary['colnames'],
@@ -192,7 +200,8 @@ def get_descriptor_vector(this_complex,
                                                          NumB=NumB, Gval=Gval,
                                                          use_dist=use_dist,
                                                          size_normalize=size_normalize,
-                                                         MRdiag_dict=MRdiag_dict)
+                                                         MRdiag_dict=MRdiag_dict,
+                                                         transition_metals_only=transition_metals_only)
     descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                        results_dictionary['colnames'],
                                                        results_dictionary['results'],
@@ -203,7 +212,8 @@ def get_descriptor_vector(this_complex,
                                                      NumB=NumB, Gval=Gval,
                                                      use_dist=use_dist,
                                                      size_normalize=size_normalize,
-                                                     MRdiag_dict=MRdiag_dict)
+                                                     MRdiag_dict=MRdiag_dict,
+                                                     transition_metals_only=transition_metals_only)
     descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                        results_dictionary['colnames'],
                                                        results_dictionary['results'],
@@ -214,7 +224,8 @@ def get_descriptor_vector(this_complex,
         results_dictionary = generate_metal_ox_autocorrelations(ox_modifier, this_complex,
                                                                 depth=depth,
                                                                 use_dist=use_dist,
-                                                                size_normalize=size_normalize)
+                                                                size_normalize=size_normalize,
+                                                                transition_metals_only=transition_metals_only)
         descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                            results_dictionary['colnames'],
                                                            results_dictionary['results'],
@@ -222,7 +233,8 @@ def get_descriptor_vector(this_complex,
         results_dictionary = generate_metal_ox_deltametrics(ox_modifier, this_complex,
                                                             depth=depth,
                                                             use_dist=use_dist,
-                                                            size_normalize=size_normalize)
+                                                            size_normalize=size_normalize,
+                                                            transition_metals_only=transition_metals_only)
         descriptor_names, descriptors = append_descriptors(descriptor_names, descriptors,
                                                            results_dictionary['colnames'],
                                                            results_dictionary['results'],
@@ -359,7 +371,7 @@ def get_descriptor_derivatives(this_complex, custom_ligand_dict=False, ox_modifi
     return descriptor_derivative_names, descriptor_derivatives
 
 
-def generate_all_ligand_misc(mol, loud=False, custom_ligand_dict=False, smiles_charge=False):
+def generate_all_ligand_misc(mol, loud=False, custom_ligand_dict=False, smiles_charge=False, transition_metals_only=True):
     """
     Get the ligand_misc_descriptors (axial vs. equatorial
     charge (from OBMol) and denticity).
@@ -377,6 +389,8 @@ def generate_all_ligand_misc(mol, loud=False, custom_ligand_dict=False, smiles_c
             custom_ligand_dictionary if passed, by default False.
         smiles_charge : bool, optional
             Whether or not to use the smiles charge assignment, default is False.
+        transition_metals_only : bool, optional
+            Flag if only transition metals counted as metals, by default True.
 
     Returns
     -------
@@ -390,7 +404,8 @@ def generate_all_ligand_misc(mol, loud=False, custom_ligand_dict=False, smiles_c
     result_eq = list()
     colnames = ['dent', 'charge']
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True,
+        transition_metals_only=transition_metals_only) # Complex is assumed to be octahedral
         ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list, \
             ax_con_list, eq_con_list, built_ligand_list = ligand_assign_consistent(
                 mol, liglist, ligdents, ligcons, loud)
@@ -463,7 +478,8 @@ def generate_all_ligand_misc(mol, loud=False, custom_ligand_dict=False, smiles_c
 
 def generate_all_ligand_autocorrelations_lac(mol, loud=False, depth=4, flag_name=False,
                                          custom_ligand_dict=False, NumB=False, Gval=False,
-                                         use_dist=False, size_normalize=False, MRdiag_dict={}):
+                                         use_dist=False, size_normalize=False, MRdiag_dict={},
+                                         transition_metals_only=True):
     """
     Utility for generating all ligand-based product autocorrelations for a complex.
 
@@ -489,6 +505,8 @@ def generate_all_ligand_autocorrelations_lac(mol, loud=False, depth=4, flag_name
             Whether or not to normalize by the number of atoms.
         MRdiag_dict : dict, optional
             Keys are ligand identifiers, values are MR diagnostics like E_corr.
+        transition_metals_only : bool, optional
+            Flag if only transition metals counted as metals, by default True.
 
     Returns
     -------
@@ -516,7 +534,8 @@ def generate_all_ligand_autocorrelations_lac(mol, loud=False, depth=4, flag_name
     result_ax_con = list()
     result_eq_con = list()
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True,
+        transition_metals_only=transition_metals_only) # Complex is assumed to be octahedral
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list,
          ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_consistent(
             mol, liglist, ligdents, ligcons, loud)
@@ -537,18 +556,22 @@ def generate_all_ligand_autocorrelations_lac(mol, loud=False, depth=4, flag_name
         for i in range(0, n_ax):
             if not list(ax_ligand_ac_full):
                 ax_ligand_ac_full = full_autocorrelation(ax_ligand_list[i].mol, properties, depth, use_dist=use_dist,
-                                                         size_normalize=size_normalize, MRdiag_dict=MRdiag_dict)
+                                                         size_normalize=size_normalize, MRdiag_dict=MRdiag_dict,
+                                                         transition_metals_only=transition_metals_only)
             else:
                 ax_ligand_ac_full += full_autocorrelation(ax_ligand_list[i].mol, properties, depth, use_dist=use_dist,
-                                                          size_normalize=size_normalize, MRdiag_dict=MRdiag_dict)
+                                                          size_normalize=size_normalize, MRdiag_dict=MRdiag_dict,
+                                                          transition_metals_only=transition_metals_only)
         ax_ligand_ac_full = np.divide(ax_ligand_ac_full, n_ax)
         for i in range(0, n_eq):
             if not list(eq_ligand_ac_full):
                 eq_ligand_ac_full = full_autocorrelation(eq_ligand_list[i].mol, properties, depth, use_dist=use_dist,
-                                                         size_normalize=size_normalize, MRdiag_dict=MRdiag_dict)
+                                                         size_normalize=size_normalize, MRdiag_dict=MRdiag_dict,
+                                                         transition_metals_only=transition_metals_only)
             else:
                 eq_ligand_ac_full += full_autocorrelation(eq_ligand_list[i].mol, properties, depth, use_dist=use_dist,
-                                                          size_normalize=size_normalize, MRdiag_dict=MRdiag_dict)
+                                                          size_normalize=size_normalize, MRdiag_dict=MRdiag_dict,
+                                                          transition_metals_only=transition_metals_only)
         eq_ligand_ac_full = np.divide(eq_ligand_ac_full, n_eq)
         ax_ligand_ac_con = []
         eq_ligand_ac_con = []
@@ -719,7 +742,8 @@ def generate_all_ligand_autocorrelation_derivatives_lac(mol, loud=False, depth=4
 
 def generate_all_ligand_deltametrics_lac(mol, loud=False, depth=4, flag_name=False,
                                      custom_ligand_dict=False, NumB=False, Gval=False,
-                                     use_dist=False, size_normalize=False, MRdiag_dict={}):
+                                     use_dist=False, size_normalize=False, MRdiag_dict={},
+                                     transition_metals_only=transition_metals_only):
     """
     Utility for generating all ligand-based deltametric autocorrelations for a complex.
 
@@ -745,6 +769,8 @@ def generate_all_ligand_deltametrics_lac(mol, loud=False, depth=4, flag_name=Fal
             Whether or not to normalize by the number of atoms.
         MRdiag_dict : dict, optional
             Keys are ligand identifiers, values are MR diagnostics like E_corr.
+        transition_metals_only : bool, optional
+            Flag if only transition metals counted as metals, by default True.
 
     Returns
     -------
@@ -770,7 +796,8 @@ def generate_all_ligand_deltametrics_lac(mol, loud=False, depth=4, flag_name=Fal
             allowed_strings += [k]
             labels_strings += [k]
     if not custom_ligand_dict:
-        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True) # Complex is assumed to be octahedral
+        liglist, ligdents, ligcons = ligand_breakdown(mol, BondedOct=True,
+        transition_metals_only=transition_metals_only) # Complex is assumed to be octahedral
         (ax_ligand_list, eq_ligand_list, ax_natoms_list, eq_natoms_list, ax_con_int_list, eq_con_int_list,
          ax_con_list, eq_con_list, built_ligand_list) = ligand_assign_consistent(mol, liglist, ligdents, ligcons, loud)
     else:

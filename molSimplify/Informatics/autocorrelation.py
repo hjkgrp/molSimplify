@@ -2369,7 +2369,8 @@ def generate_full_complex_coulomb_autocorrelations(mol,
 #### Possibly Needed - ox_ utilities ###
 def generate_metal_ox_autocorrelations(oxmodifier, mol, depth=4,
                                        oct=True, flag_name=False,
-                                       use_dist=False, size_normalize=False):
+                                       use_dist=False, size_normalize=False,
+                                       transition_metals_only=True):
     # # oxmodifier - dict, used to modify prop vector (e.g., for adding
     # #             ONLY used with  ox_nuclear_charge    ox or charge)
     # #              {"Fe":2, "Co": 3} etc, normally only 1 metal...
@@ -2378,7 +2379,8 @@ def generate_metal_ox_autocorrelations(oxmodifier, mol, depth=4,
     colnames = []
     metal_ox_ac = metal_only_autocorrelation(mol, 'ox_nuclear_charge', depth, oct=oct,
                                              modifier=oxmodifier,
-                                             use_dist=use_dist, size_normalize=size_normalize)
+                                             use_dist=use_dist, size_normalize=size_normalize,
+                                             transition_metals_only=transition_metals_only)
     this_colnames = []
     for i in range(0, depth + 1):
         this_colnames.append('O' + '-' + str(i))
@@ -2405,7 +2407,8 @@ def generate_metal_ox_autocorrelation_derivatives(oxmodifier, mol, depth=4, oct=
 
 
 def generate_metal_ox_deltametrics(oxmodifier, mol, depth=4, oct=True,
-                                   flag_name=False, use_dist=False, size_normalize=False):
+                                   flag_name=False, use_dist=False, size_normalize=False,
+                                   transition_metals_only=True):
     # # oxmodifier - dict, used to modify prop vector (e.g., for adding
     # #             ONLY used with  ox_nuclear_charge    ox or charge)
     # #              {"Fe":2, "Co": 3} etc, normally only 1 metal...
@@ -2414,7 +2417,8 @@ def generate_metal_ox_deltametrics(oxmodifier, mol, depth=4, oct=True,
     colnames = []
     metal_ox_ac = metal_only_deltametric(mol, 'ox_nuclear_charge', depth, oct=oct,
                                          modifier=oxmodifier, use_dist=use_dist,
-                                         size_normalize=size_normalize)
+                                         size_normalize=size_normalize,
+                                         transition_metals_only=transition_metals_only)
     this_colnames = []
     for i in range(0, depth + 1):
         this_colnames.append('O' + '-' + str(i))

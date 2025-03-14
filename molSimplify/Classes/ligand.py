@@ -283,6 +283,8 @@ def ligand_breakdown(mol, BondedOct=False, silent=True, transition_metals_only=T
             List of ligand denticities. Length is the number of ligands
         ligcons : list of list of int
             List of ligand connection indices (in mol). Length is the number of ligands
+        transition_metals_only : bool, optional
+            Flag if only transition metals counted as metals, by default True.
 
     """
     # this function takes an octahedral
