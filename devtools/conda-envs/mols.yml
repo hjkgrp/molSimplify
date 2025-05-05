@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - openbabel
-  - tensorflow-base >2.0
+  - tensorflow-base >2.0, <2.14
   - scikit-learn
   - pyyaml
   - pandas
