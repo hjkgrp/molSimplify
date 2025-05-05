@@ -1744,8 +1744,8 @@ def main():
 
         mkdir_if_absent(base_database_path_without_overlap) ## Error handling for bad structures. Removing overlapping atoms in the CIF.
 
-        for mof in primitive_cifs:
-            overlap_removal(cif_path=base_database_path_primitive+mof, new_cif_path=base_database_path_without_overlap+mof)
+        for primitive_mof in primitive_cifs:
+            overlap_removal(cif_path=base_database_path_primitive+primitive_mof, new_cif_path=base_database_path_without_overlap+primitive_mof)
 
         cifs_without_overlap = DS_remover(os.listdir(base_database_path_without_overlap))
 
