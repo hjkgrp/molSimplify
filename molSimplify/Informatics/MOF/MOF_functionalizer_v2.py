@@ -24,7 +24,7 @@ import networkx as nx
 import spglib
 import os
 import shutil
-import multiprocessing
+
 import pandas as pd
 import traceback
 import json
