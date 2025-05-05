@@ -1595,7 +1595,7 @@ def post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoor
         return False
     except:
         return True
-   
+
 def atom_deletion(cart_coords, allatomtypes, delete_list):
     """
     Makes new coordinate and atom lists that disregard the undesired hydrogens.
