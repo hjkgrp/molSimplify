@@ -3100,7 +3100,6 @@ def structgen(args: Namespace, rootdir: str, ligands: List[str], ligoc: List[int
 
     del core3D  # Legacy code, unsure if needed
 
-    pfold = rootdir.split('/', 1)[-1]
     print(f'\nIn folder {rootdir}, generated 1 structure!')
 
     return strfiles, emsg, this_diag
