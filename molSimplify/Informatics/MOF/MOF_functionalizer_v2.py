@@ -3,7 +3,7 @@ from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
 from molSimplify.Informatics.MOF.MOF_descriptors import get_primitive
 from molSimplify.Informatics.MOF.monofunctionalized_BDC.index_information import INDEX_INFO
-from molSimplify.Scripts.geometry import checkplanar, PointRotateAxis, setPdistance, kabsch, rotate_mat, distance, rotate_around_axis
+from molSimplify.Scripts.geometry import checkplanar, PointRotateAxis, kabsch, rotate_mat, distance, rotate_around_axis
 from molSimplify.Informatics.MOF.PBC_functions import (
         compute_adj_matrix,
         compute_distance_matrix,
