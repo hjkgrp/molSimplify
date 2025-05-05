@@ -1593,7 +1593,7 @@ def post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoor
     try:
         adj_matrix, _ = compute_adj_matrix(distance_mat, allatomtypes, handle_overlap=False) # Will throw an error if atoms are overlapping after functionalization.
         return False
-    except:
+    except Exception:
         return True
 
 def atom_deletion(cart_coords, allatomtypes, delete_list):
