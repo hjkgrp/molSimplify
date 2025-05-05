@@ -25,9 +25,6 @@ import spglib
 import os
 import shutil
 
-import pandas as pd
-import traceback
-
 import copy
 import pickle
 ### Beginning of functions ###
@@ -1598,46 +1595,7 @@ def post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoor
         return False
     except:
         return True
-    # adj_matrix = adj_matrix.todense()
-    # adj_matrix = np.squeeze(np.asarray(adj_matrix)) # Converting from numpy.matrix to numpy.array
-
-    # # Since functional group atoms are added to the end of the atom type list and fractional coordinate numpy array (see function atom_addition),
-    # # we just check the last few rows of the adjacency matrix.
-    # # These last few rows correspond to the functional group atoms that were added.
-    # print(extra_atom_types)
-
-    # flattened_extra_atom_types = [item for sublist in extra_atom_types for item in sublist]
-    # if len(flattened_extra_atom_types) == 0:
-    #     return bond_overlap
-    # func_group_length = len(extra_atom_types[0])
-
-    # number_functional_groups = len(extra_atom_types)
-    # number_atoms_per_functional_group = len(extra_atom_types[0])
-    # total_func_group_atoms = len(flattened_extra_atom_types)
-
-
-    # index = -1
-
-    # if func_group_length == 1:
-
-    #     for i in range(len(flattened_extra_atom_types)):
-    #         bond_order_mof_atoms = np.sum(adj_matrix[index, 0:-num_func_group_atoms])
-    #         if bond_order_mof_atoms > 1:
-    #             bond_overlap = True
-    #             return bond_overlap
-    #         index  = index - 1
-
-    # else:
-
-    #     for i in range(len(flattened_extra_atom_types)):
-    #         if (i+1) % func_group_length != 0:
-    #             bond_order_mof_atoms = np.sum(adj_matrix[index, 0:-num_func_group_atoms])
-    #             if bond_order_mof_atoms > 0:
-    #                 bond_overlap = True
-    #                 return bond_overlap
-    #         index = index - 1
-
-
+   
 def atom_deletion(cart_coords, allatomtypes, delete_list):
     """
     Makes new coordinate and atom lists that disregard the undesired hydrogens.
