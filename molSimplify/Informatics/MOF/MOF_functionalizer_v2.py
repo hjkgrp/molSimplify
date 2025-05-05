@@ -1752,8 +1752,6 @@ def main():
 
         for MOF in cifs_without_overlap:
             MOF = MOF[0:-4]
-            global current_mof
-            current_mof = MOF
             num_list = [1, 2] ## List containing the number of times functionalization will be done on each linker
             path = 3          ## Functionalization depth between successive functionalizations
             for num_func in num_list:
