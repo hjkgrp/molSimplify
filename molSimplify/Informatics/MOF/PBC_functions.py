@@ -485,7 +485,7 @@ def write_cif(fname, cellprm, fcoords, atom_labels):
     """
     with open(fname,'w') as f_cif:
        f_cif.write("data_I\n")
-       f_cif.write("_chemical_name_common  \'%s\'\n"%(fname.strip(".cif")))
+       f_cif.write("_chemical_name_common  \'%s\'"%(fname.strip(".cif")))
        f_cif.write("_cell_length_a %8.05f\n"%(cellprm[0]))
        f_cif.write("_cell_length_b %8.05f\n"%(cellprm[1]))
        f_cif.write("_cell_length_c %8.05f\n"%(cellprm[2]))
