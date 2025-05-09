@@ -85,7 +85,7 @@ def linker_rotation(molcif, fcoords, linker, rot_angle, cell_v, all_atom_types):
     frac_new_linker : numpy.ndarray
         fractional coordinates of new linker atoms
 
-    """    
+    """
     original_cart_coords = fractional2cart(fcoords, cell_v)
     full_cart_coords = original_cart_coords.copy()
     linker_subgraph = np.array(molcif.graph)[np.ix_(np.array(linker), np.array(linker))]
@@ -100,9 +100,9 @@ def linker_rotation(molcif, fcoords, linker, rot_angle, cell_v, all_atom_types):
     atom_not_to_rotate = []
     new_linker = []
     #linker_coord_original = cart_coords[linker]
-    
+
     metal_list = molcif.findMetal(transition_metals_only=False)
-    
+
     # identifying metal coordinated O's
     # molcif.getBondedAtomsSmart(idx) returns bonded atom id, all_atom_types[val] has bonded atom type
     for idx in linker:
@@ -223,4 +223,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
