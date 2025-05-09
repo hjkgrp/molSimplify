@@ -214,7 +214,7 @@ def main():
 
     rotate_and_write(
         input_cif=input_cif,
-        path2write=path2write
+        path2write=path2write,
         rot_angle=rot_angle,
         is_degree=True
     )
