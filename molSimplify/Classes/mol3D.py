@@ -1741,8 +1741,6 @@ class mol3D:
         # Get BO matrix if exits:
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('mol2')
-        if not len(self.graph):
-            self.createMolecularGraph()
         if self.bo_dict:
             mol2string = self.writemol2('temporary', writestring=True,
                                         ignoreX=ignoreX)
