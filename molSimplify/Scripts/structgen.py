@@ -895,7 +895,7 @@ def xtb_opt(ff: str, mol: mol3D, connected: List[int], constopt: int,
         # number of steps is just restricted to the same maximum used in
         # adaptive mode: 20*50 = 1000
         nsteps = 1000
-    # Initialize defailed input file with optimization parameters.
+    # Initialize detailed input file with optimization parameters.
     input_lines = ['$opt\n', f'maxcycle={nsteps}\n']
     if inertial:
         # engine=inertial is selected in cases if the generation of approximate
