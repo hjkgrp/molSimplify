@@ -179,8 +179,6 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     adj_matrix, _ = compute_adj_matrix(distance_mat, all_atom_types)
     molcif.graph = adj_matrix.todense()
 
-    # Initialize rot_angle_rad to avoid potential uninitialized variable error
-    rot_angle_rad = rot_angle
     # Convert the rotation angle to radians if it is in degrees
     if is_degree:
         rot_angle_rad = rot_angle * np.pi / 180
