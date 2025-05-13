@@ -86,56 +86,67 @@ def linker_rotation(molcif, fcoords, linker, rot_angle, cell_v, all_atom_types):
         fractional coordinates of new linker atoms
 
     """
-    tmp_cart_coords = fractional2cart(fcoords, cell_v)
-    fcoords_connected = XYZ_connected(cell_v, tmp_cart_coords, np.array(molcif.graph))
-    cart_coords = fractional2cart(fcoords_connected, cell_v)
-    Zr_bonded_O = []
-    ZrO_bonded_C = []
+    original_cart_coords = fractional2cart(fcoords, cell_v)
+    full_cart_coords = original_cart_coords.copy()
+    linker_subgraph = np.array(molcif.graph)[np.ix_(np.array(linker), np.array(linker))]
+    linker_fcoords_connected = XYZ_connected(cell_v, full_cart_coords[linker], linker_subgraph)
+    #global_to_local = {global_idx: local_idx for local_idx, global_idx in enumerate(linker)}
+    linker_cart_coords = fractional2cart(linker_fcoords_connected, cell_v)
+    full_cart_coords[linker] = linker_cart_coords
+
+    metal_bonded_O = []
+    metalO_bonded_C = []
     C_axis = []
     atom_not_to_rotate = []
     new_linker = []
-    linker_coord_original = cart_coords[linker]
+    #linker_coord_original = cart_coords[linker]
 
-    # identifying Zr coordinated O's
+    metal_list = molcif.findMetal(transition_metals_only=False)
+
+    # identifying metal coordinated O's
     # molcif.getBondedAtomsSmart(idx) returns bonded atom id, all_atom_types[val] has bonded atom type
     for idx in linker:
         adj_atoms = [all_atom_types[val] for val in molcif.getBondedAtomsSmart(idx)]
-        if 'Zr' in adj_atoms:
+        if any(all_atom_types[metal] in adj_atoms for metal in metal_list):
             atom_not_to_rotate.append(idx)
-            Zr_bonded_O.append(idx)
+            metal_bonded_O.append(idx)
 
-    # Identifying stationary Carbon coordinated to Zr-O
+    # Identifying stationary Carbon coordinated to metal-O
     for idx in linker:
         for val in molcif.getBondedAtomsSmart(idx):
-            if val in Zr_bonded_O and idx not in atom_not_to_rotate:
+            if val in metal_bonded_O and idx not in atom_not_to_rotate:
                 atom_not_to_rotate.append(idx)
-                ZrO_bonded_C.append(idx)
+                metalO_bonded_C.append(idx)
                 break
 
-    # Identifying stationary Carbon coordinated to Zr-O-C
+    # Identifying stationary Carbon coordinated to metal-O-C
     for idx in linker:
         for val in molcif.getBondedAtomsSmart(idx):
-            if val in ZrO_bonded_C and idx not in atom_not_to_rotate:
+            if val in metalO_bonded_C and idx not in atom_not_to_rotate:
                 atom_not_to_rotate.append(idx)
-                C_axis.append(cart_coords[idx]) # designate these Carbons as rotation axis
+                C_axis.append(full_cart_coords[idx]) # designate these Carbons as rotation axis
                 break
 
     # Rotation axis defined by vectors between two stationary Carbons
-    rot_axis = np.array(C_axis[1] - C_axis[0])
+    # If there are no stationary Carbons, return original coordinates
+    try:
+        rot_axis = np.array(C_axis[1] - C_axis[0])
+    except IndexError:
+        return fcoords[linker]
 
     # Obtain new linker coordinates
     for idx in linker:
         if idx in atom_not_to_rotate:
-            new_linker.append(cart_coords[idx])
+            new_linker.append(full_cart_coords[idx])
         else:
-            new_linker.append(rotate_around_axis(rot_axis, C_axis[0], np.ndarray.tolist(cart_coords[idx]), rot_angle))
+            new_linker.append(rotate_around_axis(rot_axis, C_axis[0], np.ndarray.tolist(full_cart_coords[idx]), rot_angle))
 
     # Change back to fractional coordinates
     frac_new_linker = frac_coord(new_linker, cell_v)
 
     return frac_new_linker
 
-def rotate_and_write(input_cif, path2write, rot_angle):
+def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     """
     Rotates the linkers in the provided cif by the angle rot_angle.
     Writes the resulting cif to path2write.
@@ -150,7 +161,9 @@ def rotate_and_write(input_cif, path2write, rot_angle):
         The folder path where the cif of the linker-rotated MOF will be written.
     rot_angle : float
         Desired angle of rotation, in radians.
-
+    is_degree : bool, optional
+        If True, rot_angle is in degrees. If False, rot_angle is in radians.
+        The default is True.
     Returns
     -------
     None
@@ -165,6 +178,13 @@ def rotate_and_write(input_cif, path2write, rot_angle):
     distance_mat = compute_distance_matrix(cell_v, cart_coords)
     adj_matrix, _ = compute_adj_matrix(distance_mat, all_atom_types)
     molcif.graph = adj_matrix.todense()
+
+    # Convert the rotation angle to radians if it is in degrees
+    if is_degree:
+        rot_angle_rad = rot_angle * np.pi / 180
+    else:
+        rot_angle_rad = rot_angle
+        rot_angle = rot_angle_rad * 180 / np.pi
 
     # list of linkers
     linker_list, _ = get_linkers(molcif, adj_matrix, all_atom_types)
@@ -182,58 +202,25 @@ def rotate_and_write(input_cif, path2write, rot_angle):
 
     # Rotation of all of the linkers
     for linker_num, linker in enumerate(linkers_to_rotate_list):
-        new_linker = linker_rotation(molcif, fcoords, linker, rot_angle, cell_v, all_atom_types)
+        new_linker = linker_rotation(molcif, fcoords, linker, rot_angle_rad, cell_v, all_atom_types)
         coords_new[linkers_to_rotate_list[linker_num],:] = new_linker
-    write_cif(f'{path2write}/{basename}_rot_{rot_angle:.2f}.cif', cpar, coords_new, all_atom_types)
+    write_cif(f'{path2write}/{basename}_rot_{rot_angle}.cif', cpar, coords_new, all_atom_types)
+
 
 ### End of functions ###
 
 def main():
-    ### Deprecated example below ###
+    ### Example functionalizing UiO-66 below ###
+    input_cif = 'UiO-66.cif'
+    path2write = '.'
+    rot_angle = 45
 
-    # Functional groups to use
-    func_group = ['Br','CF3','CH3','CN','COOH','Cl','F','I','NH2','NO2','OH','SH']
-
-    for elem in func_group:
-        cif_file=f'functionalized_UiO66_{elem}_1.cif' # Functionalized .CIF file name goes here
-        path2write = str(elem)+'/'
-        # (from pbc_functions) reads cif and returns cpar (cell parametrs: 3 cell lengths, 3 cell angles), a list all atom elements in atom index order, and fractional coordinates
-        cpar, all_atom_types, fcoords = readcif(path2write+cif_file)
-        # obtains mol3D
-        molcif,cell_vector, alpha, beta, gamma = import_from_cif(path2write+cif_file, True)
-        cell_v = np.array(cell_vector)
-        cart_coords = fractional2cart(fcoords, cell_v)
-        distance_mat = compute_distance_matrix(cell_v, cart_coords) # distance matrix of all atoms
-        adj_matrix, _ = compute_adj_matrix(distance_mat, all_atom_types) # from distance matrix and heuristics for bond distances, obtains connectivity information in the form of adjacency matrix (graph)
-        molcif.graph = adj_matrix.todense() # dense form of adjacency matrix / graph is saved to molcif object
-
-
-        # list of linkers
-        linker_list, linker_subgraphlist = get_linkers(molcif, adj_matrix, all_atom_types)
-        # get BDC linkers
-        linker_bdc_list = []
-        for linker_num, linker in enumerate(linker_list):
-            if len(linker) < 2:
-                continue
-            else:
-                linker_bdc_list.append(linker)
-
-        # get coordinates of BDC linkers
-        linker_coords = [fcoords[val,:] for val in linker_bdc_list]
-
-        coords_new = fcoords.copy()
-        rot_angle_degree = np.linspace(0, 360, 25) # Define rotation angles
-        rot_angle_list = rot_angle_degree/180*np.pi
-
-        # Rotation of all of the linkers
-        for i, rot_angle in enumerate(rot_angle_list):
-            for linker_num, linker in enumerate(linker_bdc_list):
-                new_linker=linker_rotation(molcif, fcoords, linker, rot_angle, cell_v, all_atom_types)
-                coords_new[linker_bdc_list[linker_num],:] = new_linker # new_linker
-            path_directory = str(path2write)+str(int(rot_angle_degree[i]))
-            if not os.path.exists(path_directory):
-                   os.mkdir(path_directory)
-            write_cif(f'{path_directory}/modified_{elem}_{int(rot_angle_degree[i])}.cif', cpar, coords_new, all_atom_types)
+    rotate_and_write(
+        input_cif=input_cif,
+        path2write=path2write,
+        rot_angle=rot_angle,
+        is_degree=True
+    )
 
     ### End of example ###
 
