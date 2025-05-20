@@ -1104,6 +1104,10 @@ class mol3D:
                 self.graph, index, np.zeros(graph_size), axis=0)
             self.graph = np.insert(
                 self.graph, index, np.zeros(graph_size+1), axis=1)
+            self.bo_mat = np.insert(
+                self.bo_mat, index, np.zeros(graph_size), axis=0)
+            self.bo_mat = np.insert(
+                self.bo_mat, index, np.zeros(graph_size+1), axis=1)
 
             # Grab connecting atom indices and populate bo_dict and graph
             catom_idxs = self.getBondedAtoms(index)
