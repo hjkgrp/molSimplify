@@ -4,8 +4,6 @@ import os
 from molSimplify.Informatics.MOF.PBC_functions import readcif
 from molSimplify.Informatics.MOF.linker_rotation import rotate_and_write
 
-
-
 @pytest.mark.parametrize(
     ("cif_name", "rotation_angle"),
     [
