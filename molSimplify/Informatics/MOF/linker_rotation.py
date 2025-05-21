@@ -204,7 +204,7 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     for linker_num, linker in enumerate(linkers_to_rotate_list):
         new_linker = linker_rotation(molcif, fcoords, linker, rot_angle_rad, cell_v, all_atom_types)
         coords_new[linkers_to_rotate_list[linker_num],:] = new_linker
-    write_cif(f'{path2write}/{basename}_rot_{rot_angle}.cif', cpar, coords_new, all_atom_types)
+    write_cif(f'{path2write}/{basename}_rot_{rot_angle:.2f}.cif', cpar, coords_new, all_atom_types)
 
 
 ### End of functions ###
