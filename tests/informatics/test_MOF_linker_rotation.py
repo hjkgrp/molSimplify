@@ -2,7 +2,9 @@ import pytest
 import numpy as np
 import os
 from molSimplify.Informatics.MOF.PBC_functions import readcif
-from linker_rotation import rotate_and_write
+from molSimplify.Informatics.MOF.linker_rotation import rotate_and_write
+
+
 
 @pytest.mark.parametrize(
     "cif_name", "rotation_angle",
