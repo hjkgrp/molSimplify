@@ -7,7 +7,7 @@ from molSimplify.Informatics.MOF.linker_rotation import rotate_and_write
 
 
 @pytest.mark.parametrize(
-    "cif_name", "rotation_angle",
+    ("cif_name", "rotation_angle"),
     [
         ("UiO-66", 45), # Zr, BDC, 45 degrees
         ("UiO-66", 135), # Zr, BDC, 90 degrees
