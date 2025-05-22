@@ -164,6 +164,7 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     is_degree : bool, optional
         If True, rot_angle is in degrees. If False, rot_angle is in radians.
         The default is True.
+    
     Returns
     -------
     None
@@ -204,7 +205,10 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     for linker_num, linker in enumerate(linkers_to_rotate_list):
         new_linker = linker_rotation(molcif, fcoords, linker, rot_angle_rad, cell_v, all_atom_types)
         coords_new[linkers_to_rotate_list[linker_num],:] = new_linker
-    write_cif(f'{path2write}/{basename}_rot_{rot_angle:.2f}.cif', cpar, coords_new, all_atom_types)
+    rot_angle_no_period = f'{rot_angle:.2f}'.replace('.', '-')
+    file_path = f'{path2write}/{basename}_rot_{rot_angle_no_period}.cif'
+    print(f'debug: file_path is {file_path}')
+    write_cif(file_path, cpar, coords_new, all_atom_types)
 
 
 ### End of functions ###
