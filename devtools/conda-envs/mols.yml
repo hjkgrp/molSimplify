@@ -28,10 +28,6 @@ dependencies:
   #- pytorch::pytorch
   #- hyperopt
   # QM interfaces
-<<<<<<< HEAD
-  - xtb
-  - libgcc <15
-=======
   - xtb <6.7
->>>>>>> origin/mof_functionalization
+  - libgcc <15
   #- psi4::psi4
