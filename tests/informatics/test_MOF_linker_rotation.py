@@ -17,6 +17,8 @@ from molSimplify.Informatics.MOF.linker_rotation import rotate_and_write
 def test_linker_rotation(resource_path_root, tmp_path, cif_name, rotation_angle):
     input_cif = os.path.join(resource_path_root, "inputs", "cif_files", f"{cif_name}.cif")
 
+    tmp_path.mkdir(exist_ok=True)
+    
     rotate_and_write(
         input_cif=input_cif,
         path2write=tmp_path,
