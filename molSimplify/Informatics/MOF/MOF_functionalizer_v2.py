@@ -3,7 +3,7 @@ from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
 from molSimplify.Informatics.MOF.MOF_descriptors import get_primitive
 from molSimplify.Informatics.MOF.monofunctionalized_BDC.index_information import INDEX_INFO
-from molSimplify.Scripts.geometry import checkplanar, PointRotateAxis, setPdistance, kabsch, rotate_mat, distance, rotate_around_axis
+from molSimplify.Scripts.geometry import checkplanar, PointRotateAxis, distance, rotate_around_axis
 from molSimplify.Informatics.MOF.PBC_functions import (
         compute_adj_matrix, 
         compute_distance_matrix, 
@@ -24,11 +24,6 @@ import networkx as nx
 import spglib
 import os
 import shutil
-import multiprocessing
-import pandas as pd
-import traceback
-import json
-import copy
 import pickle
 ### Beginning of functions ###
 
@@ -84,7 +79,6 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
     cpar, allatomtypes, fcoords = readcif(cif_file)
     molcif, cell_vector, alpha, beta, gamma = import_from_cif(cif_file, True)
     cell_v = np.array(cell_vector)
-    original_fcoords = fcoords.copy()
     cart_coords = fractional2cart(fcoords, cell_v)
     distance_mat = compute_distance_matrix(cell_v, cart_coords)
     adj_matrix, _ = compute_adj_matrix(distance_mat, allatomtypes)
@@ -1052,7 +1046,6 @@ def multiatomic_functionalization(connection_atom_dict,
         # Change Akash
     if functional_group == 'COOH':
         cooh_h_coords = molcif.getAtom(first_o_index).coords() + directional_unit_vector
-        cooh_h_atom = atom3D('H',cooh_h_coords)
         additions_to_cart = np.concatenate((additions_to_cart, np.array([cooh_h_coords])))
         atom_types_to_add.append('H')
 

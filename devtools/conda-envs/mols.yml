@@ -29,4 +29,5 @@ dependencies:
   #- hyperopt
   # QM interfaces
   - xtb
+  - libgcc <15
   #- psi4::psi4
