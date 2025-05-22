@@ -26,7 +26,8 @@ def test_linker_rotation(resource_path_root, tmp_path, cif_name, rotation_angle)
 
     print(f'debug: tmp_path is {tmp_path}')
 
-    new_cif_name = f"{cif_name}_rot_{rotation_angle:.2f}.cif"
+    rot_angle_no_period = f'{rotation_angle:.2f}'.replace('.', '-')
+    new_cif_name = f"{cif_name}_rot_{rot_angle_no_period}.cif"
     generated_cif = str(tmp_path / new_cif_name)
     reference_cif = str(resource_path_root / "refs" / "informatics" / "mof" / "cif" / new_cif_name)
 
