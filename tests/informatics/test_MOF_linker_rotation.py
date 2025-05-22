@@ -24,14 +24,10 @@ def test_linker_rotation(resource_path_root, tmp_path, cif_name, rotation_angle)
         is_degree=True
     )
 
-    print(f'debug: tmp_path is {tmp_path}')
-
     rot_angle_no_period = f'{rotation_angle:.2f}'.replace('.', '-')
     new_cif_name = f"{cif_name}_rot_{rot_angle_no_period}.cif"
     generated_cif = str(tmp_path / new_cif_name)
     reference_cif = str(resource_path_root / "refs" / "informatics" / "mof" / "cif" / new_cif_name)
-
-    print(f'debug: generated_cif is {generated_cif}')
 
     cpar1, atom_types1, fcoords1 = readcif(generated_cif)
     cpar2, atom_types2, fcoords2 = readcif(reference_cif)

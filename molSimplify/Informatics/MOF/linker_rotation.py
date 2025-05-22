@@ -207,7 +207,6 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
         coords_new[linkers_to_rotate_list[linker_num],:] = new_linker
     rot_angle_no_period = f'{rot_angle:.2f}'.replace('.', '-')
     file_path = f'{path2write}/{basename}_rot_{rot_angle_no_period}.cif'
-    print(f'debug: file_path is {file_path}')
     write_cif(file_path, cpar, coords_new, all_atom_types)
 
 
