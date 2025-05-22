@@ -2,7 +2,7 @@ channels:
   - conda-forge
 dependencies:
   - openbabel
-  - tensorflow-base >2.0
+  - tensorflow-base >2.0, <2.14
   - scikit-learn
   - pyyaml
   - pandas
@@ -28,6 +28,10 @@ dependencies:
   #- pytorch::pytorch
   #- hyperopt
   # QM interfaces
+<<<<<<< HEAD
   - xtb
   - libgcc <15
+=======
+  - xtb <6.7
+>>>>>>> origin/mof_functionalization
   #- psi4::psi4
