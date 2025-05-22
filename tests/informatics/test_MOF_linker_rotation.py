@@ -15,17 +15,17 @@ from molSimplify.Informatics.MOF.linker_rotation import rotate_and_write
     ])
 
 def test_linker_rotation(resource_path_root, tmp_path, cif_name, rotation_angle):
-    input_cif = str(resource_path_root / "inputs" / "cif_files" / f"{cif_name}.cif")
+    input_cif = os.path.join(resource_path_root, "inputs", "cif_files", f"{cif_name}.cif")
 
     rotate_and_write(
         input_cif=input_cif,
-        path2write=str(tmp_path),
+        path2write=tmp_path,
         rot_angle=rotation_angle,
         is_degree=True
     )
 
-    generated_cif = str(tmp_path / f"{cif_name}_rot_{rotation_angle:.2f}.cif")
-    reference_cif = str(resource_path_root / "refs" / "informatics" / "mof" / "cif" / f"{cif_name}_rot_{rotation_angle:.2f}.cif")
+    generated_cif = os.path.join(tmp_path, f"{cif_name}_rot_{rotation_angle:.2f}.cif")
+    reference_cif = os.path.join(resource_path_root, "refs", "informatics", "mof", "cif", f"{cif_name}_rot_{rotation_angle:.2f}.cif")
 
     cpar1, atom_types1, fcoords1 = readcif(generated_cif)
     cpar2, atom_types2, fcoords2 = readcif(reference_cif)
