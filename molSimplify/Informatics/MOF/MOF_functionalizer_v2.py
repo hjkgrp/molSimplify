@@ -21,7 +21,6 @@ from pkg_resources import resource_filename, Requirement
 import numpy as np
 import scipy
 import networkx as nx
-import spglib
 import os
 import shutil
 import pickle
@@ -728,6 +727,7 @@ def symmetry_check(allatomtypes, fcoords, cell_v, precision=1):
     None
 
     """
+    import spglib
     numbers = [] # Will keep track of which atom in unique_types is in which position in allatomtypes.
     unique_types=list(set(allatomtypes))
     for label in allatomtypes:
