@@ -164,7 +164,7 @@ def rotate_and_write(input_cif, path2write, rot_angle, is_degree=True):
     is_degree : bool, optional
         If True, rot_angle is in degrees. If False, rot_angle is in radians.
         The default is True.
-    
+
     Returns
     -------
     None
