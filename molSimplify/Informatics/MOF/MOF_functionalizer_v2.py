@@ -207,9 +207,9 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
     """""""""
     Write the cif.
     """""""""
-    cif_folder = f'{path2write}cif/'
+    cif_folder = f'{path2write}/cif'
     mkdir_if_absent(cif_folder)
-    write_cif(f'{path2write}cif/functionalized_{base_mof_name}_{functional_group}_{functionalization_limit}.cif', cpar, fcoords, allatomtypes)
+    write_cif(f'{cif_folder}/functionalized_{base_mof_name}_{functional_group}_{functionalization_limit}.cif', cpar, fcoords, allatomtypes)
 
     """""""""
     Check on how the functionalization affected the symmetry.
@@ -512,7 +512,9 @@ def apply_functionalization(cell_v, molcif, allatomtypes, position_to_functional
 
     """
     # connection_length_dict, connection_atom_dict, bond_length_dict, bond_angle_dict, bond_rotation_dict = geo_dict_loader()
-    with open('functional_group_dictionary.pkl', 'rb') as pickle_file:
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    pkl_path = os.path.join(script_dir, 'functional_group_dictionary.pkl')
+    with open(pkl_path, 'rb') as pickle_file:
         geo_dict_loader_gram_schmidt = pickle.load(pickle_file)
 
     ##### Construct the plane to work on.
@@ -1321,9 +1323,9 @@ def functionalize_MOF_at_indices(cif_file, path2write, functional_group, func_in
     """""""""
     Write the cif.
     """""""""
-    cif_folder = f'{path2write}cif/'
+    cif_folder = f'{path2write}/cif'
     mkdir_if_absent(cif_folder)
-    write_cif(f'{path2write}cif/functionalized_{base_mof_name}_{functional_group}_index.cif', cpar, fcoords, allatomtypes)
+    write_cif(f'{cif_folder}/functionalized_{base_mof_name}_{functional_group}_index.cif', cpar, fcoords, allatomtypes)
 
 
 def functionalize_MOF_at_indices_mol3D_merge(cif_file, path2write, functional_group, func_indices, gram_schmidt, additional_atom_offset):
@@ -1494,9 +1496,9 @@ def functionalize_MOF_at_indices_mol3D_merge(cif_file, path2write, functional_gr
     # """""""""
     # Write the cif.
     # """""""""
-    cif_folder = f'{path2write}cif/'
+    cif_folder = f'{path2write}/cif'
     mkdir_if_absent(cif_folder)
-    write_cif(f'{path2write}cif/functionalized_{base_mof_name}_{functional_group}_index.cif', cpar, fcoords, allatomtypes)
+    write_cif(f'{cif_folder}/functionalized_{base_mof_name}_{functional_group}_index.cif', cpar, fcoords, allatomtypes)
 
 
 def alignment_objective(rotation_vector, molcif_clone, MOF_main_carbon_index, MOF_carbon_neighbor_indices,
@@ -1764,7 +1766,7 @@ def main():
 
                     # Functionalization if not already functionalized.
 
-                    if not os.path.exists(f'{func_folder}cif/functionalized_{MOF}_{func}_{num_func}.cif'):
+                    if not os.path.exists(f'{func_folder}/cif/functionalized_{MOF}_{func}_{num_func}.cif'):
                         functionalize_MOF(f'{base_database_path_without_overlap}{MOF}.cif', func_folder,
                         path_between_functionalizations=path, functionalization_limit=num_func, functional_group=func)
 
