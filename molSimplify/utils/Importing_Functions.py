@@ -1,6 +1,5 @@
 import networkx as nx
 from molSimplify.Classes.globalvars import globalvars
-from molSimplify.Classes.mol3DX import mol3D
 from molSimplify.Classes.atom3D import atom3D
 import re
 import sys
