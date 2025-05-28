@@ -7395,7 +7395,7 @@ class mol3D:
                 f.write(mol2_str)
         else:
             raise ValueError("Must specify either return_string=True or output_file='filename.mol2'")
-    
+
     def writemxyz(self, mol, filename, no_tabs=False):
         """
         Write standard XYZ file with two molecules.
