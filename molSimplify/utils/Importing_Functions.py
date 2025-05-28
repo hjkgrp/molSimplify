@@ -3,6 +3,7 @@ from molSimplify.Classes.globalvars import globalvars
 from molSimplify.Classes.mol3DX import mol3D
 from molSimplify.Classes.atom3D import atom3D
 import re
+import sys
 
 def readfrommol2(mol, filename, readstring=False, trunc_sym="X"):
     # assign global variables
