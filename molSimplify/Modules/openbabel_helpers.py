@@ -1,5 +1,4 @@
 from openbabel import openbabel, pybel
-from molSimplify.Classes.mol3D import mol3D
 import numpy as np
 
 def constrained_forcefield_optimization(mol, fixed_atom_indices, max_steps=250, ff_name='mmff94'):
