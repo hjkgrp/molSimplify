@@ -44,7 +44,7 @@ def readfrommol2(mol, filename, readstring=False, trunc_sym="X"):
             else:
                 atype = None
             atom_symbol2 = atom_symbol2.split('.')[0]
-            # check if either atom symbol is in the dict set that as the atom to add, 
+            # check if either atom symbol is in the dict set that as the atom to add,
             # get xyz and add it too
             if atom_symbol1 in list(amassdict.keys()):
                 atom = atom3D(atom_symbol1, [float(s_line[2]), float(
@@ -60,7 +60,7 @@ def readfrommol2(mol, filename, readstring=False, trunc_sym="X"):
             # add atom
             mol.addAtom(atom)
         # get Bonds
-        elif read_bonds:  
+        elif read_bonds:
             s_line = line.split()
             atom1=int(s_line[1])-1
             atom2=int(s_line[2])-1

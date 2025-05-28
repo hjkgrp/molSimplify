@@ -6,14 +6,14 @@ import numpy as np
 def ligand_breakdown(mol,dummy_bool=False):
     # get networkx graph representations
     g=mol3D_to_networkx(mol,get_symbols=False,get_bond_order=False,get_bond_distance=False)
-    
+
     # get metal_indices
     metal_indices=mol.findMetal(transition_metals_only=True)
-    
+
     # remove all metals from copied graph and get all disconnected graphs from the copy
     g.remove_nodes_from(metal_indices)
     disconnected_graphs = list(nx.connected_components(g))
-    
+
     list_of_ligands=[]
     # for each disconnected graph
     for set_of_nodes in disconnected_graphs:
@@ -35,7 +35,7 @@ def ligand_breakdown(mol,dummy_bool=False):
 
 def mol3D_to_networkx(mol,get_symbols:bool=True,get_bond_order:bool=True,get_bond_distance:bool=False):
     g = nx.Graph()
-    
+
     # get every index of atoms in mol3D object
     for atom_ind in range(0,mol.natoms):
         # set each atom as a node in the graph, and add symbol information if wanted
@@ -43,7 +43,7 @@ def mol3D_to_networkx(mol,get_symbols:bool=True,get_bond_order:bool=True,get_bon
         if get_symbols:
             data['symbol']=mol.getAtom(atom_ind).symbol()
         g.add_node(atom_ind,**data)
-        
+
     # get every bond in mol3D object
     bond_info=mol.bo_dict
     for bond in bond_info:
@@ -76,4 +76,4 @@ def bridging_ligand_helper(mol,set_of_nodes,metal_indices):
                     metal_count+=1
             ret['Bridging_Ligand']=metal_count>1
             ret['Connected_Metals']=metal_count
-    return ret        
+    return ret

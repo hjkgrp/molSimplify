@@ -2,7 +2,7 @@ import networkx as nx
 
 def graph_from_mol2_string(m2_string, positions=False):
     lines = m2_string.splitlines(True)
-    
+
     # Read counts line:
     sp = lines[2].split()
     n_atoms = int(sp[0])

@@ -13,7 +13,7 @@ def get_hash(mol):
                 temp_label = (mol.getAtom(i).symbol()+mol.getAtom(j).symbol())
                 temp_label = ''.join(sorted(temp_label))
                 attributed.append((i, j, {'label': temp_label}))
-    graph_attr.add_edges_from(attributed)   
+    graph_attr.add_edges_from(attributed)
     graph_hash_attr = nx.weisfeiler_lehman_graph_hash(graph_attr, edge_attr="label")
 
     return graph_hash, graph_hash_attr

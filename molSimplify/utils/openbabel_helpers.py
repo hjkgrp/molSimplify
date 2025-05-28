@@ -38,9 +38,9 @@ def constrained_forcefield_optimization(mol, fixed_atom_indices, max_steps=250, 
         [atom.GetX(), atom.GetY(), atom.GetZ()]
         for atom in openbabel.OBMolAtomIter(mol.OBMol)
     ])
-    
+
     return optimized_coords
-    
+
 def bond_order_from_str(bo_str):
     """
     Convert bond order representation to OpenBabel-compatible values.
