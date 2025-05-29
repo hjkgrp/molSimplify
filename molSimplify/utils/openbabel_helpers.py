@@ -128,3 +128,21 @@ def get_all_atoms(obmol):
             "coords": (x, y, z)
         })
     return atoms
+
+def get_bond_dict(obmol):
+    """
+    Returns a dictionary with bond atom index pairs as keys and bond order as values.
+
+    Parameters:
+        obmol: an openbabel.OBMol object
+
+    Returns:
+        bond_dict: dict with keys (i, j) and values as bond order (float)
+    """
+    bond_dict = {}
+    for bond in openbabel.OBMolBondIter(obmol):
+        a1 = bond.GetBeginAtomIdx() - 1  # convert from 1-based to 0-based
+        a2 = bond.GetEndAtomIdx() - 1
+        order = bond.GetBondOrder()
+        bond_dict[tuple(sorted((a1, a2)))] = order
+    return bond_dict
