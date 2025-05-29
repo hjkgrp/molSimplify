@@ -33,8 +33,36 @@ geometry_vectors = {
         'trigonal_bipyramidal': np.array([
             [1, 0, 0], [-0.5, np.sqrt(3)/2, 0], [-0.5, -np.sqrt(3)/2, 0],
             [0, 0, 1], [0, 0, -1]
+        ]),
+        'linear': np.array([
+            [1, 0, 0], [-1, 0, 0]
+        ]),
+
+        'square_pyramidal': np.array([
+            [1, 0, 0], [-1, 0, 0],
+            [0, 1, 0], [0, -1, 0],
+            [0, 0, 1]
+        ]),
+
+        'trigonal_planar': np.array([
+            [1, 0, 0], [-0.5, np.sqrt(3)/2, 0], [-0.5, -np.sqrt(3)/2, 0]
+        ]),
+
+        'trigonal_prismatic': np.array([
+            [1, 0, 1], [-0.5, np.sqrt(3)/2, 1], [-0.5, -np.sqrt(3)/2, 1],
+            [1, 0, -1], [-0.5, np.sqrt(3)/2, -1], [-0.5, -np.sqrt(3)/2, -1]
+        ]) / np.sqrt(2),
+
+        'pentagonal_bipyramidal': np.array([
+            [1, 0, 0],
+            [np.cos(2*np.pi/5), np.sin(2*np.pi/5), 0],
+            [np.cos(4*np.pi/5), np.sin(4*np.pi/5), 0],
+            [np.cos(6*np.pi/5), np.sin(6*np.pi/5), 0],
+            [np.cos(8*np.pi/5), np.sin(8*np.pi/5), 0],
+            [0, 0, 1], [0, 0, -1]
         ])
     }
+
 
 global_isomer_subsets = {
     "octahedral" : {
@@ -59,7 +87,29 @@ global_isomer_subsets = {
             (4, 5, 2),  # +Z, -Z, +Y
             (2, 4, 5),  # +Y, +Z, -Z
             (3, 4, 5),  # -Y, +Z, -Z
-        ]
+        ],
+        'alpha': [
+            (4, 5, 0, 2),  # +Z, -Z, +X, +Y
+            (4, 5, 0, 3),  # +Z, -Z, +X, -Y
+            (4, 5, 1, 2),  # +Z, -Z, -X, +Y
+            (4, 5, 1, 3),  # +Z, -Z, -X, -Y
+
+        ],
+        'beta': [
+            (0, 1, 2, 4),  # +X, -X, +Y, +Z
+            (0, 1, 2, 5),  # +X, -X, +Y, -Z
+            (0, 1, 3, 4),  # +X, -X, -Y, +Z
+            (0, 1, 3, 5),  # +X, -X, -Y, -Z
+            (2, 3, 0, 4),  # +Y, -Y, +X, +Z
+            (2, 3, 0, 5),  # +Y, -Y, +X, -Z
+            (2, 3, 1, 4),  # +Y, -Y, -X, +Z
+            (2, 3, 1, 5),  # +Y, -Y, -X, -Z
+        ],
+        'trans': [
+            (0, 2, 1, 3), # +X, +Y, -X, -Y
+            (0, 4, 1, 5), # +X, +Z, -X, -Z
+            (2, 4, 3, 5) # +Y, +Z, -Y, -Z
+        ] 
     }
 }
 
