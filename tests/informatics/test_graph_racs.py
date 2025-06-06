@@ -93,7 +93,7 @@ def test_octahedral_racs(
 
     mol = Mol2D.from_mol2_file(resource_path_root / "inputs" / "informatics" / mol2_path)
 
-    with open(resource_path_root / "refs" / "informatics" / ref_path, "r") as fin:
+    with open(resource_path_root / "refs" / "informatics" / "json" / ref_path, "r") as fin:
         ref_dict = json.load(fin)
 
     depth = 3
@@ -139,7 +139,7 @@ def test_ligand_racs(
 
     mol = Mol2D.from_mol2_file(resource_path_root / "inputs" / "informatics" / mol2_path)
 
-    with open(resource_path_root / "refs" / "informatics" / ref_path, "r") as fin:
+    with open(resource_path_root / "refs" / "informatics" / "json" / ref_path, "r") as fin:
         ref_dict = json.load(fin)
     print(ref_dict)
 
