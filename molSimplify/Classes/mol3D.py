@@ -7316,7 +7316,7 @@ class mol3D:
             str or None
                 Returns the MOL2-format string if `return_string` is True, otherwise writes to file
                 and returns None.
-            
+
         Notes
         -----
             - Atoms are renumbered starting from 1.
