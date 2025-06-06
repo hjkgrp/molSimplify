@@ -21,6 +21,8 @@ import os
         (2, "OH"),
         (1, "sulfonic"),
         (2, "sulfonic"),
+        (1, "COOH"),
+        (2, "COOH")
     ])
 def test_fg_addition(resource_path_root, tmp_path, num_func, func_group):
     starting_cif = str(resource_path_root / "inputs" / "cif_files" / "UiO-66.cif")
