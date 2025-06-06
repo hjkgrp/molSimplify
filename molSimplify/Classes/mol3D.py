@@ -7277,6 +7277,7 @@ class mol3D:
                     filename = filename.split('.')[0]+'.mol2'
             with open(filename, 'w') as file1:
                 file1.write(ss)
+
     def writemol2_bodict(
             self,
             ignore_dummy_atoms=True,
@@ -7286,40 +7287,44 @@ class mol3D:
         ):
         """
         Generate a MOL2-format string or file from atomic coordinates and bonding data.
+
         Parameters
         ----------
-        atom_coords : list or np.ndarray of shape (N, 3)
-            A list or NumPy array of atomic coordinates. Each element is a 3D coordinate
-            (x, y, z) for a single atom.
-        atom_elements : list of str
-            A list of atomic element symbols (e.g., 'C', 'N', 'O', etc.), one for each atom
-            in `atom_coords`. The list must be the same length as `atom_coords`.
-        bond_order_dict : dict
-            A dictionary mapping tuples of atom indices (i, j) to bond orders. The bond order
-            may be a string like '1', '2', '3', 'ar', etc.
-            Example: {(0, 1): '1', (1, 2): '2'}
-        ignore_dummy_atoms : bool, optional (default=True)
-            If True, atoms with element symbol 'X' will be ignored in both atoms and bonds.
-        write_bond_orders : bool, optional (default=True)
-            If True, writes the actual bond orders from `bond_order_dict`.
-            If False, all bonds are assigned order '1'.
-        return_string : bool, optional (default=True)
-            If True, returns the MOL2 content as a string.
-            If False, writes to `output_file`.
-        output_file : str or None, optional
-            If `return_string` is False, this must be the path to the file to write.
+            atom_coords : list or np.ndarray of shape (N, 3)
+                A list or NumPy array of atomic coordinates. Each element is a 3D coordinate
+                (x, y, z) for a single atom.
+            atom_elements : list of str
+                A list of atomic element symbols (e.g., 'C', 'N', 'O', etc.), one for each atom
+                in `atom_coords`. The list must be the same length as `atom_coords`.
+            bond_order_dict : dict
+                A dictionary mapping tuples of atom indices (i, j) to bond orders. The bond order
+                may be a string like '1', '2', '3', 'ar', etc.
+                Example: {(0, 1): '1', (1, 2): '2'}
+            ignore_dummy_atoms : bool, optional (default=True)
+                If True, atoms with element symbol 'X' will be ignored in both atoms and bonds.
+            write_bond_orders : bool, optional (default=True)
+                If True, writes the actual bond orders from `bond_order_dict`.
+                If False, all bonds are assigned order '1'.
+            return_string : bool, optional (default=True)
+                If True, returns the MOL2 content as a string.
+                If False, writes to `output_file`.
+            output_file : str or None, optional
+                If `return_string` is False, this must be the path to the file to write.
+
         Returns
         -------
-        str or None
-            Returns the MOL2-format string if `return_string` is True, otherwise writes to file
-            and returns None.
+            str or None
+                Returns the MOL2-format string if `return_string` is True, otherwise writes to file
+                and returns None.
+            
         Notes
         -----
-        - Atoms are renumbered starting from 1.
-        - Element-based labels (e.g., C1, C2) are assigned using counts per element.
-        - Substructures are inferred using connected components in the bond graph.
-        - Only bonds where both atoms are not dummy atoms are retained if `ignore_dummy_atoms` is True.
+            - Atoms are renumbered starting from 1.
+            - Element-based labels (e.g., C1, C2) are assigned using counts per element.
+            - Substructures are inferred using connected components in the bond graph.
+            - Only bonds where both atoms are not dummy atoms are retained if `ignore_dummy_atoms` is True.
         """
+
         # Filter out dummy atoms
         filtered_atoms = []
         index_map = {}
