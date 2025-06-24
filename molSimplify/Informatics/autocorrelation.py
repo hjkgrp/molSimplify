@@ -336,7 +336,7 @@ def deltametric_derivative(mol, prop_vec, orig, d, oct=True):
 
 
 def construct_property_vector(mol, prop, oct=True, modifier=False, custom_property_dict={},
-    transition_metals_only=True, custom_prop_dict={}):
+    transition_metals_only=True):
     """
     Assigns the value of property for atom i (zero index) in mol to position i in returned vector.
 
@@ -356,9 +356,9 @@ def construct_property_vector(mol, prop, oct=True, modifier=False, custom_proper
             ONLY used with  ox_nuclear_charge    ox or charge)
             {"Fe":2, "Co": 3} etc., by default False.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
         transition_metals_only : bool, optional
             Flag if only transition metals counted as metals, by default True.
 
@@ -503,9 +503,9 @@ def full_autocorrelation(mol, prop, d, oct=True, modifier=False, use_dist=False,
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
         transition_metals_only : bool, optional
             Flag if only transition metals counted as metals, by default True.
 
@@ -602,9 +602,9 @@ def generate_full_complex_autocorrelations(mol,
         polarizability : bool, optional
             Use polarizability (alpha) as RAC, by default False.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         transition_metals_only : bool, optional
@@ -743,9 +743,9 @@ def atom_only_autocorrelation(mol, prop, d, atomIdx, oct=True, use_dist=False, s
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
 
     Returns
     -------
@@ -841,9 +841,9 @@ def metal_only_autocorrelation(
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
         transition_metals_only : bool, optional
             Flag if only transition metals counted as metals, by default True.
 
@@ -940,9 +940,9 @@ def atom_only_deltametric(mol, prop, d, atomIdx, oct=True, modifier=False,
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
 
     Returns
     -------
@@ -1035,9 +1035,9 @@ def metal_only_deltametric(
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
         transition_metals_only : bool, optional
             Flag if only transition metals counted as metals, by default True.
 
@@ -1139,9 +1139,9 @@ def generate_metal_autocorrelations(mol, depth=4, oct=True, flag_name=False,
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         transition_metals_only : bool, optional
@@ -1293,9 +1293,9 @@ def generate_metal_deltametrics(mol, depth=4, oct=True, flag_name=False,
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         transition_metals_only : bool, optional
@@ -1457,9 +1457,9 @@ def generate_atomonly_autocorrelations(mol, atomIdx, depth=4, oct=True, Gval=Fal
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         flatten : bool, optional
@@ -1568,9 +1568,9 @@ def generate_atomonly_deltametrics(mol, atomIdx, depth=4, oct=True, Gval=False, 
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms in molecule.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         flatten : bool, optional

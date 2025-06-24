@@ -3941,9 +3941,9 @@ class mol3D:
             catom_list : list of int, optional
                 List of indices of coordinating atoms.
             custom_property_dict : dict, optional
-                Keys are custom property names,
-                values are dictionaries mapping atom symbols to
-                the numerical property for that atom.
+                Keys are custom property names (str),
+                values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+                the numerical property (float) for that atom.
                 If provided, other property RACs (e.g., Z, S, T)
                 will not be made.
             depth : int, optional
