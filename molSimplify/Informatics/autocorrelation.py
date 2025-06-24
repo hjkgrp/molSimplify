@@ -336,7 +336,7 @@ def deltametric_derivative(mol, prop_vec, orig, d, oct=True):
 
 
 def construct_property_vector(mol, prop, oct=True, modifier=False, custom_property_dict={},
-    transition_metals_only=True, custom_prop_dict={}):
+    transition_metals_only=True):
     """
     Assigns the value of property for atom i (zero index) in mol to position i in returned vector.
 
