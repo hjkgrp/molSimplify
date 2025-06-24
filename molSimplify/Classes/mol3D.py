@@ -1264,15 +1264,22 @@ class mol3D:
         ----------
             bo_graph: numpy.array
                 Bond order matrix.
+
+        Returns
+        -------
+            aromatic_charge: int
+                The charge of the aromatic rings.
         '''
 
         aromatic_atoms = np.count_nonzero(bo_graph == 1.5)/2
         if aromatic_atoms > bo_graph.shape[0] - 1:
             aromatic_n = np.rint((aromatic_atoms-2)*1./4)
             aromatic_e = 4 * aromatic_n + 2
-            return aromatic_atoms - aromatic_e
+            aromatic_charge = int(aromatic_atoms - aromatic_e)
         else:
-            return 0
+            aromatic_charge = 0
+
+        return aromatic_charge
 
     def assign_graph_from_net(self, path_to_net, return_graph=False):
         """
@@ -4661,6 +4668,13 @@ class mol3D:
         ----------
             debug: boolean
                 Whether to have more printouts.
+
+        Returns
+        -------
+            charge : float
+                The overall charge of the molecule.
+            arom_charge : int
+                The charge of the aromatic rings.
         '''
 
         octet_bo = {"H": 1, "C": 4, "N": 3, "O": 2, "F": 1,
@@ -4678,32 +4692,32 @@ class mol3D:
                 if obmol_ring.IsInRing(ii):
                     _inds.append(ii-1)
             ringinds.append(_inds)
-            charge += self.aromatic_charge(self.bo_mat_trunc[_inds, :][:, _inds])
+            charge += self.aromatic_charge(self.bo_mat[_inds, :][:, _inds])
         arom_charge = charge
         for ii in range(self.natoms):
             sym = self.getAtom(ii).symbol()
             try:
-                if sym in ["N", "P", "As", "Sb"] and np.sum(self.bo_mat_trunc[ii]) >= 5:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 5)
-                elif (sym in ["N", "P", "As", "Sb"]) and (np.count_nonzero(self.bo_mat_trunc[ii] == 2) >= 1) and \
-                     ("O" in [self.getAtom(x).symbol() for x in np.where(self.bo_mat_trunc[ii] == 2)[0]]) and \
-                     (np.sum(self.bo_mat_trunc[ii]) == 4):
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 5)
+                if sym in ["N", "P", "As", "Sb"] and np.sum(self.bo_mat[ii]) >= 5:
+                    _c = int(np.sum(self.bo_mat[ii]) - 5)
+                elif (sym in ["N", "P", "As", "Sb"]) and (np.count_nonzero(self.bo_mat[ii] == 2) >= 1) and \
+                     ("O" in [self.getAtom(x).symbol() for x in np.where(self.bo_mat[ii] == 2)[0]]) and \
+                     (np.sum(self.bo_mat[ii]) == 4):
+                    _c = int(np.sum(self.bo_mat[ii]) - 5)
                 # Double Bonds == 3, Double bonded atom is O or N, Total BO == 6
-                elif sym in ["O", "S", "Se", "Te"] and np.count_nonzero(self.bo_mat_trunc[ii] == 2) == 3 and \
-                        (self.getAtom(np.where(self.bo_mat_trunc[ii] == 2)[0][0]).symbol() in ["O", "N"]) and \
-                        np.sum(self.bo_mat_trunc[ii]) == 6:
-                    _c = -int(np.sum(self.bo_mat_trunc[ii]) - 4)
-                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat_trunc[ii]) >= 5:
-                    _c = -int(np.sum(self.bo_mat_trunc[ii]) - 6)
-                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat_trunc[ii]) == 4:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 4)
-                elif sym in ["F", "Cl", "Br", "I"] and np.sum(self.bo_mat_trunc[ii]) >= 6:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 7)
-                elif sym in ["H"] and np.sum(self.bo_mat_trunc[ii]) == 2:
+                elif sym in ["O", "S", "Se", "Te"] and np.count_nonzero(self.bo_mat[ii] == 2) == 3 and \
+                        (self.getAtom(np.where(self.bo_mat[ii] == 2)[0][0]).symbol() in ["O", "N"]) and \
+                        np.sum(self.bo_mat[ii]) == 6:
+                    _c = -int(np.sum(self.bo_mat[ii]) - 4)
+                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat[ii]) >= 5:
+                    _c = -int(np.sum(self.bo_mat[ii]) - 6)
+                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat[ii]) == 4:
+                    _c = int(np.sum(self.bo_mat[ii]) - 4)
+                elif sym in ["F", "Cl", "Br", "I"] and np.sum(self.bo_mat[ii]) >= 6:
+                    _c = int(np.sum(self.bo_mat[ii]) - 7)
+                elif sym in ["H"] and np.sum(self.bo_mat[ii]) == 2:
                     _c = 0
                 else:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - octet_bo[sym])
+                    _c = int(np.sum(self.bo_mat[ii]) - octet_bo[sym])
                 if debug:
                     print(ii, sym, _c)
                 charge += _c
@@ -6287,8 +6301,8 @@ class mol3D:
             for line in fo:
                 ll = line.split()
                 if len(ll) == 7 and all([x.isdigit() for x in ll]):
-                    self.bo_mat_trunc[int(ll[0])-1, int(ll[1])-1] = int(ll[2])
-                    self.bo_mat_trunc[int(ll[1])-1, int(ll[0])-1] = int(ll[2])
+                    self.bo_mat[int(ll[0])-1, int(ll[1])-1] = int(ll[2])
+                    self.bo_mat[int(ll[1])-1, int(ll[0])-1] = int(ll[2])
 
     def read_bond_order(self, bofile):
         """
@@ -6453,7 +6467,7 @@ class mol3D:
 
             self.bo_dict[tuple(sorted([atom1_idx, atom2_idx]))] = bond_type
 
-    def readfrommol2(self, filename, readstring=False, trunc_sym="X"):
+    def readfrommol2(self, filename, readstring=False):
         """
         Read mol2 into a mol3D class instance. Stores the bond orders and atom types (SYBYL).
 
@@ -6463,8 +6477,6 @@ class mol3D:
                 String of path to MOL2 file. Path may be local or global. May be read in as a string.
             readstring : bool
                 Flag for deciding whether a string of mol2 file is being passed as the filename.
-            trunc_sym : string
-                Element symbol at which one would like to truncate the bo graph.
         """
 
         globs = globalvars()
@@ -6537,19 +6549,13 @@ class mol3D:
                 graph = np.zeros((self.natoms, self.natoms))
                 bo_graph = np.zeros((self.natoms, self.natoms))
                 bo_dict = dict()
-        X_inds = self.findAtomsbySymbol(trunc_sym)
         if isinstance(graph, np.ndarray):  # Enforce mol2 molecular graph if it exists.
             self.graph = graph
             self.bo_mat = bo_graph
-            if len(X_inds):
-                self.bo_mat_trunc = np.delete(np.delete(bo_graph, X_inds[0], 0), X_inds[0], 1)
-            else:
-                self.bo_mat_trunc = bo_graph
             self.bo_dict = bo_dict
         else:
             self.graph = np.array([])
             self.bo_mat = np.array([])
-            self.bo_mat_trunc = np.array([])
             self.bo_dict = {}
 
     @deprecated('Duplicate function will be removed in a future release.'
