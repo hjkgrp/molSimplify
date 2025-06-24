@@ -1412,3 +1412,21 @@ def test_get_mol_graph_det(resource_path_root, name, ref_det):
 
     det = mol.get_mol_graph_det(oct=name=='in_complex')
     assert det == ref_det
+
+
+@pytest.mark.parametrize(
+    "name, ref_charge",
+    [
+    ('carbonyl', 0),
+    ('fluorine', -1),
+    ('phenylpyridine', -1),
+    ('porphine', -2),
+    ]
+    )
+def test_get_octetrule_charge(resource_path_root, name, ref_charge):
+    mol2_file = resource_path_root / "inputs" / "mol2_files" / f"{name}.mol2"
+    mol = mol3D()
+    mol.readfrommol2(mol2_file)
+
+    charge, _ = mol.get_octetrule_charge()
+    assert charge == ref_charge
