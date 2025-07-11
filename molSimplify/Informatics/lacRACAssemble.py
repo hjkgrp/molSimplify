@@ -87,9 +87,9 @@ def get_descriptor_vector(this_complex,
         alleq : bool, optional
             Whether or not all ligands are equatorial.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         depth : int, optional
@@ -512,9 +512,9 @@ def generate_all_ligand_autocorrelations_lac(mol, loud=False, depth=4, flag_name
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
 
@@ -827,9 +827,9 @@ def generate_all_ligand_deltametrics_lac(mol, loud=False, depth=4, flag_name=Fal
         size_normalize : bool, optional
             Whether or not to normalize by the number of atoms.
         custom_property_dict : dict, optional
-            Keys are custom property names,
-            values are dictionaries mapping atom symbols to
-            the numerical property for that atom.
+            Keys are custom property names (str),
+            values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+            the numerical property (float) for that atom.
             If provided, other property RACs (e.g., Z, S, T)
             will not be made.
         non_trivial : bool, optional

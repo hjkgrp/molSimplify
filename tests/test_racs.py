@@ -16,7 +16,7 @@ from molSimplify.Scripts.io import lig_load
     ('co_acac_en_water_hydrogensulfide.xyz',
      'racs_Co_acac_en_water_hydrogensulfide.pickle')])
 def test_Mn_water2_ammonia_furan2_ammonia(resource_path_root, xyz_path, ref_path):
-    xyz_path = resource_path_root / "refs" / "racs" / xyz_path
+    xyz_path = resource_path_root / "inputs" / "xyz_files" / xyz_path
     mol = mol3D()
     mol.readfromxyz(xyz_path)
     features = mol.get_features()
@@ -33,8 +33,8 @@ def test_Mn_water2_ammonia_furan2_ammonia(resource_path_root, xyz_path, ref_path
 def test_six_pyridine_vs_three_bipy(resource_path_root):
     """Up to depth 2 the atom centered racs features for pyr_6 and bipy_3
     should be the same"""
-    fe_pyr_6_path = resource_path_root / "refs" / "racs" / "fe_pyr_6.xyz"
-    fe_bipy_3_path = resource_path_root / "refs" / "racs" / "fe_bipy_3.xyz"
+    fe_pyr_6_path = resource_path_root / "inputs" / "xyz_files" / "fe_pyr_6.xyz"
+    fe_bipy_3_path = resource_path_root / "inputs" / "xyz_files" / "fe_bipy_3.xyz"
     fe_pyr_6 = mol3D()
     fe_pyr_6.readfromxyz(fe_pyr_6_path)
     fe_bipy_3 = mol3D()
@@ -57,8 +57,8 @@ def test_six_pyridine_vs_three_bipy(resource_path_root):
 @pytest.mark.skip('Test fails because molSimplify averages the equatorial '
                   'plane differently for bidentates')
 def test_pyr_4_furan_2_vs_bipy_2_bifuran(resource_path_root):
-    fe_pyr_4_furan_2_path = resource_path_root / "refs" / "racs" / "fe_pyr_4_furan_2.xyz"
-    fe_bipy_2_bifuran_path = resource_path_root / "refs" / "racs" / "fe_bipy_2_bifuran.xyz"
+    fe_pyr_4_furan_2_path = resource_path_root / "inputs" / "xyz_files" / "fe_pyr_4_furan_2.xyz"
+    fe_bipy_2_bifuran_path = resource_path_root / "inputs" / "xyz_files" / "fe_bipy_2_bifuran.xyz"
     fe_pyr_4_furan_2 = mol3D()
     fe_pyr_4_furan_2.readfromxyz(fe_pyr_4_furan_2_path)
     fe_bipy_2_bifuran = mol3D()

@@ -1136,16 +1136,14 @@ def test_readfrommol2(resource_path_root, name, readstring):
     # Loading the reference files.
     reference_path1 = resource_path_root / "refs" / "json" / "test_mol3D" / "readfrommol2" /  f"{name}_graph.json"
     reference_path2 = resource_path_root / "refs" / "json" / "test_mol3D" / "readfrommol2" /  f"{name}_bo_mat.json"
-    reference_path3 = resource_path_root / "refs" / "json" / "test_mol3D" / "readfrommol2" /  f"{name}_bo_mat_trunc.json"
-    reference_path4 = resource_path_root / "refs" / "json" / "test_mol3D" / "readfrommol2" /  f"{name}_bo_dict.json"
-    reference_graph, reference_bo_mat, reference_bo_mat_trunc, reference_bo_dict = quick_load(
-        [reference_path1, reference_path2, reference_path3, reference_path4])
+    reference_path3 = resource_path_root / "refs" / "json" / "test_mol3D" / "readfrommol2" /  f"{name}_bo_dict.json"
+    reference_graph, reference_bo_mat, reference_bo_dict = quick_load(
+        [reference_path1, reference_path2, reference_path3])
 
     # For saving np arrays to json, need to cast to list.
     # Convert back for comparison.
     # Also converted nan values to -1 prior to saving the json.
     mod_bo_mat = np.nan_to_num(mol.bo_mat, nan=-1)
-    mod_bo_mat_trunc = np.nan_to_num(mol.bo_mat_trunc, nan=-1)
 
     # Needed to adjust the reference dictionary in order
     # to save to json.
@@ -1153,7 +1151,6 @@ def test_readfrommol2(resource_path_root, name, readstring):
 
     assert np.array_equal(mol.graph, np.array(reference_graph))
     assert np.array_equal(mod_bo_mat, np.array(reference_bo_mat))
-    assert np.array_equal(mod_bo_mat_trunc, np.array(reference_bo_mat_trunc))
     assert mod_bo_dict == reference_bo_dict
 
     mol_reference = mol3D()
@@ -1415,3 +1412,21 @@ def test_get_mol_graph_det(resource_path_root, name, ref_det):
 
     det = mol.get_mol_graph_det(oct=name=='in_complex')
     assert det == ref_det
+
+
+@pytest.mark.parametrize(
+    "name, ref_charge",
+    [
+    ('carbonyl', 0),
+    ('fluorine', -1),
+    ('phenylpyridine', -1),
+    ('porphine', -2),
+    ]
+    )
+def test_get_octetrule_charge(resource_path_root, name, ref_charge):
+    mol2_file = resource_path_root / "inputs" / "mol2_files" / f"{name}.mol2"
+    mol = mol3D()
+    mol.readfrommol2(mol2_file)
+
+    charge, _ = mol.get_octetrule_charge()
+    assert charge == ref_charge

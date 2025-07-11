@@ -1104,6 +1104,10 @@ class mol3D:
                 self.graph, index, np.zeros(graph_size), axis=0)
             self.graph = np.insert(
                 self.graph, index, np.zeros(graph_size+1), axis=1)
+            self.bo_mat = np.insert(
+                self.bo_mat, index, np.zeros(graph_size), axis=0)
+            self.bo_mat = np.insert(
+                self.bo_mat, index, np.zeros(graph_size+1), axis=1)
 
             # Grab connecting atom indices and populate bo_dict and graph
             catom_idxs = self.getBondedAtoms(index)
@@ -1260,15 +1264,22 @@ class mol3D:
         ----------
             bo_graph: numpy.array
                 Bond order matrix.
+
+        Returns
+        -------
+            aromatic_charge: int
+                The charge of the aromatic rings.
         '''
 
         aromatic_atoms = np.count_nonzero(bo_graph == 1.5)/2
         if aromatic_atoms > bo_graph.shape[0] - 1:
             aromatic_n = np.rint((aromatic_atoms-2)*1./4)
             aromatic_e = 4 * aromatic_n + 2
-            return aromatic_atoms - aromatic_e
+            aromatic_charge = int(aromatic_atoms - aromatic_e)
         else:
-            return 0
+            aromatic_charge = 0
+
+        return aromatic_charge
 
     def assign_graph_from_net(self, path_to_net, return_graph=False):
         """
@@ -1741,8 +1752,6 @@ class mol3D:
         # Get BO matrix if exits:
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('mol2')
-        if not len(self.graph):
-            self.createMolecularGraph()
         if self.bo_dict:
             mol2string = self.writemol2('temporary', writestring=True,
                                         ignoreX=ignoreX)
@@ -3939,9 +3948,9 @@ class mol3D:
             catom_list : list of int, optional
                 List of indices of coordinating atoms.
             custom_property_dict : dict, optional
-                Keys are custom property names,
-                values are dictionaries mapping atom symbols to
-                the numerical property for that atom.
+                Keys are custom property names (str),
+                values are dictionaries mapping atom symbols (str, e.g., "H", "He") to
+                the numerical property (float) for that atom.
                 If provided, other property RACs (e.g., Z, S, T)
                 will not be made.
             depth : int, optional
@@ -4659,6 +4668,13 @@ class mol3D:
         ----------
             debug: boolean
                 Whether to have more printouts.
+
+        Returns
+        -------
+            charge : float
+                The overall charge of the molecule.
+            arom_charge : int
+                The charge of the aromatic rings.
         '''
 
         octet_bo = {"H": 1, "C": 4, "N": 3, "O": 2, "F": 1,
@@ -4676,32 +4692,32 @@ class mol3D:
                 if obmol_ring.IsInRing(ii):
                     _inds.append(ii-1)
             ringinds.append(_inds)
-            charge += self.aromatic_charge(self.bo_mat_trunc[_inds, :][:, _inds])
+            charge += self.aromatic_charge(self.bo_mat[_inds, :][:, _inds])
         arom_charge = charge
         for ii in range(self.natoms):
             sym = self.getAtom(ii).symbol()
             try:
-                if sym in ["N", "P", "As", "Sb"] and np.sum(self.bo_mat_trunc[ii]) >= 5:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 5)
-                elif (sym in ["N", "P", "As", "Sb"]) and (np.count_nonzero(self.bo_mat_trunc[ii] == 2) >= 1) and \
-                     ("O" in [self.getAtom(x).symbol() for x in np.where(self.bo_mat_trunc[ii] == 2)[0]]) and \
-                     (np.sum(self.bo_mat_trunc[ii]) == 4):
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 5)
+                if sym in ["N", "P", "As", "Sb"] and np.sum(self.bo_mat[ii]) >= 5:
+                    _c = int(np.sum(self.bo_mat[ii]) - 5)
+                elif (sym in ["N", "P", "As", "Sb"]) and (np.count_nonzero(self.bo_mat[ii] == 2) >= 1) and \
+                     ("O" in [self.getAtom(x).symbol() for x in np.where(self.bo_mat[ii] == 2)[0]]) and \
+                     (np.sum(self.bo_mat[ii]) == 4):
+                    _c = int(np.sum(self.bo_mat[ii]) - 5)
                 # Double Bonds == 3, Double bonded atom is O or N, Total BO == 6
-                elif sym in ["O", "S", "Se", "Te"] and np.count_nonzero(self.bo_mat_trunc[ii] == 2) == 3 and \
-                        (self.getAtom(np.where(self.bo_mat_trunc[ii] == 2)[0][0]).symbol() in ["O", "N"]) and \
-                        np.sum(self.bo_mat_trunc[ii]) == 6:
-                    _c = -int(np.sum(self.bo_mat_trunc[ii]) - 4)
-                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat_trunc[ii]) >= 5:
-                    _c = -int(np.sum(self.bo_mat_trunc[ii]) - 6)
-                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat_trunc[ii]) == 4:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 4)
-                elif sym in ["F", "Cl", "Br", "I"] and np.sum(self.bo_mat_trunc[ii]) >= 6:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - 7)
-                elif sym in ["H"] and np.sum(self.bo_mat_trunc[ii]) == 2:
+                elif sym in ["O", "S", "Se", "Te"] and np.count_nonzero(self.bo_mat[ii] == 2) == 3 and \
+                        (self.getAtom(np.where(self.bo_mat[ii] == 2)[0][0]).symbol() in ["O", "N"]) and \
+                        np.sum(self.bo_mat[ii]) == 6:
+                    _c = -int(np.sum(self.bo_mat[ii]) - 4)
+                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat[ii]) >= 5:
+                    _c = -int(np.sum(self.bo_mat[ii]) - 6)
+                elif sym in ["O", "S", "Se", "Te"] and np.sum(self.bo_mat[ii]) == 4:
+                    _c = int(np.sum(self.bo_mat[ii]) - 4)
+                elif sym in ["F", "Cl", "Br", "I"] and np.sum(self.bo_mat[ii]) >= 6:
+                    _c = int(np.sum(self.bo_mat[ii]) - 7)
+                elif sym in ["H"] and np.sum(self.bo_mat[ii]) == 2:
                     _c = 0
                 else:
-                    _c = int(np.sum(self.bo_mat_trunc[ii]) - octet_bo[sym])
+                    _c = int(np.sum(self.bo_mat[ii]) - octet_bo[sym])
                 if debug:
                     print(ii, sym, _c)
                 charge += _c
@@ -6285,8 +6301,8 @@ class mol3D:
             for line in fo:
                 ll = line.split()
                 if len(ll) == 7 and all([x.isdigit() for x in ll]):
-                    self.bo_mat_trunc[int(ll[0])-1, int(ll[1])-1] = int(ll[2])
-                    self.bo_mat_trunc[int(ll[1])-1, int(ll[0])-1] = int(ll[2])
+                    self.bo_mat[int(ll[0])-1, int(ll[1])-1] = int(ll[2])
+                    self.bo_mat[int(ll[1])-1, int(ll[0])-1] = int(ll[2])
 
     def read_bond_order(self, bofile):
         """
@@ -6451,7 +6467,7 @@ class mol3D:
 
             self.bo_dict[tuple(sorted([atom1_idx, atom2_idx]))] = bond_type
 
-    def readfrommol2(self, filename, readstring=False, trunc_sym="X"):
+    def readfrommol2(self, filename, readstring=False):
         """
         Read mol2 into a mol3D class instance. Stores the bond orders and atom types (SYBYL).
 
@@ -6461,8 +6477,6 @@ class mol3D:
                 String of path to MOL2 file. Path may be local or global. May be read in as a string.
             readstring : bool
                 Flag for deciding whether a string of mol2 file is being passed as the filename.
-            trunc_sym : string
-                Element symbol at which one would like to truncate the bo graph.
         """
 
         globs = globalvars()
@@ -6535,19 +6549,13 @@ class mol3D:
                 graph = np.zeros((self.natoms, self.natoms))
                 bo_graph = np.zeros((self.natoms, self.natoms))
                 bo_dict = dict()
-        X_inds = self.findAtomsbySymbol(trunc_sym)
         if isinstance(graph, np.ndarray):  # Enforce mol2 molecular graph if it exists.
             self.graph = graph
             self.bo_mat = bo_graph
-            if len(X_inds):
-                self.bo_mat_trunc = np.delete(np.delete(bo_graph, X_inds[0], 0), X_inds[0], 1)
-            else:
-                self.bo_mat_trunc = bo_graph
             self.bo_dict = bo_dict
         else:
             self.graph = np.array([])
             self.bo_mat = np.array([])
-            self.bo_mat_trunc = np.array([])
             self.bo_dict = {}
 
     @deprecated('Duplicate function will be removed in a future release.'
@@ -7403,6 +7411,129 @@ class mol3D:
                     filename = filename.split('.')[0]+'.mol2'
             with open(filename, 'w') as file1:
                 file1.write(ss)
+
+    def writemol2_bodict(
+            self,
+            ignore_dummy_atoms=True,
+            write_bond_orders=True,
+            return_string=True,
+            output_file=None
+        ):
+        """
+        Generate a MOL2-format string or file from atomic coordinates and bonding data.
+
+        Parameters
+        ----------
+            atom_coords : list or np.ndarray of shape (N, 3)
+                A list or NumPy array of atomic coordinates. Each element is a 3D coordinate
+                (x, y, z) for a single atom.
+            atom_elements : list of str
+                A list of atomic element symbols (e.g., 'C', 'N', 'O', etc.), one for each atom
+                in `atom_coords`. The list must be the same length as `atom_coords`.
+            bond_order_dict : dict
+                A dictionary mapping tuples of atom indices (i, j) to bond orders. The bond order
+                may be a string like '1', '2', '3', 'ar', etc.
+                Example: {(0, 1): '1', (1, 2): '2'}
+            ignore_dummy_atoms : bool, optional (default=True)
+                If True, atoms with element symbol 'X' will be ignored in both atoms and bonds.
+            write_bond_orders : bool, optional (default=True)
+                If True, writes the actual bond orders from `bond_order_dict`.
+                If False, all bonds are assigned order '1'.
+            return_string : bool, optional (default=True)
+                If True, returns the MOL2 content as a string.
+                If False, writes to `output_file`.
+            output_file : str or None, optional
+                If `return_string` is False, this must be the path to the file to write.
+
+        Returns
+        -------
+            str or None
+                Returns the MOL2-format string if `return_string` is True, otherwise writes to file
+                and returns None.
+
+        Notes
+        -----
+            - Atoms are renumbered starting from 1.
+            - Element-based labels (e.g., C1, C2) are assigned using counts per element.
+            - Substructures are inferred using connected components in the bond graph.
+            - Only bonds where both atoms are not dummy atoms are retained if `ignore_dummy_atoms` is True.
+        """
+
+        # Filter out dummy atoms
+        filtered_atoms = []
+        index_map = {}
+        counter_by_element = {}
+        new_index = 1
+
+        # get the atoms
+        atom_coords = []
+        atom_elements = []
+        for atom in self.atoms:
+            atom_coords.append(atom.coords())
+            atom_elements.append(atom.sym)
+
+        # get bond_order dictionary
+        bond_order_dict = self.bo_dict
+
+        for i, (coord, elem) in enumerate(zip(atom_coords, atom_elements)):
+            if ignore_dummy_atoms and elem.upper() == 'X':
+                continue
+            elem_clean = elem.capitalize()
+            counter_by_element.setdefault(elem_clean, 0)
+            counter_by_element[elem_clean] += 1
+            atom_label = f"{elem_clean}{counter_by_element[elem_clean]}"
+            filtered_atoms.append((new_index, atom_label, coord, elem_clean))
+            index_map[i] = new_index
+            new_index += 1
+
+        # Rebuild bond list using new indices
+        bonds = []
+        for (i, j), order in bond_order_dict.items():
+            if i in index_map and j in index_map:
+                idx1 = index_map[i]
+                idx2 = index_map[j]
+                bond_type = order if write_bond_orders else '1'
+                bonds.append((idx1, idx2, bond_type))
+
+        # Determine substructures using NetworkX
+        G = nx.Graph()
+        G.add_nodes_from([idx for idx, _, _, _ in filtered_atoms])
+        G.add_edges_from([(i, j) for i, j, _ in bonds])
+        components = list(nx.connected_components(G))
+        substructure_lookup = {}
+        for idx, comp in enumerate(components, start=1):
+            for atom_idx in comp:
+                substructure_lookup[atom_idx] = idx
+
+        # Compose mol2 content
+        mol2_lines = []
+        mol2_lines.append("@<TRIPOS>MOLECULE")
+        mol2_lines.append("GeneratedMol")
+        mol2_lines.append(f"{len(filtered_atoms)} {len(bonds)} 1")
+        mol2_lines.append("SMALL")
+        mol2_lines.append("NO_CHARGES\n")
+
+        mol2_lines.append("@<TRIPOS>ATOM")
+        for idx, label, coord, elem in filtered_atoms:
+            mol2_lines.append(f"{idx:<5d} {label:<6s} {coord[0]:>10.4f} {coord[1]:>10.4f} {coord[2]:>10.4f} {elem:<4s} {substructure_lookup[idx]:>2d} RES{substructure_lookup[idx]} 0.0000")
+
+        mol2_lines.append("@<TRIPOS>BOND")
+        for i, (idx1, idx2, bond_type) in enumerate(bonds, start=1):
+            mol2_lines.append(f"{i:<5d} {idx1:<4d} {idx2:<4d} {bond_type}")
+
+        mol2_lines.append("@<TRIPOS>SUBSTRUCTURE")
+        for sub_id in sorted(set(substructure_lookup.values())):
+            mol2_lines.append(f"{sub_id:<3d} RES{sub_id}       1 TEMP              0 ****  ****    0 ROOT")
+
+        mol2_str = '\n'.join(mol2_lines)
+
+        if return_string:
+            return mol2_str
+        elif output_file:
+            with open(output_file, 'w') as f:
+                f.write(mol2_str)
+        else:
+            raise ValueError("Must specify either return_string=True or output_file='filename.mol2'")
 
     def writemxyz(self, mol, filename, no_tabs=False):
         """
