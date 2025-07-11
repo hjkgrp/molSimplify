@@ -2,7 +2,7 @@ import numpy as np
 from molSimplify.Classes.globalvars import vdwrad
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from collections import defaultdict
 
 class VoxelGrid:
     def __init__(self, voxel_size=0.5, vdw_scale=0.9):
