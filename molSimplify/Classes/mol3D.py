@@ -7244,7 +7244,7 @@ class mol3D:
 
         # get bond_order dictionary
         bond_order_dict = self.bo_dict
-        
+
         for i, (coord, elem) in enumerate(zip(atom_coords, atom_elements)):
             if ignore_dummy_atoms and elem.upper() == 'X':
                 continue
@@ -7304,7 +7304,7 @@ class mol3D:
                 f.write(mol2_str)
         else:
             raise ValueError("Must specify either return_string=True or output_file='filename.mol2'")
-    
+
     def writemol2(self, filename, writestring=False, ignoreX=False, force=False):
         """
         Write mol2 file from mol3D object. Partial charges are appended if given.
