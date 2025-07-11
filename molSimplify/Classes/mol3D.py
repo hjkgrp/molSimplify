@@ -7177,6 +7177,134 @@ class mol3D:
         with open(filename, 'w') as f:
             f.write(mol_contents)
 
+    def new_writemol2(
+        self,
+        ignore_dummy_atoms=True,
+        write_bond_orders=True,
+        return_string=True,
+        output_file=None
+    ):
+        """
+        Generate a MOL2-format string or file from atomic coordinates and bonding data.
+
+        Parameters
+        ----------
+        atom_coords : list or np.ndarray of shape (N, 3)
+            A list or NumPy array of atomic coordinates. Each element is a 3D coordinate
+            (x, y, z) for a single atom.
+
+        atom_elements : list of str
+            A list of atomic element symbols (e.g., 'C', 'N', 'O', etc.), one for each atom
+            in `atom_coords`. The list must be the same length as `atom_coords`.
+
+        bond_order_dict : dict
+            A dictionary mapping tuples of atom indices (i, j) to bond orders. The bond order
+            may be a string like '1', '2', '3', 'ar', etc.
+            Example: {(0, 1): '1', (1, 2): '2'}
+
+        ignore_dummy_atoms : bool, optional (default=True)
+            If True, atoms with element symbol 'X' will be ignored in both atoms and bonds.
+
+        write_bond_orders : bool, optional (default=True)
+            If True, writes the actual bond orders from `bond_order_dict`.
+            If False, all bonds are assigned order '1'.
+
+        return_string : bool, optional (default=True)
+            If True, returns the MOL2 content as a string.
+            If False, writes to `output_file`.
+
+        output_file : str or None, optional
+            If `return_string` is False, this must be the path to the file to write.
+
+        Returns
+        -------
+        str or None
+            Returns the MOL2-format string if `return_string` is True, otherwise writes to file
+            and returns None.
+
+        Notes
+        -----
+        - Atoms are renumbered starting from 1.
+        - Element-based labels (e.g., C1, C2) are assigned using counts per element.
+        - Substructures are inferred using connected components in the bond graph.
+        - Only bonds where both atoms are not dummy atoms are retained if `ignore_dummy_atoms` is True.
+        """
+        # Filter out dummy atoms
+        filtered_atoms = []
+        index_map = {}
+        counter_by_element = {}
+        new_index = 1
+
+        # get the atoms
+        atom_coords = []
+        atom_elements = []
+        for atom in self.atoms:
+            atom_coords.append(atom.coords())
+            atom_elements.append(atom.sym)
+
+        # get bond_order dictionary
+        bond_order_dict = self.bo_dict
+
+        for i, (coord, elem) in enumerate(zip(atom_coords, atom_elements)):
+            if ignore_dummy_atoms and elem.upper() == 'X':
+                continue
+            elem_clean = elem.capitalize()
+            counter_by_element.setdefault(elem_clean, 0)
+            counter_by_element[elem_clean] += 1
+            atom_label = f"{elem_clean}{counter_by_element[elem_clean]}"
+            filtered_atoms.append((new_index, atom_label, coord, elem_clean))
+            index_map[i] = new_index
+            new_index += 1
+
+        # Rebuild bond list using new indices
+        bonds = []
+        for (i, j), order in bond_order_dict.items():
+            if i in index_map and j in index_map:
+                idx1 = index_map[i]
+                idx2 = index_map[j]
+                bond_type = order if write_bond_orders else '1'
+                bonds.append((idx1, idx2, bond_type))
+
+        # Determine substructures using NetworkX
+        G = nx.Graph()
+        G.add_nodes_from([idx for idx, _, _, _ in filtered_atoms])
+        G.add_edges_from([(i, j) for i, j, _ in bonds])
+        components = list(nx.connected_components(G))
+        substructure_lookup = {}
+        for idx, comp in enumerate(components, start=1):
+            for atom_idx in comp:
+                substructure_lookup[atom_idx] = idx
+
+        # Compose mol2 content
+        mol2_lines = []
+        mol2_lines.append("@<TRIPOS>MOLECULE")
+        mol2_lines.append("GeneratedMol")
+        mol2_lines.append(f"{len(filtered_atoms)} {len(bonds)} 1")
+        mol2_lines.append("SMALL")
+        mol2_lines.append("NO_CHARGES\n")
+
+        mol2_lines.append("@<TRIPOS>ATOM")
+        for idx, label, coord, elem in filtered_atoms:
+            mol2_lines.append(f"{idx:<5d} {label:<6s} {coord[0]:>10.4f} {coord[1]:>10.4f} {coord[2]:>10.4f} {elem:<4s} {substructure_lookup[idx]:>2d} RES{substructure_lookup[idx]} 0.0000")
+
+        mol2_lines.append("@<TRIPOS>BOND")
+        for i, (idx1, idx2, bond_type) in enumerate(bonds, start=1):
+            mol2_lines.append(f"{i:<5d} {idx1:<4d} {idx2:<4d} {bond_type}")
+
+        mol2_lines.append("@<TRIPOS>SUBSTRUCTURE")
+        for sub_id in sorted(set(substructure_lookup.values())):
+            mol2_lines.append(f"{sub_id:<3d} RES{sub_id}       1 TEMP              0 ****  ****    0 ROOT")
+
+        mol2_str = '\n'.join(mol2_lines)
+
+        if return_string:
+            return mol2_str
+        elif output_file:
+            with open(output_file, 'w') as f:
+                f.write(mol2_str)
+        else:
+            raise ValueError("Must specify either return_string=True or output_file='filename.mol2'")
+
     def writemol2(self, filename, writestring=False, ignoreX=False, force=False):
         """
         Write mol2 file from mol3D object. Partial charges are appended if given.
