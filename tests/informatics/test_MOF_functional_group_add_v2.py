@@ -20,7 +20,7 @@ import os
         (1, "sulfonic"),
         (2, "sulfonic"),
         (1, "COOH"),
-        (2, "COOH"), 
+        (2, "COOH"),
         (1, "Cl"),
         (2, "Cl"),
         (1, "Br"),

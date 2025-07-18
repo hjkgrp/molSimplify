@@ -110,7 +110,7 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
             functionalized_wo_bond = False
 
             for i in linker_to_analyze:
-                atom = original_allatomtypes[i] 
+                atom = original_allatomtypes[i]
                 print(f'i is {i}')
                 if i in checkedlist:
                     continue # Move on to the next atom.
@@ -168,12 +168,12 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
 
                 if functionalized_wo_bond:
                     break
-                # if not unintend_bond:  
-                #     functionalized_wo_bond = True    
+                # if not unintend_bond:
+                #     functionalized_wo_bond = True
                     ## Updating the atoms list
                     # new_coord_list, final_atom_types = atom_deletion(cart_coords, allatomtypes, delete_list)
                     # # Adding atoms (the atoms in the functional groups)
-                    # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)   
+                    # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)
 
                    #break # Don't search the rest of the connected atoms if replaced a hydrogen and functionalized already at the atom with index i.
                     """""""""
@@ -181,7 +181,7 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
             """""""""
             # If there is more than one functionalization, this is where that happens.
             # Will check other atoms on the linker to potentially functionalize them.
-            
+
             if functionalized_wo_bond:
                 while functionalization_counter > 0:
                     # delete_list = [] # Collect all of the H that need to be deleted later.
@@ -208,17 +208,17 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
                         functionalized_atoms,
                         additional_atom_offset=additional_atom_offset
                         )
-                    
+
                     if unintend_bond:
                         break
-                    # if not unintend_bond:  
-                    #     functionalized_wo_bond = True    
+                    # if not unintend_bond:
+                    #     functionalized_wo_bond = True
                         ## Updating the atoms list
                         # new_coord_list, final_atom_types = atom_deletion(cart_coords, allatomtypes, delete_list)
                         # # Adding atoms (the atoms in the functional groups)
-                        # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)   
+                        # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)
 
-            
+
     """""""""
     Apply delete_list and extra_atom_types to make final_atom_types and new_coord_list.
     """""""""
@@ -458,7 +458,7 @@ def additional_functionalization(cell_v, i,
     sorted_indices_desc = np.argsort(-np_distances)
 
     n_path_lengths_away_sorted = [n_path_lengths_away[idx] for idx in sorted_indices_desc]
-    
+
     unintend_bond = False
 
     for path in n_path_lengths_away_sorted: # Looking at the possible paths between the anchor_idx and atoms that are N (path_between_functionalizations) atom away.
@@ -1647,13 +1647,13 @@ def post_functionalization_overlap_and_bonding_check(cell_v, all_atom_types, fco
     adj_matrix = adj_matrix.todense()
     adj_matrix = np.squeeze(np.asarray(adj_matrix)) # Converting from numpy.matrix to numpy.array
 
-    all_MOF_atoms_index = [i for i, atom in enumerate(all_atom_types)] 
+    all_MOF_atoms_index = [i for i, atom in enumerate(all_atom_types)]
 
     # Since functional group atoms are added to the end of the atom type list and fractional coordinate numpy array (see function atom_addition),
     # we just check the last few rows of the adjacency matrix.
     # These last few rows correspond to the functional group atoms that were added.
     bond_overlap = False
-    
+
     if len(extra_atom_types) != 0:  ## No functional group added due to no sp2 carbon
         func_group_length = len(extra_atom_types[0]) # Number of atoms in each functional group.
 
@@ -1661,14 +1661,14 @@ def post_functionalization_overlap_and_bonding_check(cell_v, all_atom_types, fco
 
         starting_index = -1
         for i in range(len(extra_atom_types)):
-            mof_index_list = [starting_index - j for j in range(func_group_length)] 
+            mof_index_list = [starting_index - j for j in range(func_group_length)]
             mof_actual_index_list = [index + len(all_atom_types) for index in mof_index_list] # The indices of the atoms in the functional group.
-            all_MOF_atoms_index_dropped = [index for index in all_MOF_atoms_index if index not in mof_actual_index_list] 
+            all_MOF_atoms_index_dropped = [index for index in all_MOF_atoms_index if index not in mof_actual_index_list]
             number_bonding  = np.sum(adj_matrix[np.ix_(mof_actual_index_list, all_MOF_atoms_index_dropped)]) # Number of bonds to the functional group atoms.
             if number_bonding > 1:
                 bond_overlap = True
                 return bond_overlap
-            
+
             starting_index -= func_group_length # Move to the next functional group atoms in the adjacency matrix.
     else:
         return True ## Returning True so that the cif without functionalization is not written again
