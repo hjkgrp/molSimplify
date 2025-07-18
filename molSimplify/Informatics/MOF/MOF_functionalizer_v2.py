@@ -100,79 +100,95 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
 
     if functional_group != 'H': # We don't do anything for -H functionalization.
 
-        ### Iterate over atoms until we find one suitable for functionalization.
-        for i, atom in enumerate(original_allatomtypes):
-            print(f'i is {i}')
-            if i in checkedlist:
-                continue # Move on to the next atom.
-            if atom != 'C': # Assumes that functionalization is performed on a C atom.
-                checkedlist.add(i)
-                continue
+        for linker_to_analyze_index, linker_to_analyze in enumerate(linker_list):
+            # delete_list = [] # Collect all of the H that need to be deleted later.
+            # extra_atom_coords = []
+            # extra_atom_types = []
+
+            linker_atom_types, linker_graph, linker_cart_coords = analyze_linker(cart_coords, linker_to_analyze,
+                                                                                 original_allatomtypes, linker_subgraphlist, linker_to_analyze_index, cell_v)
+            functionalized_wo_bond = False
+
+            for i in linker_to_analyze:
+                atom = original_allatomtypes[i] 
+                print(f'i is {i}')
+                if i in checkedlist:
+                    continue # Move on to the next atom.
+                if atom != 'C': # Assumes that functionalization is performed on a C atom.
+                    checkedlist.add(i)
+                    continue
 
             # Atoms that are connected to atom i.
-            connected_atom_list, connected_atom_types = connected_atoms_from_adjmat(adj_matrix, i, original_allatomtypes)
+                connected_atom_list, connected_atom_types = connected_atoms_from_adjmat(adj_matrix, i, original_allatomtypes)
 
-            if ('H' not in connected_atom_types) or (connected_atom_types.count('H')>1 or len(connected_atom_types) != 3): ### must functionalize where an H was. Needs sp2 C.
-                # Note: if a carbon has more than one hydrogen bonded to it, it is not considered for functionalization.
-                # So, the carbons treated by this code will carbons in a benzene-style ring for the most part, I assume.
-                    # Since apply_functionalization assumes two neighbors to the carbon excluding hydrogens.
-                    # TODO expand in the future?
-                # Note: can only replace a hydrogen in the functionalization, at the moment. Can't replace a methyl, hydroxyl, etc.
-                checkedlist.add(i)
-                continue
+                if ('H' not in connected_atom_types) or (connected_atom_types.count('H')>1 or len(connected_atom_types) != 3): ### must functionalize where an H was. Needs sp2 C.
+                    # Note: if a carbon has more than one hydrogen bonded to it, it is not considered for functionalization.
+                    # So, the carbons treated by this code will carbons in a benzene-style ring for the most part, I assume.
+                        # Since apply_functionalization assumes two neighbors to the carbon excluding hydrogens.
+                        # TODO expand in the future?
+                    # Note: can only replace a hydrogen in the functionalization, at the moment. Can't replace a methyl, hydroxyl, etc.
+                    checkedlist.add(i)
+                    continue
 
-            else: # Found a suitable location for functionalization.
-                functionalized = False
-                functionalization_counter = functionalization_limit
+                else: # Found a suitable location for functionalization.
+                    functionalized_wo_bond = False
+                    functionalization_counter = functionalization_limit
+                    unintend_bond = True
 
-                # Identifying the linker that has atom i.
-                # Also adds all the atoms in the identified linker to checkedlist. So, won't check this linker again.
-                linker_to_analyze, linker_to_analyze_index, checkedlist = linker_identification(linker_list, i, checkedlist)
+                    """""""""
+                    Linker functionalization of the current linker.
+                    """""""""
+                    # The following code will functionalize this linker functionalization_limit times, or as close to this many times as possible.
+                    for k, connected_atom in enumerate(connected_atom_types): # Look through the atoms bonded to atom i.
+                        if connected_atom == 'H':
 
-                linker_atom_types, linker_graph, linker_cart_coords = analyze_linker(cart_coords,
-                    linker_to_analyze,
-                    allatomtypes,
-                    linker_subgraphlist,
-                    linker_to_analyze_index,
-                    cell_v,
-                    )
+                            """""""""
+                            The first linker functionalization.
+                            """""""""
+                            molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms, unintend_bond = first_functionalization(cell_v, molcif,
+                                allatomtypes,
+                                i,
+                                connected_atom_list,
+                                k,
+                                functional_group,
+                                linker_cart_coords,
+                                linker_to_analyze,
+                                linker_atom_types,
+                                linker_graph,
+                                functionalization_counter,
+                                delete_list,
+                                extra_atom_coords,
+                                extra_atom_types,
+                                functionalized_atoms,
+                                additional_atom_offset=additional_atom_offset
+                                )
+                            if not unintend_bond:
+                                functionalized_wo_bond = True
+                                break
 
-                """""""""
-                Linker functionalization of the current linker.
-                """""""""
-                # The following code will functionalize this linker functionalization_limit times, or as close to this many times as possible.
-                for k, connected_atom in enumerate(connected_atom_types): # Look through the atoms bonded to atom i.
-                    if connected_atom == 'H':
+                if functionalized_wo_bond:
+                    break
+                # if not unintend_bond:  
+                #     functionalized_wo_bond = True    
+                    ## Updating the atoms list
+                    # new_coord_list, final_atom_types = atom_deletion(cart_coords, allatomtypes, delete_list)
+                    # # Adding atoms (the atoms in the functional groups)
+                    # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)   
 
-                        """""""""
-                        The first linker functionalization.
-                        """""""""
-                        molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms = first_functionalization(cell_v, molcif,
-                            allatomtypes,
-                            i,
-                            connected_atom_list,
-                            k,
-                            functional_group,
-                            linker_cart_coords,
-                            linker_to_analyze,
-                            linker_atom_types,
-                            linker_graph,
-                            functionalization_counter,
-                            delete_list,
-                            extra_atom_coords,
-                            extra_atom_types,
-                            functionalized_atoms,
-                            additional_atom_offset=additional_atom_offset
-                            )
+                   #break # Don't search the rest of the connected atoms if replaced a hydrogen and functionalized already at the atom with index i.
+                    """""""""
+            Any additional linker functionalizations.
+            """""""""
+            # If there is more than one functionalization, this is where that happens.
+            # Will check other atoms on the linker to potentially functionalize them.
+            
+            if functionalized_wo_bond:
+                while functionalization_counter > 0:
+                    # delete_list = [] # Collect all of the H that need to be deleted later.
+                    # extra_atom_coords = []
+                    # extra_atom_types = []
 
-                        break # Don't search the rest of the connected atoms if replaced a hydrogen and functionalized already at the atom with index i.
-                """""""""
-                Any additional linker functionalizations.
-                """""""""
-                # If there is more than one functionalization, this is where that happens.
-                # Will check other atoms on the linker to potentially functionalize them.
-                while functionalization_counter > 0: # Still have some more functionalizations to make.
-                    molcif, functionalization_counter, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms = additional_functionalization(cell_v, i,
+                    molcif, functionalization_counter, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms, unintend_bond = additional_functionalization(cell_v, i,
                         linker_to_analyze,
                         linker_subgraphlist,
                         linker_to_analyze_index,
@@ -192,7 +208,17 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
                         functionalized_atoms,
                         additional_atom_offset=additional_atom_offset
                         )
+                    
+                    if unintend_bond:
+                        break
+                    # if not unintend_bond:  
+                    #     functionalized_wo_bond = True    
+                        ## Updating the atoms list
+                        # new_coord_list, final_atom_types = atom_deletion(cart_coords, allatomtypes, delete_list)
+                        # # Adding atoms (the atoms in the functional groups)
+                        # allatomtypes, fcoords = atom_addition([extra_atom_types], final_atom_types, new_coord_list, extra_atom_coords, cell_v)   
 
+            
     """""""""
     Apply delete_list and extra_atom_types to make final_atom_types and new_coord_list.
     """""""""
@@ -203,34 +229,36 @@ def functionalize_MOF(cif_file, path2write, functional_group = 'F', functionaliz
 
     # Adding atoms (the atoms in the functional groups)
     allatomtypes, fcoords = atom_addition(extra_atom_types, final_atom_types, new_coord_list, extra_atom_coords, cell_v)
-
-    """""""""
-    Write the cif.
-    """""""""
-    cif_folder = f'{path2write}/cif'
-    mkdir_if_absent(cif_folder)
-    write_cif(f'{cif_folder}/functionalized_{base_mof_name}_{functional_group}_{functionalization_limit}.cif', cpar, fcoords, allatomtypes)
-
-    """""""""
-    Check on how the functionalization affected the symmetry.
-    """""""""
-    print('------- UNFUNCTIONALIZED CASE --------')
-    #symmetry_check(original_allatomtypes, original_fcoords, cell_v)
-
-    # Analysis for the case where the cell is functionalized.
-    # Difference with the block above: allatomtypes and fcoords, instead of original_allatomtypes and original_fcoords
-    print('------- FUNCTIONALIZED CASE --------')
-    #symmetry_check(allatomtypes, fcoords, cell_v)
-    ## Post functionalization bond order check
     bond_overlap = post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoords, extra_atom_types)
-    if bond_overlap:
+
+    if not bond_overlap:
+        ## post functionalization
+        """""""""
+        Write the cif.
+        """""""""
+        cif_folder = f'{path2write}/cif'
+        mkdir_if_absent(cif_folder)
+        write_cif(f'{cif_folder}/functionalized_{base_mof_name}_{functional_group}_{functionalization_limit}.cif', cpar, fcoords, allatomtypes)
+
+        """""""""
+        Check on how the functionalization affected the symmetry.
+        """""""""
+        print('------- UNFUNCTIONALIZED CASE --------')
+        #symmetry_check(original_allatomtypes, original_fcoords, cell_v)
+
+        # Analysis for the case where the cell is functionalized.
+        # Difference with the block above: allatomtypes and fcoords, instead of original_allatomtypes and original_fcoords
+        print('------- FUNCTIONALIZED CASE --------')
+            #symmetry_check(allatomtypes, fcoords, cell_v)
+        ## Post functionalization bond order check
+    else:
+    # # bond_overlap = post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoords, extra_atom_types)
+    # # if bond_overlap:
         mof_name = os.path.basename(cif_file).strip('.cif')
         with open(f'atomic_overlap_{functionalization_limit}_func.txt', 'a') as file:
             line = f'{mof_name} {functional_group}\n'
             file.write(line)
             file.close()
-
-    return functionalized_atoms
 
 
 def first_functionalization(cell_v, molcif,
@@ -312,7 +340,7 @@ def first_functionalization(cell_v, molcif,
 
     """
     # Apply the functionalization to the MOF.
-    molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized = apply_functionalization(cell_v, molcif,
+    molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized, unintend_bond = apply_functionalization(cell_v, molcif,
                                         allatomtypes, i, connected_atom_list[k], connected_atom_list, functional_group,
                                         linker_cart_coords, linker_to_functionalize, linker_atom_types, linker_graph, functionalization_counter, additional_atom_offset=additional_atom_offset)
 
@@ -326,7 +354,7 @@ def first_functionalization(cell_v, molcif,
     # Keep track of what atoms have been functionalized.
     functionalized_atoms.append(i)
 
-    return molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms
+    return molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms, unintend_bond
 
 def additional_functionalization(cell_v, i,
     linker_to_functionalize,
@@ -415,43 +443,59 @@ def additional_functionalization(cell_v, i,
     original_functionalization_counter = functionalization_counter
 
     anchor_idx = linker_to_functionalize.index(i) # As a reminder, linker_to_functionalize is a list of numpy.int32, the numpy.int32s being indices for the atoms in the linker
+    anchor_coordinate = linker_cart_coords[anchor_idx]
     G = make_networkx_graph(linker_subgraphlist[linker_to_functionalize_index]) # Getting the graph for the linker of interest.
     # Use network X to find functionalization paths that are N atoms away from the original spot
     n_path_lengths_away = findPaths(G,anchor_idx,path_between_functionalizations)
     already_functionalized = False
-    for path in n_path_lengths_away: # Looking at the possible paths between the anchor_idx and atoms that are N (path_between_functionalizations) atom away.
+
+    path_distance_list = []
+    for path in n_path_lengths_away:
+        path_coord = linker_cart_coords[path[-1]]
+        path_distance_list.append(np.linalg.norm(path_coord - anchor_coordinate))
+
+    np_distances = np.array(path_distance_list)
+    sorted_indices_desc = np.argsort(-np_distances)
+
+    n_path_lengths_away_sorted = [n_path_lengths_away[idx] for idx in sorted_indices_desc]
+    
+    unintend_bond = False
+
+    for path in n_path_lengths_away_sorted: # Looking at the possible paths between the anchor_idx and atoms that are N (path_between_functionalizations) atom away.
         if already_functionalized: # An atom was already functionalized.
             break
 
         potential_functionalization = path[-1] # Gets the last point on the graph at distance "path_between_functionalizations" away.
         functionalization_index = linker_to_functionalize[potential_functionalization] # Gets the global index of the atom to functionalize.
 
-        # Get the neighbors of the atom that we are considering for functionalization.
-        secondary_connected_atom_list, secondary_connected_atom_types = connected_atoms_from_adjmat(adj_matrix, functionalization_index, allatomtypes)
+        if allatomtypes[functionalization_index] == 'C':
+            # Get the neighbors of the atom that we are considering for functionalization.
+            secondary_connected_atom_list, secondary_connected_atom_types = connected_atoms_from_adjmat(adj_matrix, functionalization_index, allatomtypes)
 
-        if 'H' not in secondary_connected_atom_types or len(secondary_connected_atom_types) != 3:
-            continue # Must functionalize where an H was. If not, skip.
-        elif functionalization_index in functionalized_atoms:
-            continue # This atom has already been functionalized.
-        else:
-            for l, secondary_connected_atom in enumerate(secondary_connected_atom_types):
-                if (secondary_connected_atom == 'H') and (not functionalized):
-                    molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized = apply_functionalization(cell_v, molcif,
-                                    allatomtypes, functionalization_index, secondary_connected_atom_list[l], secondary_connected_atom_list,
-                                    functional_group, linker_cart_coords, linker_to_functionalize, linker_atom_types, linker_graph,
-                                    functionalization_counter, additional_atom_offset=additional_atom_offset)
-                    delete_list.append(secondary_connected_atom_list[l])
-                    extra_atom_coords.append(additions_to_cart)
-                    extra_atom_types.append(atom_types_to_add)
-                    functionalized_atoms.append(functionalization_index)
-                    already_functionalized = True # Want to break out of all the for loops
-                    break # break the for l, secondary... loop since a functionalization was made.
+            if 'H' not in secondary_connected_atom_types or len(secondary_connected_atom_types) != 3:
+                continue # Must functionalize where an H was. If not, skip.
+            elif functionalization_index in functionalized_atoms:
+                continue # This atom has already been functionalized.
+            else:
+                for l, secondary_connected_atom in enumerate(secondary_connected_atom_types):
+                    if (secondary_connected_atom == 'H') and (not functionalized):
+                        molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized, unintend_bond = apply_functionalization(cell_v, molcif,
+                                        allatomtypes, functionalization_index, secondary_connected_atom_list[l], secondary_connected_atom_list,
+                                        functional_group, linker_cart_coords, linker_to_functionalize, linker_atom_types, linker_graph,
+                                        functionalization_counter, additional_atom_offset=additional_atom_offset)
+                        if not unintend_bond:
+                            delete_list.append(secondary_connected_atom_list[l])
+                            extra_atom_coords.append(additions_to_cart)
+                            extra_atom_types.append(atom_types_to_add)
+                            functionalized_atoms.append(functionalization_index)
+                            already_functionalized = True # Want to break out of all the for loops
+                            break # break the for l, secondary... loop since a functionalization was made.
 
     if functionalization_counter == original_functionalization_counter: # Equivalently, if already_functionalized == False
         # This means there are no more locations on the linker that can be functionalized.
         functionalization_counter = 0 # No more functionalizations to be done.
 
-    return molcif, functionalization_counter, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms
+    return molcif, functionalization_counter, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms, unintend_bond
 
 def apply_functionalization(cell_v, molcif, allatomtypes, position_to_functionalize, atom_to_replace, position_to_functionalize_neighbors,
                                         functional_group, linker_cart_coords, linker_to_analyze, linker_atom_types, linker_graph, functionalization_counter, additional_atom_offset=0):
@@ -559,7 +603,8 @@ def apply_functionalization(cell_v, molcif, allatomtypes, position_to_functional
 
         new_coord_list, final_atom_types = atom_deletion(np.array(fcoords_updated), allatomtypes_new, [atom_to_replace])
 
-        bond_overlap = post_functionalization_overlap_and_bonding_check(cell_v, final_atom_types, new_coord_list, atom_types_to_add)
+        bond_overlap = post_functionalization_overlap_and_bonding_check(cell_v, final_atom_types, new_coord_list, [atom_types_to_add])
+        #print(bond_overlap)
 
         if not bond_overlap or angle >= 360 or not can_rotate:
             molcif, atom_types_to_add, additions_to_cart, can_rotate = functionalization_gram_schmidt(molcif, geo_dict_loader_gram_schmidt,
@@ -579,7 +624,7 @@ def apply_functionalization(cell_v, molcif, allatomtypes, position_to_functional
     else:
         functionalized = False
 
-    return molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized
+    return molcif, atom_types_to_add, additions_to_cart, functionalization_counter, functionalized, unintend_bond
 
 def functionalization_gram_schmidt(molcif, geo_dict_loader_gram_schmidt, functional_group,
                                    linker_cart_coords, functionalization_position_on_linker, functionalization_hydrogen_on_linker,
@@ -1287,7 +1332,7 @@ def functionalize_MOF_at_indices(cif_file, path2write, functional_group, func_in
                 if connected_atom == 'H':
 
                     functionalization_counter = 1
-                    molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms = first_functionalization(cell_v, molcif,
+                    molcif, functionalization_counter, functionalized, delete_list, extra_atom_coords, extra_atom_types, functionalized_atoms, unintend_bond = first_functionalization(cell_v, molcif,
                         allatomtypes,
                         func_index,
                         connected_atom_list,
@@ -1565,7 +1610,7 @@ def alignment_objective(rotation_vector, molcif_clone, MOF_main_carbon_index, MO
     return objective_function
 
 
-def post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoords, extra_atom_types):
+def post_functionalization_overlap_and_bonding_check(cell_v, all_atom_types, fcoords, extra_atom_types):
     """
     Prints information on whether the introduced functional group atoms are overlapping with other atoms.
     Also prints information on the interpreted bonds of the introduced functional group atoms. Useful to make sure the functional group atoms are not too close to other atoms.
@@ -1586,14 +1631,48 @@ def post_functionalization_overlap_and_bonding_check(cell_v, allatomtypes, fcoor
     None
 
     """
+    # cart_coords = fractional2cart(fcoords, cell_v)
+    # distance_mat = compute_distance_matrix(cell_v, cart_coords)
+    # try:
+    #     adj_matrix, _ = compute_adj_matrix(distance_mat, allatomtypes, handle_overlap=False) # Will throw an error if atoms are overlapping after functionalization.
+    #     return False
+    # except Exception:
+    #     return True
     cart_coords = fractional2cart(fcoords, cell_v)
     distance_mat = compute_distance_matrix(cell_v, cart_coords)
     try:
-        adj_matrix, _ = compute_adj_matrix(distance_mat, allatomtypes, handle_overlap=False) # Will throw an error if atoms are overlapping after functionalization.
-        return False
-    except Exception:
+        adj_matrix, _ = compute_adj_matrix(distance_mat, all_atom_types, wiggle_room=0.9, handle_overlap=False) # Will throw an error if atoms are overlapping after functionalization.
+    except:
         return True
+    adj_matrix = adj_matrix.todense()
+    adj_matrix = np.squeeze(np.asarray(adj_matrix)) # Converting from numpy.matrix to numpy.array
 
+    all_MOF_atoms_index = [i for i, atom in enumerate(all_atom_types)] 
+
+    # Since functional group atoms are added to the end of the atom type list and fractional coordinate numpy array (see function atom_addition),
+    # we just check the last few rows of the adjacency matrix.
+    # These last few rows correspond to the functional group atoms that were added.
+    bond_overlap = False
+    
+    if len(extra_atom_types) != 0:  ## No functional group added due to no sp2 carbon
+        func_group_length = len(extra_atom_types[0]) # Number of atoms in each functional group.
+
+        # Will be set to True if there is a bond overlap.
+
+        starting_index = -1
+        for i in range(len(extra_atom_types)):
+            mof_index_list = [starting_index - j for j in range(func_group_length)] 
+            mof_actual_index_list = [index + len(all_atom_types) for index in mof_index_list] # The indices of the atoms in the functional group.
+            all_MOF_atoms_index_dropped = [index for index in all_MOF_atoms_index if index not in mof_actual_index_list] 
+            number_bonding  = np.sum(adj_matrix[np.ix_(mof_actual_index_list, all_MOF_atoms_index_dropped)]) # Number of bonds to the functional group atoms.
+            if number_bonding > 1:
+                bond_overlap = True
+                return bond_overlap
+            
+            starting_index -= func_group_length # Move to the next functional group atoms in the adjacency matrix.
+    else:
+        return True ## Returning True so that the cif without functionalization is not written again
+    return bond_overlap
 
 def atom_deletion(cart_coords, allatomtypes, delete_list):
     """
