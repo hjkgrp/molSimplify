@@ -15,19 +15,13 @@ dependencies:
     - pytest
     - pytest-resource-path
 
-  # Optional
-  # GUI / plotting
-  # - pyqt
-  # - qt
+  ### Optional
+  # Plotting
   - matplotlib
   # Database
   - pymongo
   # PDB interaction
   - beautifulsoup4
-  # Machine learning
-  #- pytorch::pytorch
-  #- hyperopt
   # QM interfaces
   - xtb <6.7
-  - libgcc <15
-  #- psi4::psi4
+  - libgcc <15 # Note: libgcc only available for Linux
