@@ -32,14 +32,14 @@ def test_core_load():
     # Assert that the error message is empty
     assert not emsg
     core.convert2mol3D()
-    assert core.make_formula(latex=False) == "Fe1F1C10H9"
+    assert core.make_formula(latex=False, hill_system=True) == "FeC10H9F"
 
     file = str(resource_files("molSimplify").joinpath("Cores/ferrocene.mol"))
     core, emsg = core_load(file)
     # Assert that the error message is empty
     assert not emsg
     core.convert2mol3D()
-    assert core.make_formula(latex=False) == "Fe1C10H10"
+    assert core.make_formula(latex=False, hill_system=True) == "FeC10H10"
 
 
 def test_printgeoms(capsys):

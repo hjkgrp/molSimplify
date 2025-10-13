@@ -5534,7 +5534,7 @@ class mol3D:
         self.dict_lig_distort = dict_lig_distort
         return dict_lig_distort
 
-    def make_formula(self, latex=True, hill_system=True):
+    def make_formula(self, latex=True, hill_system=False):
         """
         Get a chemical formula from the mol3D class instance.
         Metals appear first, sorted alphabetically.
