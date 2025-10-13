@@ -17,9 +17,9 @@ def test_six_monodentate(resource_path_root):
     # eq_ligands: ['hydrogensulfide', 'ammonia', 'hydrocyanide', 'formaldehyde']
 
     ax_formulas = [lig.mol.make_formula(latex=False) for lig in ax_ligand_list]
-    assert ax_formulas == ['S1H2', 'N1C1H1']
+    assert ax_formulas == ['H2S', 'CHN']
     eq_formulas = [lig.mol.make_formula(latex=False) for lig in eq_ligand_list]
-    assert eq_formulas == ['O1H2', 'N1H3', 'O1C1', 'O1C1H2']
+    assert eq_formulas == ['H2O', 'H3N', 'CO', 'CH2O']
 
     assert ax_natoms_list == [3, 3]
     assert eq_natoms_list == [3, 4, 2, 4]
@@ -44,9 +44,9 @@ def test_triple_bidentate(resource_path_root):
 
     print(ax_ligand_list, eq_ligand_list)
     ax_formulas = [lig.mol.make_formula(latex=False) for lig in ax_ligand_list]
-    assert ax_formulas == ['O2C5H7']
+    assert ax_formulas == ['C5H7O2']
     eq_formulas = [lig.mol.make_formula(latex=False) for lig in eq_ligand_list]
-    assert eq_formulas == ['N2C10H8', 'N2C10H8']
+    assert eq_formulas == ['C10H8N2', 'C10H8N2']
 
     assert ax_natoms_list == [14]
     assert eq_natoms_list == [20, 20]

@@ -870,13 +870,13 @@ class mol3D:
         Generate reaction coordinate geometries using the given structure by changing the angle between atoms 2, 1,
         and 0 from 90 degrees to 160 degrees in intervals of 10 degrees
         >>> complex_mol.RCAngle(2, 1, 0, 90, 160, 10)
-        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
+        [mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O)]
 
         Generate reaction coordinates with the given geometry by changing the angle between atoms 2, 1, and 0 from
         160 degrees to 90 degrees in intervals of 10 degrees, and the generated geometries will not be written to
         a directory.
         >>> complex_mol.RCAngle(2, 1, 0, 160, 90, -10)
-        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
+        [mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O)]
         """
 
         if writegeo:
@@ -4419,7 +4419,7 @@ class mol3D:
     def get_graph_hash(self, attributed_flag=True, oct=False, loud=True):
         """
         Calculate the graph hash of a molecule.
-        Note: Not useful for distinguishing betweeen molecules
+        Note: Not useful for distinguishing between molecules
         that are just a single atom.
 
         Parameters
@@ -5534,41 +5534,74 @@ class mol3D:
         self.dict_lig_distort = dict_lig_distort
         return dict_lig_distort
 
-    def make_formula(self, latex=True):
+    def make_formula(self, latex=True, hill_system=False):
         """
         Get a chemical formula from the mol3D class instance.
+        Metals appear first, sorted alphabetically.
+        Metals followed by nonmetals.
 
         Parameters
         ----------
             latex : bool, optional
-                Flag for if formula is going to go in a latex document. Default is True.
+                If True, format the output for LaTeX. Default is True.
+            hill_system : bool, optional
+                If True, order elements according to the Hill system (C, H, then others alphabetically).
+                If False, list all elements alphabetically.
 
         Returns
         -------
             retstr : str
-                Chemical formula
+                Chemical formula string.
         """
 
-        retstr = ""
-        atomorder = self.globs.elementsbynum()
-        unique_symbols = dict()
-        for atoms in self.getAtoms():
-            if atoms.symbol() in atomorder:
-                if atoms.symbol() in list(unique_symbols.keys()):
-                    unique_symbols[atoms.symbol(
-                    )] = unique_symbols[atoms.symbol()] + 1
-                else:
-                    unique_symbols[atoms.symbol()] = 1
+        # Get all element symbols in the molecule
+        element_list = self.get_element_list()
 
-        skeys = sorted(list(unique_symbols.keys()), key=lambda x: (
-            self.globs.elementsbynum().index(x)))
-        skeys = skeys[::-1]
-        for sk in skeys:
-            if latex:
-                retstr += '\\textrm{' + sk + '}_{' + \
-                          str(int(unique_symbols[sk])) + '}'
+        # Count element occurrences
+        unique_symbols = {}
+        for sym in element_list:
+            unique_symbols[sym] = unique_symbols.get(sym, 0) + 1
+
+        # Retrieve metal list (from globalvars)
+        metals = globalvars().metalslist(transition_metals_only=False)
+
+        # Separate metals and nonmetals
+        metal_elements = [el for el in unique_symbols if el in metals]
+        nonmetal_elements = [el for el in unique_symbols if el not in metals]
+
+        # Sort metals alphabetically
+        metal_elements = sorted(metal_elements)
+
+        # Determine ordering for nonmetals
+        if hill_system:
+            if 'C' in nonmetal_elements:
+                ordered_nonmetals = ['C']
+                if 'H' in nonmetal_elements:
+                    ordered_nonmetals.append('H')
+                others = sorted(
+                    k for k in nonmetal_elements if k not in ('C', 'H')
+                )
+                ordered_nonmetals.extend(others)
             else:
-                retstr += sk+str(int(unique_symbols[sk]))
+                ordered_nonmetals = sorted(nonmetal_elements)
+        else:
+            ordered_nonmetals = sorted(nonmetal_elements)
+
+        # Combine ordered metals + ordered nonmetals
+        ordered_keys = metal_elements + ordered_nonmetals
+
+        # Build the formula string
+        retstr = ""
+        for sym in ordered_keys:
+            count = unique_symbols[sym]
+            if latex:
+                if count == 1:
+                    retstr += f"\\textrm{{{sym}}}"
+                else:
+                    retstr += f"\\textrm{{{sym}}}_{{{count}}}"
+            else:
+                retstr += f"{sym}{count if count > 1 else ''}"
+
         return retstr
 
     def match_lig_list(self, init_mol, catoms_arr=None,

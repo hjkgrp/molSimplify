@@ -200,12 +200,37 @@ def test_finding_and_counting_methods():
     assert mol.findcloseMetal(mol.getAtom(-1)) == 0
     # Test findMetal
     assert mol.findMetal() == [0]
-    # Test make_formula (sorted by atomic number)
-    assert mol.make_formula(latex=False) == 'Fe1O6C6'
-    assert (mol.make_formula(latex=True)
-            == r'\textrm{Fe}_{1}\textrm{O}_{6}\textrm{C}_{6}')
     # Test typevect
     np.testing.assert_equal(mol.typevect(), np.array(['Fe'] + ['C', 'O']*6))
+
+
+def test_make_formula():
+    # Trying Fe(CO)6
+    mol = mol3D()
+    mol.addAtom(atom3D(Sym='Fe'))
+    for _ in range(6):
+        mol.addAtom(atom3D(Sym='C'))
+        mol.addAtom(atom3D(Sym='O'))
+
+    assert mol.make_formula(latex=False) == 'FeC6O6'
+    assert (mol.make_formula(latex=True)
+            == r'\textrm{Fe}\textrm{C}_{6}\textrm{O}_{6}')
+
+    # Trying halothane (C2HBrClF3)
+    mol = mol3D()
+    freq_dict = {
+    'C': 2,
+    'H': 1,
+    'Br': 1,
+    'Cl': 1,
+    'F': 3}
+
+    for k, v in freq_dict.items():
+        for _ in range(v):
+            mol.addAtom(atom3D(Sym=k))
+
+    assert mol.make_formula(latex=False, hill_system=True) == 'C2HBrClF3'
+    assert mol.make_formula(latex=False, hill_system=False) == 'BrC2ClF3H'
 
 
 def test_add_bond():

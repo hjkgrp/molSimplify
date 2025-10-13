@@ -12,7 +12,7 @@ def test_ligand_class(resource_path_root):
         read_lig=mol2_file,
     )
     assert lig.dent == 2
-    assert lig.master_mol.make_formula(latex=False) == "Fe1O2C5H7"
+    assert lig.master_mol.make_formula(latex=False) == "FeC5H7O2"
 
     lig_graph_det, mol2_str = lig.get_lig_mol2()
     assert lig_graph_det == '-2.023585127e+17'
