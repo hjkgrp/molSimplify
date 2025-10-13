@@ -870,13 +870,13 @@ class mol3D:
         Generate reaction coordinate geometries using the given structure by changing the angle between atoms 2, 1,
         and 0 from 90 degrees to 160 degrees in intervals of 10 degrees
         >>> complex_mol.RCAngle(2, 1, 0, 90, 160, 10)
-        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
+        [mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O)]
 
         Generate reaction coordinates with the given geometry by changing the angle between atoms 2, 1, and 0 from
         160 degrees to 90 degrees in intervals of 10 degrees, and the generated geometries will not be written to
         a directory.
         >>> complex_mol.RCAngle(2, 1, 0, 160, 90, -10)
-        [mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2), mol3D(O1H2)]
+        [mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O), mol3D(H2O)]
         """
 
         if writegeo:

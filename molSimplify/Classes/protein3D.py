@@ -476,7 +476,7 @@ class protein3D:
 
         This returns a mol3D object indicating that the atom is part of a molecule that is not an amino acid or nucleotide
         >>> pdb_system.getMolecule(a_id=9164)
-        mol3D(S1O3N1C2)
+        mol3D(C2NO3S)
         >>> pdb_system.getMolecule(a_id=9164).name # This prints the name of the molecule, in this case, it is 'TAU'
         'TAU'
         """
