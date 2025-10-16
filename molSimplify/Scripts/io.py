@@ -8,6 +8,7 @@
 import copy
 import random
 import re
+import ast
 import shutil
 import glob
 import os
@@ -1246,3 +1247,30 @@ def copy_to_custom_path():
     shutil.copytree(bind_dir, str(globs.custom_path).rstrip("/")+"/Bind")
     shutil.copytree(data_dir, str(globs.custom_path).rstrip("/")+"/Data")
     shutil.copytree(subs_dir, str(globs.custom_path).rstrip("/")+"/Substrates")
+
+def parse_bracketed_list(tokens):
+    """
+    Convert ['[0', '1', '2', '3', '4', '5]', '6']
+    → [[0, 1, 2, 3, 4, 5], 6]
+    """
+    result = []
+    buffer = []
+    inside = False
+
+    for tok in tokens:
+        if tok.startswith('['):
+            inside = True
+            buffer.append(tok.lstrip('['))
+        elif tok.endswith(']'):
+            buffer.append(tok.rstrip(']'))
+            # finalize the buffered list
+            joined = ','.join(buffer)
+            result.append(ast.literal_eval(f'[{joined}]'))
+            buffer = []
+            inside = False
+        elif inside:
+            buffer.append(tok)
+        else:
+            # outside any brackets, treat as literal
+            result.append(ast.literal_eval(tok))
+    return result
