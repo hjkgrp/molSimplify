@@ -247,7 +247,7 @@ def generate_complex(
             # group-aware Kabsch
             best_subset, best_aligned_coords, best_rmsd, placement_attempts, best_perm_idx = clash_aware_kabsch(
                 ligand_all_coords,
-                donor_indices,
+                donor_indices,                                  
                 structure['backbone_coords'],
                 valid_subsets,
                 ligand_all_coords,
@@ -479,7 +479,7 @@ def visualize_molecule(coords, bond_dict=None, steric_pairs=None, severity_score
     import matplotlib.colors as mcolors
     import matplotlib.cm as cm
     import matplotlib.pyplot as plt
-
+    
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
 
