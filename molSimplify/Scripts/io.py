@@ -784,6 +784,188 @@ def lig_load(userligand: str, licores: Optional[dict] = None) -> Tuple[Any, str]
     lig.name = userligand
     return lig, emsg
 
+
+def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any, str]:
+    """
+    Load a ligand.
+    Output currently typed as any instead of Union[mol3D, None] because many other
+    scripts depend on a mol3D as first return value.
+
+    The function tries three approaches,
+    stopping after the first approach that works:
+    1) Check if ligand exists in dictionary. If so, pull from Ligands folder.
+    2) Load from a file path [.mol, .xyz, .smi, .sdf].
+    3) Interpret as a SMILES string.
+
+    Parameters
+    ----------
+        userligand : str
+            The name of the desired ligand.
+            Entry in Ligands/ligands.dict (or licores), path to geometry file,
+            or SMILES.
+            Can also instead provide a group in the ligands dictionary;
+            if so, a random ligand from that group is chosen.
+        licores : dict
+            A user dictionary of the form of Ligands/ligands.dict. Optional.
+
+    Returns
+    -------
+        lig : mol3D
+            The loaded ligand.
+            False if ligand loading fails.
+        esmg : str
+            Error message.
+    """
+
+    if licores is None:
+        try:
+            licores = getlicores()
+        except FileNotFoundError:
+            licores = None
+
+    globs = globalvars()
+
+
+    emsg = ''
+    lig = mol3D()  # Initialize ligand molecule.
+    lig.needsconformer = False
+
+    # 1) Check if ligand exists in dictionary.
+    if licores != None:
+        # Get groups.
+        groups = []
+        for entry in licores:
+            groups += licores[entry][3]
+        groups = sorted(list(set(groups)))
+
+        # Check if the user requested group.
+        # If so, set userligand to a random representative of the group.
+        if userligand.lower() in groups:
+            # Examples of groups in ligands.dict: bidentate, amino acid, small.
+            subligs = [key for key in licores if userligand.lower()
+                       in licores[key][3]]
+            # Randomly select ligand.
+            userligand = random.choice(subligs)
+
+        # Get similarity of userligand to ligands in dictionary, from the sequence point of view.
+        # This is used to assign ligands in cases where it is likely the user made a typo
+        # of something in the ligands dictionary.
+        # licores.keys() are the ligand names in the ligands dictionary.
+        text_similarities = [difflib.SequenceMatcher(None, userligand, i).ratio() for i in list(licores.keys())]
+
+        if '~' in userligand:
+            homedir = os.path.expanduser("~")
+            userligand = userligand.replace('~', homedir)
+
+        if userligand in list(licores.keys()) or max(text_similarities) > 0.6:  # Two cases here.
+            # Case 1: Ligand is in the dictionary ligands.dict.
+            if userligand in list(licores.keys()):
+                print(f'Loading ligand from dictionary: {userligand}')
+                dbentry = licores[userligand]
+            # Case 2: max(text_similarities) > 0.6
+            # It is likely the user made a typo in inputting a ligand that is in ligands.dict
+            else:
+                max_similarity = max(text_similarities)
+                index_max = text_similarities.index(max_similarity)
+                desired_ligand = list(licores.keys())[index_max]
+                print(f'Ligand was not in dictionary, but the sequence is very similar to a ligand that is: {desired_ligand}')
+                print(f'Loading ligand from dictionary: {desired_ligand}')
+                dbentry = licores[desired_ligand]  # Loading the typo ligand.
+            # Load lig mol file (with hydrogens).
+            if globs.custom_path:
+                flig = globs.custom_path + "/Ligands/" + dbentry[0]
+            else:
+                flig = str(resource_files("molSimplify").joinpath(f"Ligands/{dbentry[0]}"))
+            # Check if ligand xyz/mol file exists in the Ligands folder.
+            print(f'Looking for {flig}')
+            if not os.path.isfile(flig):
+                emsg = f"We can't find the ligand structure file {flig} right now! Something is amiss. Exiting.\n"
+                print(emsg)
+                return False, emsg
+            if '.xyz' in flig:
+                lig.OBMol = lig.getOBMol(flig, 'xyzf')
+                # Set charge to last entry in ligands.dict.
+                lig.OBMol.SetTotalCharge(int(dbentry[-1][0]))
+            elif '.mol2' in flig:
+                lig.OBMol = lig.getOBMol(flig, 'mol2f')
+            elif '.mol' in flig:
+                lig.OBMol = lig.getOBMol(flig, 'molf')
+            elif '.smi' in flig:
+                print('SMILES conversion')
+                lig.OBMol = lig.getOBMol(flig, 'smif')
+                lig.needsconformer = True
+
+            # Modified the check for length,
+            # as it parsing string length instead of
+            # list length!
+            if isinstance(dbentry[2], str):
+                lig.denticity = 1
+            else:
+                lig.denticity = len(dbentry[2])
+            lig.ident = dbentry[1]
+            lig.convert2mol3D()
+            lig.charge = lig.OBMol.GetTotalCharge()
+            if 'pi' in dbentry[2]:
+                lig.cat = [int(li) for li in dbentry[2][:-1]]
+                lig.cat.append('pi')
+            else:
+                if lig.denticity == 1:
+                    lig.cat = [int(dbentry[2])]
+                else:
+                    lig.cat = [int(li) for li in dbentry[2]]
+            if lig.denticity > 1:
+                lig.grps = dbentry[3]
+            else:
+                lig.grps = []
+            if len(dbentry) > 3:
+                lig.ffopt = dbentry[4][0]
+
+    # 2) Load from file.
+    elif ('.mol' in userligand or '.xyz' in userligand or '.smi' in userligand or '.sdf' in userligand):
+        if glob.glob(userligand):
+            ftype = userligand.split('.')[-1]
+            # Try and catch error if conversion doesn't work.
+            try:
+                print(f'Ligand is an {ftype} file.')
+                lig.OBMol = lig.getOBMol(
+                    userligand, ftype+'f')  # Convert from file.
+                # Generate coordinates if not existing.
+                lig.charge = lig.OBMol.GetTotalCharge()
+                print('Ligand successfully converted to OBMol')
+            except IOError:
+                emsg = f'Failed converting file {userligand} to molecule. Check your file.\n'
+                return False, emsg
+            lig.ident = userligand.rsplit('/')[-1]
+            lig.ident = lig.ident.split('.'+ftype)[0]
+        else:
+            emsg = f'Ligand file {userligand} does not exist. Exiting.\n'
+            print(emsg)
+            return False, emsg
+
+    # 3) Try interpreting as SMILES string.
+    else:
+        print(f'Interpreting ligand {userligand} as a SMILES string, as it was not in the ligands dictionary.')
+        print('Available ligands in the ligands dictionary can be found at molSimplify/molSimplify/Ligands/ligands.dict,\n'
+              'or by running the command `molsimplify -h liganddict`.')
+        try:
+            lig.getOBMol(userligand, 'smistring', True)  # Convert from SMILES.
+            lig.convert2mol3D()
+            assert lig.natoms
+            lig.charge = lig.OBMol.GetTotalCharge()
+            print('Ligand successfully interpreted as SMILES.')
+        except IOError:
+            emsg = f"We tried converting the string '{userligand}' to a molecule but it wasn't a valid SMILES string.\n"
+            emsg += f"Furthermore, we couldn't find the ligand structure: '{userligand}' in the ligands dictionary.\n"
+            emsg += f"Try again!\n\nAvailable ligands are: {getligs()}\n"
+            if licores is not None:
+                emsg += f"\nAnd available groups are: {getligroups(licores)}\n"
+            print(emsg)
+            return False, emsg
+        lig.ident = 'smi'
+        lig.needsconformer = True
+    lig.name = userligand
+    return lig, emsg
+
 # Load binding species and convert to mol3D.
 #  @param userbind Name of binding species
 #  @param bindcores Binding species dictionary
