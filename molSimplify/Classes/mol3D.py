@@ -6906,9 +6906,6 @@ class mol3D:
         cmol = self
         bo_dict = cmol.bo_dict
 
-        print('lig_dict')
-        print(mol.bo_dict)
-
         if cmol.bo_dict == False:
             # Only central metal
             bo_dict = {}
@@ -6939,7 +6936,7 @@ class mol3D:
         cmol.graph = (cmol.bo_mat > 0).astype(int)
 
         return cmol
-
+        
     def sanitycheck(self, silence=False, debug=False):
         """
         Sanity check a molecule for overlap within the molecule.
