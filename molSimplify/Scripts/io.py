@@ -822,7 +822,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
             licores = getlicores()
         except FileNotFoundError:
             licores = None
-            
+
     globs = globalvars()
 
 
@@ -837,7 +837,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
         for entry in licores:
             groups += licores[entry][3]
         groups = sorted(list(set(groups)))
-    
+
         # Check if the user requested group.
         # If so, set userligand to a random representative of the group.
         if userligand.lower() in groups:
@@ -846,7 +846,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
                        in licores[key][3]]
             # Randomly select ligand.
             userligand = random.choice(subligs)
-        
+
         # Get similarity of userligand to ligands in dictionary, from the sequence point of view.
         # This is used to assign ligands in cases where it is likely the user made a typo
         # of something in the ligands dictionary.
@@ -894,7 +894,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
                 print('SMILES conversion')
                 lig.OBMol = lig.getOBMol(flig, 'smif')
                 lig.needsconformer = True
-    
+
             # Modified the check for length,
             # as it parsing string length instead of
             # list length!
