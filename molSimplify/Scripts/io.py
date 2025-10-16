@@ -823,13 +823,15 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
             licores = getlicores()
         except FileNotFoundError:
             licores = None
-
+            
     globs = globalvars()
 
 
     emsg = ''
     lig = mol3D()  # Initialize ligand molecule.
     lig.needsconformer = False
+
+    go_in_dict = False
 
     # 1) Check if ligand exists in dictionary.
     if licores != None:
@@ -838,7 +840,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
         for entry in licores:
             groups += licores[entry][3]
         groups = sorted(list(set(groups)))
-
+    
         # Check if the user requested group.
         # If so, set userligand to a random representative of the group.
         if userligand.lower() in groups:
@@ -847,7 +849,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
                        in licores[key][3]]
             # Randomly select ligand.
             userligand = random.choice(subligs)
-
+        
         # Get similarity of userligand to ligands in dictionary, from the sequence point of view.
         # This is used to assign ligands in cases where it is likely the user made a typo
         # of something in the ligands dictionary.
@@ -859,70 +861,74 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
             userligand = userligand.replace('~', homedir)
 
         if userligand in list(licores.keys()) or max(text_similarities) > 0.6:  # Two cases here.
-            # Case 1: Ligand is in the dictionary ligands.dict.
-            if userligand in list(licores.keys()):
-                print(f'Loading ligand from dictionary: {userligand}')
-                dbentry = licores[userligand]
-            # Case 2: max(text_similarities) > 0.6
-            # It is likely the user made a typo in inputting a ligand that is in ligands.dict
-            else:
-                max_similarity = max(text_similarities)
-                index_max = text_similarities.index(max_similarity)
-                desired_ligand = list(licores.keys())[index_max]
-                print(f'Ligand was not in dictionary, but the sequence is very similar to a ligand that is: {desired_ligand}')
-                print(f'Loading ligand from dictionary: {desired_ligand}')
-                dbentry = licores[desired_ligand]  # Loading the typo ligand.
-            # Load lig mol file (with hydrogens).
-            if globs.custom_path:
-                flig = globs.custom_path + "/Ligands/" + dbentry[0]
-            else:
-                flig = str(resource_files("molSimplify").joinpath(f"Ligands/{dbentry[0]}"))
-            # Check if ligand xyz/mol file exists in the Ligands folder.
-            print(f'Looking for {flig}')
-            if not os.path.isfile(flig):
-                emsg = f"We can't find the ligand structure file {flig} right now! Something is amiss. Exiting.\n"
-                print(emsg)
-                return False, emsg
-            if '.xyz' in flig:
-                lig.OBMol = lig.getOBMol(flig, 'xyzf')
-                # Set charge to last entry in ligands.dict.
-                lig.OBMol.SetTotalCharge(int(dbentry[-1][0]))
-            elif '.mol2' in flig:
-                lig.OBMol = lig.getOBMol(flig, 'mol2f')
-            elif '.mol' in flig:
-                lig.OBMol = lig.getOBMol(flig, 'molf')
-            elif '.smi' in flig:
-                print('SMILES conversion')
-                lig.OBMol = lig.getOBMol(flig, 'smif')
-                lig.needsconformer = True
+            go_in_dict = True
+    if go_in_dict:
+        emsg+="dict"
+        # Case 1: Ligand is in the dictionary ligands.dict.
+        if userligand in list(licores.keys()):
+            print(f'Loading ligand from dictionary: {userligand}')
+            dbentry = licores[userligand]
+        # Case 2: max(text_similarities) > 0.6
+        # It is likely the user made a typo in inputting a ligand that is in ligands.dict
+        else:
+            max_similarity = max(text_similarities)
+            index_max = text_similarities.index(max_similarity)
+            desired_ligand = list(licores.keys())[index_max]
+            print(f'Ligand was not in dictionary, but the sequence is very similar to a ligand that is: {desired_ligand}')
+            print(f'Loading ligand from dictionary: {desired_ligand}')
+            dbentry = licores[desired_ligand]  # Loading the typo ligand.
+        # Load lig mol file (with hydrogens).
+        if globs.custom_path:
+            flig = globs.custom_path + "/Ligands/" + dbentry[0]
+        else:
+            flig = str(resource_files("molSimplify").joinpath(f"Ligands/{dbentry[0]}"))
+        # Check if ligand xyz/mol file exists in the Ligands folder.
+        print(f'Looking for {flig}')
+        if not os.path.isfile(flig):
+            emsg = f"We can't find the ligand structure file {flig} right now! Something is amiss. Exiting.\n"
+            print(emsg)
+            return False, emsg
+        if '.xyz' in flig:
+            lig.OBMol = lig.getOBMol(flig, 'xyzf')
+            # Set charge to last entry in ligands.dict.
+            lig.OBMol.SetTotalCharge(int(dbentry[-1][0]))
+        elif '.mol2' in flig:
+            lig.OBMol = lig.getOBMol(flig, 'mol2f')
+        elif '.mol' in flig:
+            lig.OBMol = lig.getOBMol(flig, 'molf')
+        elif '.smi' in flig:
+            print('SMILES conversion')
+            lig.OBMol = lig.getOBMol(flig, 'smif')
+            lig.needsconformer = True
 
-            # Modified the check for length,
-            # as it parsing string length instead of
-            # list length!
-            if isinstance(dbentry[2], str):
-                lig.denticity = 1
+        # Modified the check for length,
+        # as it parsing string length instead of
+        # list length!
+        if isinstance(dbentry[2], str):
+            lig.denticity = 1
+        else:
+            lig.denticity = len(dbentry[2])
+        lig.ident = dbentry[1]
+        lig.convert2mol3D()
+        lig.charge = lig.OBMol.GetTotalCharge()
+        if 'pi' in dbentry[2]:
+            lig.cat = [int(li) for li in dbentry[2][:-1]]
+            lig.cat.append('pi')
+        else:
+            if lig.denticity == 1:
+                lig.cat = [int(dbentry[2])]
             else:
-                lig.denticity = len(dbentry[2])
-            lig.ident = dbentry[1]
-            lig.convert2mol3D()
-            lig.charge = lig.OBMol.GetTotalCharge()
-            if 'pi' in dbentry[2]:
-                lig.cat = [int(li) for li in dbentry[2][:-1]]
-                lig.cat.append('pi')
-            else:
-                if lig.denticity == 1:
-                    lig.cat = [int(dbentry[2])]
-                else:
-                    lig.cat = [int(li) for li in dbentry[2]]
-            if lig.denticity > 1:
-                lig.grps = dbentry[3]
-            else:
-                lig.grps = []
-            if len(dbentry) > 3:
-                lig.ffopt = dbentry[4][0]
+                lig.cat = [int(li) for li in dbentry[2]]
+        if lig.denticity > 1:
+            lig.grps = dbentry[3]
+        else:
+            lig.grps = []
+        if len(dbentry) > 3:
+            lig.ffopt = dbentry[4][0]
 
     # 2) Load from file.
     elif ('.mol' in userligand or '.xyz' in userligand or '.smi' in userligand or '.sdf' in userligand):
+        emsg+="file"
         if glob.glob(userligand):
             ftype = userligand.split('.')[-1]
             # Try and catch error if conversion doesn't work.
@@ -945,6 +951,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
 
     # 3) Try interpreting as SMILES string.
     else:
+        emsg+="smi"
         print(f'Interpreting ligand {userligand} as a SMILES string, as it was not in the ligands dictionary.')
         print('Available ligands in the ligands dictionary can be found at molSimplify/molSimplify/Ligands/ligands.dict,\n'
               'or by running the command `molsimplify -h liganddict`.')
@@ -1248,29 +1255,93 @@ def copy_to_custom_path():
     shutil.copytree(data_dir, str(globs.custom_path).rstrip("/")+"/Data")
     shutil.copytree(subs_dir, str(globs.custom_path).rstrip("/")+"/Substrates")
 
-def parse_bracketed_list(tokens):
+def _coerce_scalar(tok: str) -> Any:
+    try:
+        return ast.literal_eval(tok)
+    except Exception:
+        return tok  # leave as raw string if not a Python literal
+
+def _normalize_list(obj: Any) -> Any:
+    if isinstance(obj, list):
+        return [_normalize_list(x) for x in obj]
+    if isinstance(obj, str):
+        # coerce numeric-like strings inside proper lists
+        try:
+            v = ast.literal_eval(obj)
+            return v
+        except Exception:
+            return obj
+    return obj
+
+def parse_bracketed_list(obj: Union[List[Any], str]) -> List[Any]:
     """
-    Convert ['[0', '1', '2', '3', '4', '5]', '6']
-    → [[0, 1, 2, 3, 4, 5], 6]
+    If given a token list like ['[0','1','2','3','4','5]','6'],
+    returns [[0,1,2,3,4,5], 6].
+
+    If given an already-proper list, returns it (with numeric-like strings coerced).
+    If given a string, tries to parse it as a Python literal first.
     """
-    result = []
-    buffer = []
-    inside = False
+    # Already a proper Python list (not all strings): just normalize/coerce
+    if isinstance(obj, list) and not all(isinstance(t, str) for t in obj):
+        return _normalize_list(obj)
+
+    # If it's a single string, try parsing directly
+    if isinstance(obj, str):
+        try:
+            parsed = ast.literal_eval(obj)
+            return _normalize_list(parsed if isinstance(parsed, list) else [parsed])
+        except Exception:
+            # fall back to tokenizing
+            tokens = [tok for tok in obj.replace(',', ' ').split() if tok]
+    else:
+        tokens = obj  # expect list of strings
+
+    result: List[Any] = []
+    buf: List[str] = []
+    depth = 0
+
+    def flush_buffer():
+        nonlocal buf
+        if not buf:
+            return
+        # Build a single string and extract the innermost [...] slice
+        s = ",".join(buf)
+        # Keep only the content between the first '[' and the last ']'
+        try:
+            start = s.index('[')
+            end = s.rindex(']')
+            inner = s[start+1:end]
+            lst = ast.literal_eval(f'[{inner}]')  # parse as list
+        except ValueError:
+            # No brackets found; treat buffer as scalars
+            lst = [ _coerce_scalar(x) for x in buf ]
+        result.append(_normalize_list(lst))
+        buf = []
 
     for tok in tokens:
-        if tok.startswith('['):
-            inside = True
-            buffer.append(tok.lstrip('['))
-        elif tok.endswith(']'):
-            buffer.append(tok.rstrip(']'))
-            # finalize the buffered list
-            joined = ','.join(buffer)
-            result.append(ast.literal_eval(f'[{joined}]'))
-            buffer = []
-            inside = False
-        elif inside:
-            buffer.append(tok)
+        opens = tok.count('[')
+        closes = tok.count(']')
+
+        if depth == 0:
+            if opens:
+                # starting a group
+                buf.append(tok)
+                depth += opens - closes
+                if depth == 0:
+                    # group starts and ends in same token, e.g. "[1,2]"
+                    flush_buffer()
+            else:
+                # standalone scalar
+                result.append(_coerce_scalar(tok))
         else:
-            # outside any brackets, treat as literal
-            result.append(ast.literal_eval(tok))
+            # inside a group
+            buf.append(tok)
+            depth += opens - closes
+            if depth == 0:
+                flush_buffer()
+
+    # best-effort flush if unbalanced input
+    if buf:
+        flush_buffer()
+
     return result
