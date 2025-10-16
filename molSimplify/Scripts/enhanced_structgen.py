@@ -616,8 +616,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Normalize lists: usercatoms/occupancies/isomers can be missing; create_ligand_list handles None
-    ligands = args.ligands
-
+    ligands: List[str] = args.ligands
+    usercatoms_list: Optional[List[Any]]
     if args.usercatoms is not None:
         usercatoms_list = [_parse_usercatoms(_maybe_none(s)) for s in args.usercatoms]
     else:
