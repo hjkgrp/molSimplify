@@ -36,10 +36,10 @@ class VoxelGrid:
         """
         if vdw_radii is None:
             vdw_radii = self.vdw_radii  # your global dict
-    
+
         # Get all clashing atom pairs
         clash_pairs, ligand_ids, complex_ids = self.get_clashing_atoms()
-    
+
         total_severity = 0.0
         severity_dict = {}
         for lig_idx, comp_idx in clash_pairs:
@@ -51,7 +51,7 @@ class VoxelGrid:
                 severity_dict[(lig_idx, comp_idx)] = severity
                 total_severity += severity
         return total_severity, severity_dict
-    
+
     def _to_voxel_index(self, coord):
         return tuple((np.floor(coord / self.voxel_size)).astype(int))
 
@@ -74,7 +74,7 @@ class VoxelGrid:
         base_radius = self.vdw_radii.get(element, 1.5)
         radius = base_radius * self.vdw_scale
         voxel_indices = self._get_voxel_sphere_indices(np.array(coord), radius)
-        
+
         for idx in voxel_indices:
             self.grid.setdefault(idx, set()).add(group)
             if group == "complex":
@@ -84,11 +84,11 @@ class VoxelGrid:
 
             # Track atom IDs and groups per voxel
             self.atom_map.setdefault(idx, []).append((atom_id, group))
-                
+
     def add_atoms(self, elements, coords, atom_ids=None, group="complex", auto_label=False):
         """
         Add multiple atoms to the voxel grid.
-    
+
         Args:
             elements: list of str, element symbols (e.g. ['C', 'H', 'N'])
             coords: (N, 3) ndarray of coordinates
@@ -98,10 +98,10 @@ class VoxelGrid:
         """
         if len(elements) != len(coords):
             raise ValueError("elements and coords must have the same length")
-    
+
         if atom_ids is not None and len(atom_ids) != len(coords):
             raise ValueError("If provided, atom_ids must match number of atoms")
-    
+
         # Automatically generate atom labels like N1, C3 if requested
         if auto_label:
             element_counts = defaultdict(int)
@@ -114,7 +114,7 @@ class VoxelGrid:
 
         for elem, coord, aid in zip(elements, coords, atom_ids):
             self.add_atom(elem, coord, atom_id=aid, group=group)
-        
+
     def get_voxel_status(self, coord, radius):
         """
         Returns:
@@ -156,7 +156,7 @@ class VoxelGrid:
                     ligand_ids.add(l[0])
                     complex_ids.add(c[0])
 
-        if verbose: 
+        if verbose:
             if clashes:
                 print("⚠️ Atoms involved in clashes:")
                 for lig_id, comp_id in clashes:
@@ -166,7 +166,7 @@ class VoxelGrid:
 
     def get_clashing_ligand_atoms(self):
         return list(set(lig for (lig, _) in self.get_clashing_atoms()))
-    
+
     def has_voxel_clash(self):
         """Return True if any voxel is filled by both complex and ligand."""
         return len(self.complex_voxels & self.ligand_voxels) > 0
@@ -262,7 +262,7 @@ def plot_all_voxels(
     if filename is not None:
         fig.savefig(filename, bbox_inches='tight', pad_inches=0, transparent=False)
     plt.close(fig)
-    
+
 def plot_voxels(voxel_grid, group="both", mode="cube", size=50, silent=False):
     """
     Visualize occupied voxels from a VoxelGrid.
