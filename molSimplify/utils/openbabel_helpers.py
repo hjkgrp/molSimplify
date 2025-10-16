@@ -2,44 +2,101 @@ from openbabel import openbabel, pybel
 from molSimplify.Classes.mol3D import mol3D
 import numpy as np
 
-def constrained_forcefield_optimization(mol, fixed_atom_indices, max_steps=250, ff_name='mmff94'):
-    """
-    Perform forcefield optimization with some atoms fixed.
+def constrained_forcefield_optimization(
+    mol,
+    fixed_atom_indices=None,
+    max_steps=250,
+    ff_name='mmff94',
+    return_per_atom_nonbonded=False,   # deprecated path (delete-one-atom)
+    return_vdw_energy=False,
+    *,
+    return_per_atom_ff_force=False,    # NEW: preferred embedding
+    fd_delta=1e-3,                     # Å, finite-difference step
+    isolate_vdw=False                  # True -> zero partial charges to emphasize vdW
+):
+    from openbabel import openbabel
+    import numpy as np
 
-    Parameters:
-    - mol: pybel.Molecule object
-    - fixed_atom_indices: list of 0-based atom indices to fix
-    - max_steps: max number of optimization steps
-    - ff_name: 'mmff94' or 'uff'
-
-    Returns:
-    - optimized_coords: numpy array of shape (N, 3)
-    """
     ff = openbabel.OBForceField.FindForceField(ff_name)
     if ff is None:
         raise RuntimeError(f"Forcefield '{ff_name}' not found.")
 
     obmol = mol.OBMol
+    obmol.FindRingAtomsAndBonds()
+    openbabel.OBAtomTyper().AssignTypes(obmol)
+
+    if isolate_vdw:
+        for a in openbabel.OBMolAtomIter(obmol):
+            a.SetPartialCharge(0.0)
 
     if not ff.Setup(obmol):
         raise RuntimeError("Failed to set up forcefield on molecule.")
 
-    # Create constraints object and fix atoms (1-based indexing!)
-    constraints = openbabel.OBFFConstraints()
-    for idx in fixed_atom_indices:
-        constraints.AddAtomConstraint(idx + 1)
-    ff.SetConstraints(constraints)
+    if fixed_atom_indices:
+        constraints = openbabel.OBFFConstraints()
+        for idx in fixed_atom_indices:
+            constraints.AddAtomConstraint(int(idx) + 1)  # 1-based
+        ff.SetConstraints(constraints)
 
     ff.ConjugateGradients(max_steps)
     ff.GetCoordinates(obmol)
 
-    # Extract optimized coordinates
-    optimized_coords = np.array([
-        [atom.GetX(), atom.GetY(), atom.GetZ()]
-        for atom in openbabel.OBMolAtomIter(mol.OBMol)
-    ])
+    optimized_coords = np.array([[a.GetX(), a.GetY(), a.GetZ()]
+                                 for a in openbabel.OBMolAtomIter(obmol)], dtype=float)
 
-    return optimized_coords
+    # Early exit (original behavior)
+    if not (return_per_atom_nonbonded or return_vdw_energy or return_per_atom_ff_force):
+        return optimized_coords
+
+    results = [optimized_coords]
+
+    if return_per_atom_nonbonded:
+        # keep for backwards-compat, but it's noisy; prefer return_per_atom_ff_force
+        base_energy = ff.Energy()
+        per_atom_nonbonded = []
+        for i in range(obmol.NumAtoms()):
+            tempmol = openbabel.OBMol(obmol)
+            tempmol.DeleteAtom(tempmol.GetAtom(i + 1))
+            fftemp = openbabel.OBForceField.FindForceField(ff_name)
+            if not fftemp.Setup(tempmol):
+                raise RuntimeError("Failed to set up temporary forcefield.")
+            e = fftemp.Energy()
+            per_atom_nonbonded.append(base_energy - e)
+        results.append(per_atom_nonbonded)
+
+    if return_per_atom_ff_force:
+        # finite-difference gradient per atom -> |∇E| as steric pressure
+        N = optimized_coords.shape[0]
+        force_mag = np.zeros(N, dtype=float)
+
+        def _apply_coords(xyz):
+            for k, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
+                atom.SetVector(float(xyz[k,0]), float(xyz[k,1]), float(xyz[k,2]))
+            ff.SetCoordinates(obmol)
+
+        _apply_coords(optimized_coords)
+
+        fixed_set = set(int(i) for i in (fixed_atom_indices or []))
+        for i in range(N):
+            # you can skip fixed atoms if you want: if i in fixed_set: continue
+            gi = np.zeros(3, dtype=float)
+            for d in range(3):
+                x_f = optimized_coords.copy(); x_f[i, d] += fd_delta
+                _apply_coords(x_f); Ef = ff.Energy()
+                x_b = optimized_coords.copy(); x_b[i, d] -= fd_delta
+                _apply_coords(x_b); Eb = ff.Energy()
+                gi[d] = (Ef - Eb) / (2.0 * fd_delta)
+            force_mag[i] = float(np.linalg.norm(gi))
+        # restore minimized coords
+        _apply_coords(optimized_coords)
+        results.append(force_mag)
+
+    if return_vdw_energy:
+        results.append(ff.GetVDWEnergy())
+
+    return tuple(results) if len(results) > 1 else results[0]
+
+
 
 def bond_order_from_str(bo_str):
     """
