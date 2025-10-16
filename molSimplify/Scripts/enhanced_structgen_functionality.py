@@ -12,6 +12,7 @@ Only comments/docstrings were added for clarity.
 """
 
 import numpy as np
+from numpy.typing import NDArray
 from molSimplify.Classes.atom3D import atom3D
 from collections import defaultdict
 from molSimplify.Classes.mol3D import mol3D
@@ -2524,7 +2525,7 @@ def detect_ring_piercing(
                     for tri in hull.simplices:
                         V0, V1, V2 = ring_xyz[tri[0]], ring_xyz[tri[1]], ring_xyz[tri[2]]
                         ok, tpar = _seg_tri_isect_t(A, B, V0, V1, V2)
-                        if not ok:
+                        if not ok: 
                             continue
                         if tpar < endpoint_buffer / (L + 1e-12) or (1.0 - tpar) < endpoint_buffer / (L + 1e-12):
                             continue
@@ -2888,7 +2889,7 @@ def check_sterics(tree, coords, elements, vdw_radii, bo_dict=None, scale=0.9, de
         ri = vdw_radii.get(elements[i], default_vdw)
         neighbors = tree.query_ball_point(pi, (ri + max_vdw) * scale)
         for j in neighbors:
-            if i >= j:
+            if i >= j: 
                 continue
             if (min(i,j), max(i,j)) in bond_pairs:
                 continue
@@ -3059,7 +3060,10 @@ def check_sterics_with_ff_embedding(
     if energies is not None:
         energies = np.clip(np.asarray(energies, float), 0.0, None)
 
-    is_H = np.array([str(z).upper() == 'H' for z in elements], dtype=bool)
+    is_H: NDArray[np.bool_] = np.array(
+        [str(z).upper() == "H" for z in elements],
+        dtype=bool,
+    )
 
     clashes = set()
     severity_scores = {}
