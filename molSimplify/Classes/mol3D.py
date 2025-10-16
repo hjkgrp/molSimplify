@@ -6906,9 +6906,6 @@ class mol3D:
         cmol = self
         bo_dict = cmol.bo_dict
 
-        print('lig_dict')
-        print(mol.bo_dict)
-
         if cmol.bo_dict == False:
             # Only central metal
             bo_dict = {}
