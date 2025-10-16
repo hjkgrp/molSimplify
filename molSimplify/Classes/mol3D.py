@@ -6936,7 +6936,7 @@ class mol3D:
         cmol.graph = (cmol.bo_mat > 0).astype(int)
 
         return cmol
-        
+
     def sanitycheck(self, silence=False, debug=False):
         """
         Sanity check a molecule for overlap within the molecule.
