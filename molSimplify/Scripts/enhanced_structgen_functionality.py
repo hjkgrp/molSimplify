@@ -2524,7 +2524,7 @@ def detect_ring_piercing(
                     for tri in hull.simplices:
                         V0, V1, V2 = ring_xyz[tri[0]], ring_xyz[tri[1]], ring_xyz[tri[2]]
                         ok, tpar = _seg_tri_isect_t(A, B, V0, V1, V2)
-                        if not ok:
+                        if not ok: 
                             continue
                         if tpar < endpoint_buffer / (L + 1e-12) or (1.0 - tpar) < endpoint_buffer / (L + 1e-12):
                             continue
@@ -2888,7 +2888,7 @@ def check_sterics(tree, coords, elements, vdw_radii, bo_dict=None, scale=0.9, de
         ri = vdw_radii.get(elements[i], default_vdw)
         neighbors = tree.query_ball_point(pi, (ri + max_vdw) * scale)
         for j in neighbors:
-            if i >= j:
+            if i >= j: 
                 continue
             if (min(i,j), max(i,j)) in bond_pairs:
                 continue
@@ -2912,17 +2912,6 @@ def check_sterics(tree, coords, elements, vdw_radii, bo_dict=None, scale=0.9, de
     return sorted(clashes), severity_scores
 
 
-def _normalize_bonds_zero_based(bo_dict):
-    norm = {}
-    for (i, j), bo in bo_dict.items():
-        i0 = i - 1 if i >= 1 and j >= 1 else i
-        j0 = j - 1 if i >= 1 and j >= 1 else j
-        if i0 == j0:
-            continue
-        a, b = (i0, j0) if i0 < j0 else (j0, i0)
-        norm[(a, b)] = bo
-    return norm
-
 def _ring_sets_from_graph(G):
     # NetworkX cycle basis works well for aromatic rings
     cycles = nx.cycle_basis(G)
@@ -2931,21 +2920,6 @@ def _ring_sets_from_graph(G):
 def _same_ring(i, j, ring_sets):
     return any((i in R and j in R) for R in ring_sets)
 
-
-def _normalize_bonds_zero_based(bo_dict):
-    """Return a 0-based, sorted-key bond dict."""
-    norm = {}
-    for (i, j), bo in (bo_dict or {}).items():
-        # Convert 1-based (MOL2) -> 0-based if needed
-        if i >= 1 and j >= 1:
-            i0, j0 = i - 1, j - 1
-        else:
-            i0, j0 = i, j
-        if i0 == j0:
-            continue
-        a, b = (i0, j0) if i0 < j0 else (j0, i0)
-        norm[(a, b)] = bo
-    return norm
 
 def _normalize_bonds_auto(bo_dict, N):
     """
@@ -3145,64 +3119,6 @@ def check_sterics_with_ff_embedding(
             clashes.add(key)
 
     return sorted(clashes), severity_scores
-
-def visualize_molecule(coords, bond_dict=None, steric_pairs=None, severity_scores=None, severity_threshold=0.05):
-    """
-    Simple 3D line/point visualization:
-      - Atoms as blue dots.
-      - Bonds as black lines.
-      - Clash pairs as colored lines (Reds colormap) with thickness ∝ severity.
-
-    Note: Uses matplotlib inline; call from an environment that can display plots.
-    """
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-
-    xs, ys, zs = coords[:, 0], coords[:, 1], coords[:, 2]
-    atom_scatter = ax.scatter(xs, ys, zs, color='blue', s=60, label='Atoms')
-
-    legend_handles = [atom_scatter]
-    legend_labels = ['Atoms']
-
-    # Bonds
-    if bond_dict:
-        for i, j in bond_dict:
-            p1, p2 = coords[i], coords[j]
-            ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], color='black', lw=2, alpha=1.0, zorder=1)
-        dummy_bond, = ax.plot([], [], [], color='black', lw=2)
-        legend_handles.append(dummy_bond)
-        legend_labels.append('Bonds')
-
-    # Clashes with severity coloring
-    if steric_pairs:
-        severity_scores = severity_scores or {}
-        max_sev = max(severity_scores.values(), default=0.1)
-        norm = mcolors.Normalize(vmin=0.0, vmax=max_sev)
-        cmap = plt.get_cmap('Reds')
-
-        drew_any = False
-        for i, j in steric_pairs:
-            severity = severity_scores.get((i, j), severity_scores.get((j, i), 0.0))
-            if severity < severity_threshold:
-                continue
-            p1, p2 = coords[i], coords[j]
-            color = cmap(norm(severity))
-            lw = 1 + 4 * norm(severity)
-            ax.plot([p1[0], p2[0]], [p1[1], p2[1]], [p1[2], p2[2]], color=color, lw=lw, zorder=2)
-            drew_any = True
-
-        if drew_any:
-            dummy_clash, = ax.plot([], [], [], color=cmap(1.0), lw=3)
-            legend_handles.append(dummy_clash)
-            legend_labels.append(f'Steric Clashes (severity ≥ {severity_threshold:.2f} Å)')
-
-    ax.legend(legend_handles, legend_labels)
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_zlabel('Z')
-    plt.title('Molecular Structure with Steric Clash Severity')
-    plt.tight_layout()
-    plt.show()
 
 
 def check_badjob(core3D):
