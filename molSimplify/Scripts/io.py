@@ -8,6 +8,7 @@
 import copy
 import random
 import re
+import ast
 import shutil
 import glob
 import os
@@ -822,7 +823,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
             licores = getlicores()
         except FileNotFoundError:
             licores = None
-
+            
     globs = globalvars()
 
 
@@ -837,7 +838,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
         for entry in licores:
             groups += licores[entry][3]
         groups = sorted(list(set(groups)))
-
+    
         # Check if the user requested group.
         # If so, set userligand to a random representative of the group.
         if userligand.lower() in groups:
@@ -846,7 +847,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
                        in licores[key][3]]
             # Randomly select ligand.
             userligand = random.choice(subligs)
-
+        
         # Get similarity of userligand to ligands in dictionary, from the sequence point of view.
         # This is used to assign ligands in cases where it is likely the user made a typo
         # of something in the ligands dictionary.
@@ -894,7 +895,7 @@ def lig_load_safe(userligand: str, licores: Optional[dict] = None) -> Tuple[Any,
                 print('SMILES conversion')
                 lig.OBMol = lig.getOBMol(flig, 'smif')
                 lig.needsconformer = True
-
+    
             # Modified the check for length,
             # as it parsing string length instead of
             # list length!
@@ -1246,3 +1247,30 @@ def copy_to_custom_path():
     shutil.copytree(bind_dir, str(globs.custom_path).rstrip("/")+"/Bind")
     shutil.copytree(data_dir, str(globs.custom_path).rstrip("/")+"/Data")
     shutil.copytree(subs_dir, str(globs.custom_path).rstrip("/")+"/Substrates")
+
+def parse_bracketed_list(tokens):
+    """
+    Convert ['[0', '1', '2', '3', '4', '5]', '6']
+    → [[0, 1, 2, 3, 4, 5], 6]
+    """
+    result = []
+    buffer = []
+    inside = False
+
+    for tok in tokens:
+        if tok.startswith('['):
+            inside = True
+            buffer.append(tok.lstrip('['))
+        elif tok.endswith(']'):
+            buffer.append(tok.rstrip(']'))
+            # finalize the buffered list
+            joined = ','.join(buffer)
+            result.append(ast.literal_eval(f'[{joined}]'))
+            buffer = []
+            inside = False
+        elif inside:
+            buffer.append(tok)
+        else:
+            # outside any brackets, treat as literal
+            result.append(ast.literal_eval(tok))
+    return result
