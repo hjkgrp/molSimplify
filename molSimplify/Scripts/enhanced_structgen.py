@@ -108,12 +108,12 @@ def _get_catoms(userligand, emsg, usercatoms):
         catoms = dbentry[2]
         corrected_catoms = parse_bracketed_list(catoms)
     else:
-        assert usercatoms != None, "Ligand must either be in ligand dictionary or user must pass in coordinating atom indices"
         catoms = usercatoms
         try:
             corrected_catoms = parse_bracketed_list(catoms)
             assert type(corrected_catoms) == list
         except:
+            corrected_catoms = None
             print("Coordinating atom indices are not in a readable format, please refer to the tutorial on passing in coordinating atoms")
     return corrected_catoms
 
