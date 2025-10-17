@@ -113,7 +113,7 @@ def _get_catoms(userligand, emsg, usercatoms):
             corrected_catoms = parse_bracketed_list(catoms)
             assert type(corrected_catoms) == list
         except:
-            corrected_catoms = None            
+            corrected_catoms = None
             print("Coordinating atom indices are not in a readable format, please refer to the tutorial on passing in coordinating atoms")
     return corrected_catoms
 
