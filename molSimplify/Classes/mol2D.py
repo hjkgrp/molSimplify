@@ -317,6 +317,8 @@ class Mol2D(nx.Graph):
                 Number of independent coordination paths in graph
             hapticity : list
                 Length of each separate coordination path in graph
+            coordination_paths : list
+                Atom indices corresponding to each coordination path
         """
         # ensure provided coordinating atoms are all within range of atoms in molecule
         if max(catoms) >= self.number_of_nodes():
@@ -344,4 +346,4 @@ class Mol2D(nx.Graph):
         denticity = len(coordination_paths)
         hapticity = [len(path) for path in coordination_paths]
 
-        return denticity, hapticity
+        return denticity, hapticity, coordination_paths
