@@ -1,7 +1,7 @@
 # @file __main__.py
 # Gateway script to rest of program
 #
-# Written by Tim Ioannidis for HJK Group
+# Written by Tim Ioannidis and Roland St Michel for HJK Group
 #
 # Dpt of Chemical Engineering, MIT
 
@@ -25,12 +25,14 @@
 '''
 # fix OB bug: https://github.com/openbabel/openbabel/issues/1983
 import sys
+import matplotlib.pyplot as plt
+import os
 import argparse
 if not ('win' in sys.platform):
     flags = sys.getdlopenflags()
 if not ('win' in sys.platform):
     sys.setdlopenflags(flags)
-
+from pathlib import Path
 from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabgen,
                                          parseinputs_db, parseinputs_inputgen,
                                          parseinputs_postproc, parseinputs_random,
@@ -41,6 +43,23 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import globalvars
 from molSimplify.utils.tensorflow import tensorflow_silence
+
+
+# subcommand deps (safe to import here)
+import json
+try:
+    from openbabel import pybel  # for optional write-out
+except Exception:
+    pybel = None  # we'll guard usage below
+
+# our builders
+from molSimplify.Scripts.enhanced_structgen import (
+    create_ligand_list,
+    generate_complex,
+)
+
+from molSimplify.Scripts.enhanced_structgen_functionality import check_badjob
+
 
 globs = globalvars()
 # Basic help description string
@@ -104,6 +123,284 @@ def main(args=None):
     if args is None:
         args = sys.argv[1:]
 
+    # ------------------------ subcommand: build-complex ------------------------
+    # Usage:
+    #   python -m molSimplify build-complex \
+    #       --ligand biimidazole \
+    #       --ligand "c1ccccc1" \
+    #       --usercatoms None \
+    #       --usercatoms "[[0,1,2,3,4,5]]" \
+    #       --occupancy 2 \
+    #       --occupancy 2 \
+    #       --out complex.mol2 --verbose
+    if 'build-complex' in args:
+        # Extract only the subcommand args (strip the token 'build-complex')
+        subargv = [a for a in args if a != 'build-complex']
+
+        import argparse
+
+        def _maybe_none(x: str):
+            return None if x is None or str(x).strip().lower() in {"none", "null", ""} else x
+
+        def _parse_usercatoms(s: str):
+            """
+            Accepts:
+              - "None" / "none" / ""  -> None
+              - JSON or Python-like lists, e.g. "[[0,1,2,3,4,5]]" or "[0,1]"
+            """
+            if s is None:
+                return None
+            s = s.strip()
+            if s.lower() in {"", "none", "null"}:
+                return None
+            try:
+                return json.loads(s)
+            except Exception:
+                from ast import literal_eval
+                return literal_eval(s)
+
+        parser = argparse.ArgumentParser(
+            prog="molSimplify build-complex",
+            description="Build a coordination complex from ligands (wrapper around generate_complex)."
+        )
+
+        # Repeated flags collect into lists in positional order
+        parser.add_argument("--ligand", dest="ligands", action="append", required=True,
+                            help="Ligand identifier or SMILES (repeat flag for multiple ligands).")
+        parser.add_argument("--usercatoms", dest="usercatoms", action="append", default=None,
+                            help='Coordinating atom indices per ligand (e.g. "[[0,1,2]]"). '
+                                 'Use "None" to auto-detect / dictionary.')
+        parser.add_argument("--occupancy", dest="occupancies", action="append", type=int, default=None,
+                            help="Occupancy per ligand (repeat to match --ligand count).")
+        parser.add_argument("--isomer", dest="isomers", action="append", default=None,
+                            help='Isomer tag per ligand (or "None").')
+
+        # Common build knobs (pass-through to generate_complex)
+        parser.add_argument("--metal", default="Fe")
+        parser.add_argument("--geometry", default="octahedral")
+        parser.add_argument("--voxel-size", type=float, default=0.5)
+        parser.add_argument("--vdw-scale", type=float, default=0.8)
+        parser.add_argument("--clash-weight", type=float, default=10.0)
+        parser.add_argument("--nudge-alpha", type=float, default=0.1)
+        parser.add_argument("--max-steps", type=int, default=500)
+        parser.add_argument("--ff-name", default="UFF")
+        parser.add_argument("--verbose", action="store_true")
+        parser.add_argument("--smart-generation", action="store_true", default=True)
+        parser.add_argument("--no-smart-generation", dest="smart_generation", action="store_false")
+
+        # Orientation terms
+        parser.add_argument("--orientation-weight", type=float, default=6.0)
+        parser.add_argument("--orientation-k-neighbors", type=int, default=4)
+        parser.add_argument("--orientation-hinge", type=float, default=0.5)
+        parser.add_argument("--orientation-cap", type=float, default=1.0)
+
+        # Haptic multi-bond behavior
+        parser.add_argument("--multibond-haptics", action="store_true", default=True)
+        parser.add_argument("--no-multibond-haptics", dest="multibond_haptics", action="store_false")
+        parser.add_argument("--multibond-bond-order", type=int, default=1)
+        parser.add_argument("--multibond-prefer-nearest-metal", action="store_true", default=True)
+        parser.add_argument("--no-multibond-prefer-nearest-metal", dest="multibond_prefer_nearest_metal", action="store_false")
+
+        # Sterics terms
+        parser.add_argument("--run-sterics", action="store_true", default=True)
+        
+        # Visualization/output
+        parser.add_argument("--vis-save-dir", default=None)
+        parser.add_argument("--vis-stride", type=int, default=1)
+        parser.add_argument("--vis-view", default="22,-60",
+                            help="Comma-separated elevation,azimuth (e.g., '22,-60').")
+        parser.add_argument("--vis-prefix", default="kabsch")
+
+        # Run directory management
+        parser.add_argument("--run-dir", default="runs",
+                            help="Base directory for outputs (default: runs).")
+        parser.add_argument("--run-name", default=None,
+                            help="Optional name for the run subfolder; default is a timestamp.")
+
+
+        pargs = parser.parse_args(subargv)
+
+        # Normalize lists: usercatoms/occupancies/isomers can be missing; create_ligand_list handles None
+        ligands = pargs.ligands
+        if pargs.usercatoms is not None:
+            usercatoms_list = [_parse_usercatoms(_maybe_none(s)) for s in pargs.usercatoms]
+        else:
+            usercatoms_list = None
+
+        occupancies = pargs.occupancies if pargs.occupancies is not None else None
+        isomers = [ _maybe_none(s) for s in pargs.isomers ] if pargs.isomers is not None else None
+
+        # Sanity: lengths (create_ligand_list will assert too)
+        if usercatoms_list is not None and len(usercatoms_list) != len(ligands):
+            parser.error("--usercatoms count must match --ligand count.")
+        if occupancies is not None and len(occupancies) != len(ligands):
+            parser.error("--occupancy count must match --ligand count.")
+        if isomers is not None and len(isomers) != len(ligands):
+            parser.error("--isomer count must match --ligand count.")
+
+        # Build ligand tuples via existing helper
+        ligand_list = create_ligand_list(
+            userligand_list=ligands,
+            usercatoms_list=usercatoms_list,
+            occupancy_list=occupancies,
+            isomer_list=isomers
+        )
+
+        # Parse vis view tuple
+        try:
+            elev, azim = [float(x) for x in pargs.vis_view.split(",")]
+            vis_view = (elev, azim)
+        except Exception:
+            vis_view = (22, -60)
+
+        # Run build
+        mol, clash, severity, fig = generate_complex(
+            ligand_list,
+            metals=pargs.metal,
+            voxel_size=pargs.voxel_size,
+            vdw_scale=pargs.vdw_scale,
+            clash_weight=pargs.clash_weight,
+            nudge_alpha=pargs.nudge_alpha,
+            geometry=pargs.geometry,
+            coords=None,
+            max_steps=pargs.max_steps,
+            ff_name=pargs.ff_name,
+            vis_save_dir=pargs.vis_save_dir,
+            vis_stride=pargs.vis_stride,
+            vis_view=vis_view,
+            vis_prefix=pargs.vis_prefix,
+            manual=False,
+            manual_list=None,
+            smart_generation=pargs.smart_generation,
+            verbose=pargs.verbose,
+            orientation_weight=pargs.orientation_weight,
+            orientation_k_neighbors=pargs.orientation_k_neighbors,
+            orientation_hinge=pargs.orientation_hinge,
+            orientation_cap=pargs.orientation_cap,
+            multibond_haptics=pargs.multibond_haptics,
+            multibond_bond_order=pargs.multibond_bond_order,
+            multibond_prefer_nearest_metal=pargs.multibond_prefer_nearest_metal,
+            run_sterics=pargs.run_sterics,
+        )
+
+    # -------------------- auto-build run name --------------------
+    import re, hashlib
+    
+    def _slug(s: str) -> str:
+        """
+        Make a filesystem-safe token from a ligand identifier (name or SMILES).
+        - Lowercase, strip leading/trailing spaces
+        - Replace any run of non [a-z0-9] with a single '-'
+        - Trim repeated dashes
+        - Fallback to short hash if empty
+        """
+        s = (s or "").strip().lower()
+        s = re.sub(r"[^a-z0-9]+", "-", s)         # collapse non-alnum to '-'
+        s = re.sub(r"-{2,}", "-", s).strip("-")   # remove dup dashes + edge dashes
+        if not s:
+            s = "lig-" + hashlib.md5((s or 'x').encode()).hexdigest()[:6]
+        return s
+    
+    # Build effective occupancies: use 1 where user omitted / passed None.
+    if occupancies is None:
+        effective_occ = [1] * len(ligands)
+    else:
+        # pad/trim to ligands length defensively, coerce None -> 1
+        tmp = list(occupancies) + [1] * max(0, len(ligands) - len(occupancies))
+        effective_occ = [ (o if (o is not None) else 1) for o in tmp[:len(ligands)] ]
+    
+    # Assemble name: {metal}_{lig1}_{occ1}_{lig2}_{occ2}...
+    parts = [str(pargs.metal)]
+    for lig, occ in zip(ligands, effective_occ):
+        parts.append(_slug(str(lig)))
+        parts.append(str(int(occ)))  # make sure it's an int-like string
+    
+    run_name = "_".join(parts)
+    
+    # Optional: limit extreme length while keeping uniqueness
+    MAX_LEN = 120
+    if len(run_name) > MAX_LEN:
+        tail_hash = hashlib.md5(run_name.encode()).hexdigest()[:8]
+        run_name = run_name[: (MAX_LEN - 9)] + "_" + tail_hash
+    # -------------------------------------------------------------
+
+    # -------------------- create run directory & handoff --------------------
+    base_dir = os.path.abspath(pargs.run_dir)
+    os.makedirs(base_dir, exist_ok=True)
+    
+    run_dir = os.path.join(base_dir, run_name)
+    
+    # Ensure unique folder if name collides (append _1, _2, ...)
+    suffix = 1
+    candidate = run_dir
+    while os.path.exists(candidate):
+        candidate = f"{run_dir}_{suffix}"
+        suffix += 1
+    run_dir = candidate
+    os.makedirs(run_dir, exist_ok=False)
+    
+    # Save inputs actually used for reproducibility
+    metadata = {
+        "run_name": run_name,
+        "run_dir": run_dir,
+        "ligands": ligands,
+        "effective_occupancies": effective_occ,
+        "usercatoms": usercatoms_list,
+        "isomers": isomers,
+        "metal": pargs.metal,
+        "geometry": pargs.geometry,
+        "voxel_size": pargs.voxel_size,
+        "vdw_scale": pargs.vdw_scale,
+        "clash_weight": pargs.clash_weight,
+        "nudge_alpha": pargs.nudge_alpha,
+        "max_steps": pargs.max_steps,
+        "ff_name": pargs.ff_name,
+        "orientation_weight": pargs.orientation_weight,
+        "orientation_k_neighbors": pargs.orientation_k_neighbors,
+        "orientation_hinge": pargs.orientation_hinge,
+        "orientation_cap": pargs.orientation_cap,
+        "multibond_haptics": pargs.multibond_haptics,
+        "multibond_bond_order": pargs.multibond_bond_order,
+        "multibond_prefer_nearest_metal": pargs.multibond_prefer_nearest_metal,
+        "run_sterics": pargs.run_sterics,
+        "vis_save_dir": pargs.vis_save_dir,
+        "vis_stride": pargs.vis_stride,
+        "vis_view": vis_view,
+        "vis_prefix": pargs.vis_prefix,
+        "verbose": pargs.verbose,
+    }
+
+    # add files to runs
+    with open(os.path.join(run_dir, "input_metadata.json"), "w") as f:
+        json.dump(metadata, f, indent=2)
+    # xyz structural file
+    mol.writexyz(os.path.join(run_dir, "complex.xyz"))
+    # mol2 structural file
+    mol.writemol2_bodict(ignore_dummy_atoms=False, write_bond_orders=True, return_string=False, output_file=os.path.join(run_dir, "complex.mol2"))
+    # sterics report
+    fig.savefig(os.path.join(run_dir, "sterics.png"), dpi=300)
+    plt.close(fig)
+    # convert tuple keys → string like "4-43"
+    json_safe = {f"{i}-{j}": v for (i, j), v in severity.items()}
+    out_path = Path(run_dir) / "steric_clashes.json"
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(json_safe, indent=2))
+    # status
+    overlap, same_order = check_badjob(mol)
+    if overlap == True or same_order == False:
+        status = f"Badjob! Overlap: {overlap}, Order: {same_order}"
+    else:
+        status = "Success"
+    status_path = os.path.join(run_dir, "status.log")
+    with open(status_path, "a") as f:
+        f.write(status + "\n")
+
+    print(f"[ok] Run directory ready: {run_dir}")
+    return
+    # -----------------------------------------------------------------------
+    # ---------------------- end subcommand: build-complex ----------------------
+
+    
     ## print help ###
     if '-h' in args or '-H' in args or '--help' in args:
         if 'advanced' in args:
