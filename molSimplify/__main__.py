@@ -211,6 +211,9 @@ def main(args=None):
                             help="Comma-separated elevation,azimuth (e.g., '22,-60').")
         parser.add_argument("--vis-prefix", default="kabsch")
 
+        # pydentate integration
+        parser.add_argument("--pydentate", action="store_true", default=True)        
+        
         # Run directory management
         parser.add_argument("--run-dir", default="runs",
                             help="Base directory for outputs (default: runs).")
@@ -246,6 +249,30 @@ def main(args=None):
             isomer_list=isomers
         )
 
+
+        fixed_ligand_list = []
+        pydentate_bool = pargs.pydentate
+        if pydentate_bool:
+            from pydentate import pydentate_lite
+            i = 0
+            for ligand in ligand_list:
+                if ligand[1] == None:
+                    print(f"Missing coordinating atoms for ligand {ligands[i]}. \n Using pydentate prediction...")
+                    try:
+                        pydentate_results = pydentate_lite.pydentate_lite(ligands[i])
+                        catoms = pydentate_results[1]
+                        from molSimplify.Classes import mol2D
+                        mol2d = mol2D.Mol2D()
+                        mol2d = mol2d.from_smiles(ligands[i])
+                        catoms = mol2d.denticity_hapticity(catoms)[2]
+                        fixed_ligand_list.append((ligand[0],catoms,ligand[2],ligand[3]))
+                    except:
+                        assert True == False, "No coordinating atoms available. Check inout or manually assign coordinating atoms. Now closing..."
+                else:
+                    fixed_ligand_list.append((ligand[0],ligand[1],ligand[2],ligand[3]))
+                i+=1
+        ligand_list = fixed_ligand_list
+        
         # Parse vis view tuple
         try:
             elev, azim = [float(x) for x in pargs.vis_view.split(",")]
