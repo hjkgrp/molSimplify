@@ -25,7 +25,6 @@
 '''
 # fix OB bug: https://github.com/openbabel/openbabel/issues/1983
 import sys
-import matplotlib.pyplot as plt
 import os
 import argparse
 if not ('win' in sys.platform):
@@ -134,6 +133,8 @@ def main(args=None):
     #       --occupancy 2 \
     #       --out complex.mol2 --verbose
     if 'build-complex' in args:
+        import matplotlib.pyplot as plt
+
         # Extract only the subcommand args (strip the token 'build-complex')
         subargv = [a for a in args if a != 'build-complex']
 
@@ -203,7 +204,7 @@ def main(args=None):
 
         # Sterics terms
         parser.add_argument("--run-sterics", action="store_true", default=True)
-
+        
         # Visualization/output
         parser.add_argument("--vis-save-dir", default=None)
         parser.add_argument("--vis-stride", type=int, default=1)
@@ -285,7 +286,7 @@ def main(args=None):
 
     # -------------------- auto-build run name --------------------
     import re, hashlib
-
+    
     def _slug(s: str) -> str:
         """
         Make a filesystem-safe token from a ligand identifier (name or SMILES).
@@ -300,7 +301,7 @@ def main(args=None):
         if not s:
             s = "lig-" + hashlib.md5((s or 'x').encode()).hexdigest()[:6]
         return s
-
+    
     # Build effective occupancies: use 1 where user omitted / passed None.
     if occupancies is None:
         effective_occ = [1] * len(ligands)
@@ -308,15 +309,15 @@ def main(args=None):
         # pad/trim to ligands length defensively, coerce None -> 1
         tmp = list(occupancies) + [1] * max(0, len(ligands) - len(occupancies))
         effective_occ = [ (o if (o is not None) else 1) for o in tmp[:len(ligands)] ]
-
+    
     # Assemble name: {metal}_{lig1}_{occ1}_{lig2}_{occ2}...
     parts = [str(pargs.metal)]
     for lig, occ in zip(ligands, effective_occ):
         parts.append(_slug(str(lig)))
         parts.append(str(int(occ)))  # make sure it's an int-like string
-
+    
     run_name = "_".join(parts)
-
+    
     # Optional: limit extreme length while keeping uniqueness
     MAX_LEN = 120
     if len(run_name) > MAX_LEN:
@@ -327,9 +328,9 @@ def main(args=None):
     # -------------------- create run directory & handoff --------------------
     base_dir = os.path.abspath(pargs.run_dir)
     os.makedirs(base_dir, exist_ok=True)
-
+    
     run_dir = os.path.join(base_dir, run_name)
-
+    
     # Ensure unique folder if name collides (append _1, _2, ...)
     suffix = 1
     candidate = run_dir
@@ -338,7 +339,7 @@ def main(args=None):
         suffix += 1
     run_dir = candidate
     os.makedirs(run_dir, exist_ok=False)
-
+    
     # Save inputs actually used for reproducibility
     metadata = {
         "run_name": run_name,
@@ -400,7 +401,7 @@ def main(args=None):
     # -----------------------------------------------------------------------
     # ---------------------- end subcommand: build-complex ----------------------
 
-
+    
     ## print help ###
     if '-h' in args or '-H' in args or '--help' in args:
         if 'advanced' in args:
