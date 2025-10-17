@@ -283,122 +283,122 @@ def main(args=None):
             run_sterics=pargs.run_sterics,
         )
 
-    # -------------------- auto-build run name --------------------
-    import re, hashlib
-
-    def _slug(s: str) -> str:
-        """
-        Make a filesystem-safe token from a ligand identifier (name or SMILES).
-        - Lowercase, strip leading/trailing spaces
-        - Replace any run of non [a-z0-9] with a single '-'
-        - Trim repeated dashes
-        - Fallback to short hash if empty
-        """
-        s = (s or "").strip().lower()
-        s = re.sub(r"[^a-z0-9]+", "-", s)         # collapse non-alnum to '-'
-        s = re.sub(r"-{2,}", "-", s).strip("-")   # remove dup dashes + edge dashes
-        if not s:
-            s = "lig-" + hashlib.md5((s or 'x').encode()).hexdigest()[:6]
-        return s
-
-    # Build effective occupancies: use 1 where user omitted / passed None.
-    if occupancies is None:
-        effective_occ = [1] * len(ligands)
-    else:
-        # pad/trim to ligands length defensively, coerce None -> 1
-        tmp = list(occupancies) + [1] * max(0, len(ligands) - len(occupancies))
-        effective_occ = [ (o if (o is not None) else 1) for o in tmp[:len(ligands)] ]
-
-    # Assemble name: {metal}_{lig1}_{occ1}_{lig2}_{occ2}...
-    parts = [str(pargs.metal)]
-    for lig, occ in zip(ligands, effective_occ):
-        parts.append(_slug(str(lig)))
-        parts.append(str(int(occ)))  # make sure it's an int-like string
-
-    run_name = "_".join(parts)
-
-    # Optional: limit extreme length while keeping uniqueness
-    MAX_LEN = 120
-    if len(run_name) > MAX_LEN:
-        tail_hash = hashlib.md5(run_name.encode()).hexdigest()[:8]
-        run_name = run_name[: (MAX_LEN - 9)] + "_" + tail_hash
-    # -------------------------------------------------------------
-
-    # -------------------- create run directory & handoff --------------------
-    base_dir = os.path.abspath(pargs.run_dir)
-    os.makedirs(base_dir, exist_ok=True)
-
-    run_dir = os.path.join(base_dir, run_name)
-
-    # Ensure unique folder if name collides (append _1, _2, ...)
-    suffix = 1
-    candidate = run_dir
-    while os.path.exists(candidate):
-        candidate = f"{run_dir}_{suffix}"
-        suffix += 1
-    run_dir = candidate
-    os.makedirs(run_dir, exist_ok=False)
-
-    # Save inputs actually used for reproducibility
-    metadata = {
-        "run_name": run_name,
-        "run_dir": run_dir,
-        "ligands": ligands,
-        "effective_occupancies": effective_occ,
-        "usercatoms": usercatoms_list,
-        "isomers": isomers,
-        "metal": pargs.metal,
-        "geometry": pargs.geometry,
-        "voxel_size": pargs.voxel_size,
-        "vdw_scale": pargs.vdw_scale,
-        "clash_weight": pargs.clash_weight,
-        "nudge_alpha": pargs.nudge_alpha,
-        "max_steps": pargs.max_steps,
-        "ff_name": pargs.ff_name,
-        "orientation_weight": pargs.orientation_weight,
-        "orientation_k_neighbors": pargs.orientation_k_neighbors,
-        "orientation_hinge": pargs.orientation_hinge,
-        "orientation_cap": pargs.orientation_cap,
-        "multibond_haptics": pargs.multibond_haptics,
-        "multibond_bond_order": pargs.multibond_bond_order,
-        "multibond_prefer_nearest_metal": pargs.multibond_prefer_nearest_metal,
-        "run_sterics": pargs.run_sterics,
-        "vis_save_dir": pargs.vis_save_dir,
-        "vis_stride": pargs.vis_stride,
-        "vis_view": vis_view,
-        "vis_prefix": pargs.vis_prefix,
-        "verbose": pargs.verbose,
-    }
-
-    # add files to runs
-    with open(os.path.join(run_dir, "input_metadata.json"), "w") as f:
-        json.dump(metadata, f, indent=2)
-    # xyz structural file
-    mol.writexyz(os.path.join(run_dir, "complex.xyz"))
-    # mol2 structural file
-    mol.writemol2_bodict(ignore_dummy_atoms=False, write_bond_orders=True, return_string=False, output_file=os.path.join(run_dir, "complex.mol2"))
-    # sterics report
-    fig.savefig(os.path.join(run_dir, "sterics.png"), dpi=300)
-    plt.close(fig)
-    # convert tuple keys → string like "4-43"
-    json_safe = {f"{i}-{j}": v for (i, j), v in severity.items()}
-    out_path = Path(run_dir) / "steric_clashes.json"
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(json_safe, indent=2))
-    # status
-    overlap, same_order = check_badjob(mol)
-    if overlap == True or same_order == False:
-        status = f"Badjob! Overlap: {overlap}, Order: {same_order}"
-    else:
-        status = "Success"
-    status_path = os.path.join(run_dir, "status.log")
-    with open(status_path, "a") as f:
-        f.write(status + "\n")
-
-    print(f"[ok] Run directory ready: {run_dir}")
-    return
-    # -----------------------------------------------------------------------
-    # ---------------------- end subcommand: build-complex ----------------------
+        # -------------------- auto-build run name --------------------
+        import re, hashlib
+    
+        def _slug(s: str) -> str:
+            """
+            Make a filesystem-safe token from a ligand identifier (name or SMILES).
+            - Lowercase, strip leading/trailing spaces
+            - Replace any run of non [a-z0-9] with a single '-'
+            - Trim repeated dashes
+            - Fallback to short hash if empty
+            """
+            s = (s or "").strip().lower()
+            s = re.sub(r"[^a-z0-9]+", "-", s)         # collapse non-alnum to '-'
+            s = re.sub(r"-{2,}", "-", s).strip("-")   # remove dup dashes + edge dashes
+            if not s:
+                s = "lig-" + hashlib.md5((s or 'x').encode()).hexdigest()[:6]
+            return s
+    
+        # Build effective occupancies: use 1 where user omitted / passed None.
+        if occupancies is None:
+            effective_occ = [1] * len(ligands)
+        else:
+            # pad/trim to ligands length defensively, coerce None -> 1
+            tmp = list(occupancies) + [1] * max(0, len(ligands) - len(occupancies))
+            effective_occ = [ (o if (o is not None) else 1) for o in tmp[:len(ligands)] ]
+    
+        # Assemble name: {metal}_{lig1}_{occ1}_{lig2}_{occ2}...
+        parts = [str(pargs.metal)]
+        for lig, occ in zip(ligands, effective_occ):
+            parts.append(_slug(str(lig)))
+            parts.append(str(int(occ)))  # make sure it's an int-like string
+    
+        run_name = "_".join(parts)
+    
+        # Optional: limit extreme length while keeping uniqueness
+        MAX_LEN = 120
+        if len(run_name) > MAX_LEN:
+            tail_hash = hashlib.md5(run_name.encode()).hexdigest()[:8]
+            run_name = run_name[: (MAX_LEN - 9)] + "_" + tail_hash
+        # -------------------------------------------------------------
+    
+        # -------------------- create run directory & handoff --------------------
+        base_dir = os.path.abspath(pargs.run_dir)
+        os.makedirs(base_dir, exist_ok=True)
+    
+        run_dir = os.path.join(base_dir, run_name)
+    
+        # Ensure unique folder if name collides (append _1, _2, ...)
+        suffix = 1
+        candidate = run_dir
+        while os.path.exists(candidate):
+            candidate = f"{run_dir}_{suffix}"
+            suffix += 1
+        run_dir = candidate
+        os.makedirs(run_dir, exist_ok=False)
+    
+        # Save inputs actually used for reproducibility
+        metadata = {
+            "run_name": run_name,
+            "run_dir": run_dir,
+            "ligands": ligands,
+            "effective_occupancies": effective_occ,
+            "usercatoms": usercatoms_list,
+            "isomers": isomers,
+            "metal": pargs.metal,
+            "geometry": pargs.geometry,
+            "voxel_size": pargs.voxel_size,
+            "vdw_scale": pargs.vdw_scale,
+            "clash_weight": pargs.clash_weight,
+            "nudge_alpha": pargs.nudge_alpha,
+            "max_steps": pargs.max_steps,
+            "ff_name": pargs.ff_name,
+            "orientation_weight": pargs.orientation_weight,
+            "orientation_k_neighbors": pargs.orientation_k_neighbors,
+            "orientation_hinge": pargs.orientation_hinge,
+            "orientation_cap": pargs.orientation_cap,
+            "multibond_haptics": pargs.multibond_haptics,
+            "multibond_bond_order": pargs.multibond_bond_order,
+            "multibond_prefer_nearest_metal": pargs.multibond_prefer_nearest_metal,
+            "run_sterics": pargs.run_sterics,
+            "vis_save_dir": pargs.vis_save_dir,
+            "vis_stride": pargs.vis_stride,
+            "vis_view": vis_view,
+            "vis_prefix": pargs.vis_prefix,
+            "verbose": pargs.verbose,
+        }
+    
+        # add files to runs
+        with open(os.path.join(run_dir, "input_metadata.json"), "w") as f:
+            json.dump(metadata, f, indent=2)
+        # xyz structural file
+        mol.writexyz(os.path.join(run_dir, "complex.xyz"))
+        # mol2 structural file
+        mol.writemol2_bodict(ignore_dummy_atoms=False, write_bond_orders=True, return_string=False, output_file=os.path.join(run_dir, "complex.mol2"))
+        # sterics report
+        fig.savefig(os.path.join(run_dir, "sterics.png"), dpi=300)
+        plt.close(fig)
+        # convert tuple keys → string like "4-43"
+        json_safe = {f"{i}-{j}": v for (i, j), v in severity.items()}
+        out_path = Path(run_dir) / "steric_clashes.json"
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(json_safe, indent=2))
+        # status
+        overlap, same_order = check_badjob(mol)
+        if overlap == True or same_order == False:
+            status = f"Badjob! Overlap: {overlap}, Order: {same_order}"
+        else:
+            status = "Success"
+        status_path = os.path.join(run_dir, "status.log")
+        with open(status_path, "a") as f:
+            f.write(status + "\n")
+    
+        print(f"[ok] Run directory ready: {run_dir}")
+        return
+        # -----------------------------------------------------------------------
+        # ---------------------- end subcommand: build-complex ----------------------
 
 
     ## print help ###
