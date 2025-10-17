@@ -212,8 +212,8 @@ def main(args=None):
         parser.add_argument("--vis-prefix", default="kabsch")
 
         # pydentate integration
-        parser.add_argument("--pydentate", action="store_true", default=True)        
-        
+        parser.add_argument("--pydentate", action="store_true", default=True)
+
         # Run directory management
         parser.add_argument("--run-dir", default="runs",
                             help="Base directory for outputs (default: runs).")
@@ -272,7 +272,7 @@ def main(args=None):
                     fixed_ligand_list.append((ligand[0],ligand[1],ligand[2],ligand[3]))
                 i+=1
         ligand_list = fixed_ligand_list
-        
+
         # Parse vis view tuple
         try:
             elev, azim = [float(x) for x in pargs.vis_view.split(",")]
