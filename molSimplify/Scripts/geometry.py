@@ -1204,3 +1204,29 @@ def move_point(initial_point, vector, distance):
     new_point = initial_point + displacement
 
     return new_point
+
+def align_axis(mol,Rp,u1,u2):
+    """Rotates mol to align two specified axes (such as bonds)
+
+            Parameters
+            ----------
+                mol : mol3D
+                    mol3D class instance of molecule to be rotated.
+                Rp : list
+                    Reference point. This will serve as the point of rotation.
+                u1 : float
+                    First axis. This axis is rotated to align with the second axis.
+                u2 : list
+                    Second axis.
+
+            Returns
+            -------
+            mol : mol3D
+            mol3D class instance of rotated molecule.
+
+    """
+
+    axis = np.cross(u1,u2)
+    angle = vecangle(u1,u2)
+    rotate_around_axis(mol,Rp,axis,angle)
+    return mol
