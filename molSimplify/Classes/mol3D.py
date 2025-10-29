@@ -6940,7 +6940,7 @@ class mol3D:
     def mindist(self, mol, exclude1=[], exclude2=[]):
         """
         Measure the smallest distance between atoms in two molecules.
-    
+
         Parameters
         ----------
             mol : mol3D
@@ -6949,13 +6949,13 @@ class mol3D:
                     list of indices of atoms to exclude on self
             exclude2: list
                     list of indices of atoms to exclude on mol
-    
+
         Returns
         -------
             mind : float
                 Min distance between atoms of two molecules.
         """
-    
+
         mind = 1000
         for atom1 in range(self.getNumAtoms()):
             for atom2 in range(mol.getNumAtoms()):
@@ -6963,12 +6963,12 @@ class mol3D:
                     if (atom1 not in exclude1 and atom2 not in exclude2):
                         mind = distance(self.getAtom(atom1).coords(), mol.getAtom(atom2).coords())
         return mind
-    
-    
+
+
     def substruct_add(self, dec, base_idx, sub_idx, force_field=True):
         """
         This function allows for substructure addition/functionalization.
-    
+
         Parameters
         ----------
             dec : mol3D or str
@@ -6980,7 +6980,7 @@ class mol3D:
                 Index of atom on substructure where connection will be made, which must have at least one removable hydrogen
             force_field : bool
                 Flag for UFF force field optimization to be performed after merger. Default is true.
-    
+
         """
         from molSimplify.utils.openbabel_helpers import constrained_forcefield_optimization
         from molSimplify.Scripts.geometry import (
@@ -6988,21 +6988,21 @@ class mol3D:
             vecdiff,
             align_axis
         )
-    
+
         if not isinstance(dec, mol3D) and not isinstance(dec, str):
             raise TypeError('Invalid type for dec.')
         if not isinstance(base_idx, int):
             raise TypeError('Invalid type for base_idx.')
         if not isinstance(sub_idx, int):
             raise TypeError('Invalid type for sub_idx.')
-    
+
         if isinstance(self, mol3D):
             self.bo_dict = False
             self.convert2OBMol()
             self.charge = self.OBMol.GetTotalCharge()
-    
+
         self.convert2mol3D()  # Convert to mol3D.
-    
+
         if not isinstance(dec, mol3D):
             if dec[-5:] == ".mol2":
                 # Interpret mol2
@@ -7020,10 +7020,10 @@ class mol3D:
                 dec = mol3D()
                 dec.read_smiles(smiles)
                 dec.convert2mol3D()  # Convert to mol3D.
-    
+
         Hs = [x for x in dec.getBondedAtomsBOMatrix(sub_idx) if
               dec.getAtom(x).sym == "H"]  # Get list of adjacent hydrogen atoms
-    
+
         if len(Hs):
             # Delete a hydrogen on the substructure attachment atom
             HtoDelete = Hs[0]
@@ -7034,12 +7034,12 @@ class mol3D:
             dec.charge = dec.charge - 1
         else:
             raise Exception('No removable hydrogen found on substructure connection point.')
-    
+
         # Translate decoration so that its connecting point
         # overlaps with the atom to be replaced in mol.
-    
+
         dec.alignmol(dec.getAtom(sub_idx), self.getAtom(base_idx))
-    
+
         # Get the default distance between atoms in question.
         # connection_anchor is the atom in the molecule being modified (decorated)
         # to which the decoration is added.
@@ -7052,10 +7052,10 @@ class mol3D:
         missing = (target_distance - old_dist)
         # Move the decoration.
         dec.translate([missing * unit_vec[j] for j in [0, 1, 2]])
-    
+
         align_axis(dec, dec.getAtom(sub_idx).coords(), alignmentAxis,
                    vecdiff(connection_anchor.coords(), self.getAtom(base_idx).coords())) # Align bond vectors for better initial placement
-    
+
         # Finding the optimal rotation.
         r1 = dec.getAtom(sub_idx).coords()
         u = vecdiff(r1, connection_anchor.coords())
@@ -7076,12 +7076,12 @@ class mol3D:
                 optmax = iteropt
             totiters += 1
         dec = decb
-    
+
         # Store connectivity for deleted H.
         BO_mat = self.populateBOMatrix()
         row_deleted = BO_mat[base_idx]
         bonds_to_add = []
-    
+
         # Find where to put the new bonds
         for j, els in enumerate(row_deleted):
             if els > 0:
@@ -7093,27 +7093,27 @@ class mol3D:
                 else:
                     bond_partner = j - 1
                 bonds_to_add.append((bond_partner, self.natoms - 1 + sub_idx, els))
-    
+
         if len(bonds_to_add) > 1:
             raise Exception("Structure failed to place due to overlap.")  # Could not find a good orientation
-    
+
         self.deleteatom(base_idx)
-    
+
         self.convert2OBMol()
-    
+
         # Merge and bond.
         self.combine(dec, bond_to_add=bonds_to_add)
         self.convert2OBMol()
-    
+
         BO_mat = self.populateBOMatrix(bonddict=True, set_bo_mat=True)
-    
+
         if force_field:
             # Do force field optimization
             new_coords = constrained_forcefield_optimization(self, [], max_steps=250, ff_name="uff")
             for c in range(len(new_coords)):
                 self.getAtom(c).setcoords(new_coords[c])
 
-    
+
     def sanitycheck(self, silence=False, debug=False):
         """
         Sanity check a molecule for overlap within the molecule.
