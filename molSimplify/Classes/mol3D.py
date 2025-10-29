@@ -5862,7 +5862,7 @@ class mol3D:
                 dev /= Nat0
             return dev
 
-    def mindist(self, mol):
+    def mindist_legacy(self, mol):
         """
         Measure the smallest distance between atoms in two molecules.
 
