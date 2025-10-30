@@ -632,15 +632,11 @@ def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False
 
     # --- Keras imports ---
     try:
-        from keras.models import load_model
-        from keras.optimizers import Adam
         try:
             from keras.saving.legacy.model_config import model_from_json as _legacy_model_from_json
         except Exception:
             _legacy_model_from_json = None
     except Exception:
-        from tensorflow.keras.models import load_model
-        from tensorflow.keras.optimizers import Adam
         _legacy_model_from_json = None
 
     here = Path(__file__).resolve()
