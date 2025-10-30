@@ -670,32 +670,56 @@ def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False
         return None
 
     def _model_from_json_compat(model_json: str):
-        """Handle keras 2.x JSONs."""
-        if _legacy_model_from_json is not None:
-            return _legacy_model_from_json(model_json)
-        # fallback with explicit custom_objects
+        """
+        Minimal, mypy-safe loader for legacy Keras JSONs.
+        - Prefer keras.saving.legacy when available
+        - Otherwise fall back to keras / tf.keras with a small custom_objects dict
+        """
+        # 1) Try legacy loader (works without custom_objects)
         try:
-            from keras.models import model_from_json as _modern, Sequential
-            from keras.layers import Dense, Dropout, BatchNormalization, Activation
-            from keras.initializers import VarianceScaling, Zeros, Ones
-            from keras.regularizers import L1L2
+            from keras.saving.legacy.model_config import model_from_json as _km_legacy_mfj  # type: ignore[attr-defined]
+            return _km_legacy_mfj(model_json)
         except Exception:
-            from tensorflow.keras.models import model_from_json as _modern, Sequential
-            from tensorflow.keras.layers import Dense, Dropout, BatchNormalization, Activation
-            from tensorflow.keras.initializers import VarianceScaling, Zeros, Ones
-            from tensorflow.keras.regularizers import L1L2
-        custom_objects = {
-            "Sequential": Sequential,
-            "Dense": Dense,
-            "Dropout": Dropout,
-            "BatchNormalization": BatchNormalization,
-            "Activation": Activation,
-            "VarianceScaling": VarianceScaling,
-            "Zeros": Zeros,
-            "Ones": Ones,
-            "L1L2": L1L2,
+            pass
+    
+        # 2) Try keras.* with explicit custom_objects
+        try:
+            from keras.models import model_from_json as _km_mfj, Sequential as _km_Sequential
+            from keras.layers import Dense as _km_Dense, Dropout as _km_Dropout, BatchNormalization as _km_BN, Activation as _km_Act
+            from keras.initializers import VarianceScaling as _km_VS, Zeros as _km_Z, Ones as _km_O
+            from keras.regularizers import L1L2 as _km_L1L2
+            _custom_objects = {
+                "Sequential": _km_Sequential,
+                "Dense": _km_Dense,
+                "Dropout": _km_Dropout,
+                "BatchNormalization": _km_BN,
+                "Activation": _km_Act,
+                "VarianceScaling": _km_VS,
+                "Zeros": _km_Z,
+                "Ones": _km_O,
+                "L1L2": _km_L1L2,
+            }
+            return _km_mfj(model_json, custom_objects=_custom_objects)
+        except Exception:
+            pass
+    
+        # 3) Fallback to tf.keras.* with explicit custom_objects
+        from tensorflow.keras.models import model_from_json as _tk_mfj, Sequential as _tk_Sequential
+        from tensorflow.keras.layers import Dense as _tk_Dense, Dropout as _tk_Dropout, BatchNormalization as _tk_BN, Activation as _tk_Act
+        from tensorflow.keras.initializers import VarianceScaling as _tk_VS, Zeros as _tk_Z, Ones as _tk_O
+        from tensorflow.keras.regularizers import L1L2 as _tk_L1L2
+        _custom_objects = {
+            "Sequential": _tk_Sequential,
+            "Dense": _tk_Dense,
+            "Dropout": _tk_Dropout,
+            "BatchNormalization": _tk_BN,
+            "Activation": _tk_Act,
+            "VarianceScaling": _tk_VS,
+            "Zeros": _tk_Z,
+            "Ones": _tk_O,
+            "L1L2": _tk_L1L2,
         }
-        return _modern(model_json, custom_objects=custom_objects)
+        return _tk_mfj(model_json, custom_objects=_custom_objects)
 
     # -------- actual loading --------
     if "clf" not in predictor:
