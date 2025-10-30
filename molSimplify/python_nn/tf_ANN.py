@@ -681,7 +681,7 @@ def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False
             return _km_legacy_mfj(model_json)
         except Exception:
             pass
-    
+
         # 2) Try keras.* with explicit custom_objects
         try:
             from keras.models import model_from_json as _km_mfj, Sequential as _km_Sequential
@@ -702,7 +702,7 @@ def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False
             return _km_mfj(model_json, custom_objects=_custom_objects)
         except Exception:
             pass
-    
+
         # 3) Fallback to tf.keras.* with explicit custom_objects
         from tensorflow.keras.models import model_from_json as _tk_mfj, Sequential as _tk_Sequential
         from tensorflow.keras.layers import Dense as _tk_Dense, Dropout as _tk_Dropout, BatchNormalization as _tk_BN, Activation as _tk_Act
