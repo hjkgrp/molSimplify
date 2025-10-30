@@ -29,18 +29,27 @@ import os
 from pathlib import Path
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
-# Keras (for non-clf models and legacy fallbacks)
+# --- Keras compat (no mypy redefs) ---
 try:
-    from keras.models import load_model, model_from_json
-    from keras.optimizers import Adam
+    from keras.models import load_model as _km_load_model, model_from_json as _km_model_from_json
+    from keras.optimizers import Adam as _km_Adam
 except Exception:
-    from tensorflow.keras.models import load_model, model_from_json
+    from tensorflow.keras.models import load_model as _km_load_model, model_from_json as _km_model_from_json  # type: ignore[no-redef]
+    from tensorflow.keras.optimizers import Adam as _km_Adam  # type: ignore[no-redef]
 
-# Optional: package data helper
+# Single public names used everywhere below (defined once)
+load_model = _km_load_model        # type: ignore[assignment]
+model_from_json = _km_model_from_json  # type: ignore[assignment]
+Adam = _km_Adam                    # type: ignore[assignment]
+
+# --- importlib.resources compat ---
 try:
-    from importlib.resources import files as resource_files
+    from importlib.resources import files as resource_files  # type: ignore[attr-defined]
 except Exception:
-    resource_files = None
+    try:
+        from importlib_resources import files as resource_files  # type: ignore[no-redef]
+    except Exception:
+        resource_files = None  # type: ignore[assignment]
 
 
 
