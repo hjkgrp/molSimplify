@@ -485,7 +485,7 @@ def tf_ANN_preproc(metal: str, oxstate, spin, ligs: List[str], occs: List[int], 
     metal_mol.addAtom(atom3D(metal))
     this_complex = assemble_connectivity_from_parts(
         metal_mol, custom_ligand_dict)
-    
+
     if debug:
         print('custom_ligand_dict is : ')
         print(custom_ligand_dict)

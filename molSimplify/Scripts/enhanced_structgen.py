@@ -240,7 +240,7 @@ def generate_complex(
             denticity = len(donor_groups)
 
             structure = get_next_structure(metals_structures_copy, denticity)
-            
+
             if manual and iteration < len(manual_list):
                 valid_subsets = [manual_list[iteration]]
             else:
@@ -249,7 +249,7 @@ def generate_complex(
             if verbose:
                 print(f"Valid subsets: {valid_subsets}")
                 print(structure)
-                
+
             prev = structure['occupied_mask'].copy()
             # group-aware Kabsch
             best_subset, best_aligned_coords, best_rmsd, placement_attempts, best_perm_idx = clash_aware_kabsch(
@@ -275,7 +275,7 @@ def generate_complex(
                 vis_prefix=vis_prefix,
                 fixed_bounds=fixed_bounds,
             )
-            
+
             # mark sites occupied
             if verbose:
                 print(best_subset)
@@ -769,7 +769,7 @@ def enhanced_init_ANN(metal, ox, spin, ligands, occs, dents,
         metal, ox, spin, ligands, occs, dents, batslist,
         tcats, licores, False, decoration_index, False,
         geometry, debug=False)
-    
+
     if ANN_flag:
         ANN_bondl = ANN_attributes['ANN_bondl']
     else:

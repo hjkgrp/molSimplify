@@ -230,7 +230,7 @@ def main(args=None):
 
         pargs = parser.parse_args(subargv)
 
-        
+
         # Normalize lists: usercatoms/occupancies/isomers can be missing; create_ligand_list handles None
         ligands = pargs.ligands
         if pargs.usercatoms is not None:
@@ -329,7 +329,7 @@ def main(args=None):
             ox = pargs.ox
             spin = pargs.spin
             ligands = pargs.ligands
-            occs = pargs.occupancies 
+            occs = pargs.occupancies
             dents = dents
             batslist = batslist
             tcats = [[],[],[],[],[],[]]
