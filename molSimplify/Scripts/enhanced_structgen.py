@@ -20,6 +20,7 @@ from molSimplify.Scripts.enhanced_structgen_functionality import *
 from molSimplify.utils.openbabel_helpers import *
 from molSimplify.Scripts.io import lig_load
 from molSimplify.Classes.globalvars import vdwrad
+from molSimplify.Classes.globalvars import globalvars
 from molSimplify.Scripts.io import getlicores, lig_load_safe, parse_bracketed_list
 
 from typing import Any, List, Dict, Tuple, Union, Optional
@@ -206,6 +207,10 @@ def generate_complex(
     # Accumulate ALL ligands' haptic groups (GLOBAL indices) so we can re-apply anytime
     all_haptic_groups_global = []
 
+    batslist = []
+    # NEW: collect (backbone_site_1based, core_atom_index_1based) for every filled site
+    backbone_core_pairs = []  # NEW
+
     iteration = 0
     for ligand in ligand_list:
         donor_indices = list(ligand[1])   # may include lists (haptics) or ints
@@ -235,6 +240,7 @@ def generate_complex(
             denticity = len(donor_groups)
 
             structure = get_next_structure(metals_structures_copy, denticity)
+            
             if manual and iteration < len(manual_list):
                 valid_subsets = [manual_list[iteration]]
             else:
@@ -243,7 +249,8 @@ def generate_complex(
             if verbose:
                 print(f"Valid subsets: {valid_subsets}")
                 print(structure)
-
+                
+            prev = structure['occupied_mask'].copy()
             # group-aware Kabsch
             best_subset, best_aligned_coords, best_rmsd, placement_attempts, best_perm_idx = clash_aware_kabsch(
                 ligand_all_coords,
@@ -268,13 +275,20 @@ def generate_complex(
                 vis_prefix=vis_prefix,
                 fixed_bounds=fixed_bounds,
             )
-
+            
             # mark sites occupied
             if verbose:
                 print(best_subset)
 
             assert best_subset != None, "Check total number of coordination sites in tested geometry, as well as total number of coordinating atoms"
             structure['occupied_mask'][np.array(best_subset)] = True
+
+            curr = np.array(structure['occupied_mask'].copy())
+            # Find where a value flipped from False → True
+            new_true = np.where((~prev) & curr)[0] + 1  # +1 for 1-based indexing
+            batslist.append(list(new_true))
+            # Update stored state
+            prev = curr.copy()
 
             # group→site mapping (not strictly needed for bonding)
             donor_to_site, site_indices_in_group_order = map_donors_to_sites_haptic_aware(
@@ -329,6 +343,14 @@ def generate_complex(
                     prefer_nearest_metal=multibond_prefer_nearest_metal,
                 )
             # ---------------------------------------------------------------------------------
+
+            # NEW: record which core3D atom now occupies each backbone site filled by this ligand
+            #      Use the representative donor atom for each donor group (donor_reps).
+            #      Both backbone site indices and core atom indices reported as 1-based.
+            for site_idx_0b, rep_local_0b in zip(site_indices_in_group_order, donor_reps):  # both 0-based
+                core_idx_1b = int(local2global[rep_local_0b]) + 1  # assume 0-based mapping → make 1-based
+                backbone_core_pairs.append((int(site_idx_0b) + 1, core_idx_1b))  # (backbone_site_1b, core_atom_1b)
+            # END NEW
 
             # clean bonds & optimize
             core3D.convert2OBMol(force_clean=True)
@@ -423,8 +445,14 @@ def generate_complex(
     # get sterics report
     if run_sterics:
         clashes, severity, fig = run_sterics_check(core3D, max_steps, ff_name)
+    else:
+        fig = None  # just to be explicit
 
-    return core3D, clashes, severity, fig
+    # NEW: produce the final ordered list of core indices per filled backbone site
+    backbone_core_indices = [core for (site, core) in sorted(backbone_core_pairs, key=lambda x: x[0])]  # NEW
+
+    # OLD + NEW: append backbone_core_indices at the end
+    return core3D, clashes, severity, fig, batslist, backbone_core_indices
 
 def run_sterics_check(core3D, max_steps, ff_name):
     optimized_coords, per_atom_ff_force = constrained_forcefield_optimization(
@@ -691,3 +719,174 @@ if __name__ == "__main__":
             print(f"[ok] Wrote complex to {out_path} (format={out_fmt})")
         except Exception as e:
             print(f"[warn] Could not write file ({e}). Returning object only.")
+
+
+def enhanced_init_ANN(metal, ox, spin, ligands, occs, dents,
+             batslist, tcats, licores, geometry):
+    """Initializes ANN.
+
+    Parameters
+    ----------
+        args : Namespace
+            Namespace of arguments.
+        ligands : list
+            List of ligands, given as names.
+        occs : list
+            List of ligand occupations (frequencies of each ligand).
+        dents : list
+            List of ligand denticities.
+        batslist : list
+            List of backbond points.
+        tcats : list
+            List of SMILES ligand connecting atoms.
+        licores : dict
+            Ligand dictionary within molSimplify.
+
+    Returns
+    -------
+        ANN_flag : bool
+            Whether an ANN call was successful.
+        ANN_bondl : float
+            ANN predicted bond length.
+        ANN_reason : str
+            Reason for ANN failure, if failed.
+        ANN_attributes : dict
+            Dictionary of predicted attributes of complex.
+        catalysis_flag : bool
+            Whether or not complex is compatible for catalytic ANNs.
+
+    """
+    # initialize ANN
+    globs = globalvars()
+    catalysis_flag = False
+
+    # new RACs-ANN
+    from molSimplify.Scripts.tf_nn_prep import tf_ANN_preproc
+    # Set default value [] in case decoration is not used
+    decoration_index = []
+
+    ANN_flag, ANN_reason, ANN_attributes, catalysis_flag = tf_ANN_preproc(
+        metal, ox, spin, ligands, occs, dents, batslist,
+        tcats, licores, False, decoration_index, False,
+        geometry, debug=False)
+    
+    if ANN_flag:
+        ANN_bondl = ANN_attributes['ANN_bondl']
+    else:
+        # there needs to be 1 length per possible lig
+        ANN_bondl = len(
+            [item for items in batslist for item in items])*[False]
+    return ANN_flag, ANN_bondl, ANN_reason, ANN_attributes, catalysis_flag
+
+import numpy as np
+
+def enforce_metal_ligand_distances_and_optimize(
+    core3D,
+    bondl,
+    backbone_core_indices,   # 1-based indices
+    *,
+    ff_name: str = "UFF",
+    max_steps: int = 500,
+    constrain: bool = True,
+    tolerate_zero_vec: float = 1e-6,
+):
+    """
+    Adjust metal–ligand distances and perform a constrained FF optimization.
+    Assumes backbone_core_indices are 1-based. If bondl is None, per-site targets
+    are set to (metal covalent radius + donor covalent radius) in Å.
+    """
+
+    # --- helper: robust scalar cast (accepts scalar or length-1 array/list) ---
+    def _as_float(x):
+        if isinstance(x, (list, tuple, np.ndarray)):
+            arr = np.asarray(x, dtype=float).reshape(-1)
+            if arr.size != 1:
+                raise TypeError(f"Each bond length must be a scalar; got shape {arr.shape} with values {arr}.")
+            return float(arr[0])
+        return float(x)
+
+    # 1) Convert to 0-based indices for internal use
+    donor_idxs = [int(i) - 1 for i in backbone_core_indices]
+
+    # 2) Coords & elements
+    coords, elements = get_all_coords_and_elements(core3D)
+    coords = np.asarray(coords, dtype=float)
+    N = len(coords)
+
+    # 3) Identify metal centers
+    try:
+        metal_indices = core3D.findMetal(transition_metals_only=True)
+    except Exception:
+        tm_set = {
+            "Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn",
+            "Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd",
+            "La","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg"
+        }
+        metal_indices = [i for i, sym in enumerate(elements) if sym in tm_set]
+
+    if not metal_indices:
+        raise RuntimeError("No metal centers found in core3D.")
+
+    metal_indices = sorted(set(int(i) for i in metal_indices))
+    metal_coords = coords[metal_indices]
+
+    # 4) Quick bond lookup (0-based pairs)
+    bonded_pairs = {(min(a, b), max(a, b)) for (a, b) in core3D.bo_dict}
+
+    def donor_metal_for(idx):
+        """Prefer the metal it's bonded to; else nearest metal geometrically."""
+        for m in metal_indices:
+            if (min(idx, m), max(idx, m)) in bonded_pairs:
+                return m
+        diffs = metal_coords - coords[idx]
+        return metal_indices[int(np.argmin(np.sum(diffs**2, axis=1)))]
+
+    # --- NEW: if bondl is None, build it from covalent radii sums ---
+    if bondl is None:
+        bondl = []
+        for donor_idx in donor_idxs:
+            if donor_idx < 0 or donor_idx >= N:
+                raise IndexError(f"Donor index {donor_idx+1} out of bounds (1-based input).")
+            m_idx = donor_metal_for(donor_idx)
+            r_m = float(core3D.getAtom(m_idx).rad)        # Å
+            r_l = float(core3D.getAtom(donor_idx).rad)    # Å
+            bondl.append(r_m + r_l)
+    else:
+        if len(bondl) != len(donor_idxs):
+            raise ValueError("bondl and backbone_core_indices must have the same length")
+
+    # 5) Move each donor along its M–L line to the target distance
+    new_coords = coords.copy()
+    for target_dist_raw, donor_idx in zip(bondl, donor_idxs):
+        if donor_idx < 0 or donor_idx >= N:
+            raise IndexError(f"Donor index {donor_idx+1} out of bounds (1-based input).")
+
+        target_dist = _as_float(target_dist_raw)
+
+        m_idx = donor_metal_for(donor_idx)
+        M = coords[m_idx]
+        L = coords[donor_idx]
+
+        vec = L - M
+        dist = float(np.linalg.norm(vec))
+        if dist < tolerate_zero_vec:
+            direction = np.array([0.0, 0.0, 1.0], dtype=float)
+        else:
+            direction = vec / dist
+
+        new_coords[donor_idx] = M + direction * target_dist
+
+    core3D = set_new_coords(core3D, new_coords)
+
+    # 6) Constrained FF optimization (freeze metals + donors)
+    if constrain:
+        frozen = sorted(set(metal_indices + donor_idxs))
+        optimized = constrained_forcefield_optimization(
+            core3D,
+            frozen,
+            max_steps=max_steps,
+            ff_name=ff_name,
+        )
+        core3D = set_new_coords(core3D, optimized)
+
+    return core3D
