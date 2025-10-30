@@ -18,12 +18,126 @@ import pandas as pd
 import scipy
 from typing import List, Tuple, Union, Optional
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import model_from_json, load_model
 from importlib_resources import files as resource_files
 from packaging import version
 import tensorflow as tf
+import sys, types
 
 from molSimplify.python_nn.clf_analysis_tool import array_stack, get_layer_outputs, dist_neighbor, get_entropy
+
+import os
+from pathlib import Path
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+
+# --- Keras compat (no mypy redefs) ---
+try:
+    from keras.models import load_model as _km_load_model, model_from_json as _km_model_from_json
+    from keras.optimizers import Adam as _km_Adam
+except Exception:
+    from tensorflow.keras.models import load_model as _km_load_model, model_from_json as _km_model_from_json  # type: ignore[no-redef]
+    from tensorflow.keras.optimizers import Adam as _km_Adam  # type: ignore[no-redef]
+
+# Single public names used everywhere below (defined once)
+load_model = _km_load_model        # type: ignore[assignment]
+model_from_json = _km_model_from_json  # type: ignore[assignment]
+Adam = _km_Adam                    # type: ignore[assignment]
+
+# --- importlib.resources compat ---
+try:
+    from importlib.resources import files as resource_files  # type: ignore[attr-defined]
+except Exception:
+    try:
+        from importlib_resources import files as resource_files  # type: ignore[no-redef]
+    except Exception:
+        resource_files = None  # type: ignore[assignment]
+
+
+
+def get_layer_outputs2(model, layer_index, input_array, training_flag=False):
+    """
+    Return the output of model.layers[layer_index] for a single example.
+    Ensures input has correct dtype/shape and matches the model's expected structure.
+    """
+    # 1) Build a partial model from the original graph
+    try:
+        # Functional/Sequential both support these
+        partial_model = tf.keras.Model(inputs=model.inputs,
+                                       outputs=model.layers[layer_index].output)
+    except Exception:
+        # Fallback for very old Sequential APIs
+        partial_model = tf.keras.Model(inputs=model.input,
+                                       outputs=model.layers[layer_index].output)
+
+    # 2) Prepare inputs (ndarray float32, correct rank)
+    x = _prepare_inputs_for_model(model, input_array)
+
+    # 3) Call with the correct structure (no extra list wrappers, no strings)
+    out = partial_model(x, training=training_flag)
+    # Ensure eager value
+    return out.numpy() if hasattr(out, "numpy") else np.array(out)
+
+
+def _prepare_inputs_for_model(model, X):
+    """Ensure numeric ndarray and correct rank for model.input(s)."""
+    X = np.asarray(X, dtype=np.float32)
+    X = _fix_shape_for_model(model, X)  # your helper: adds (time) axis if needed
+    return X
+
+
+def _install_sklearn_compat_shims():
+    """
+    Create backwards-compat import paths so old pickles load under modern sklearn.
+    Covers:
+      - sklearn.svm.classes -> sklearn.svm._classes
+      - sklearn.externals.joblib -> joblib
+      - sklearn.grid_search -> sklearn.model_selection
+      - sklearn.cross_validation -> sklearn.model_selection
+      - sklearn.utils.fixes (fallback to `types.SimpleNamespace`) if referenced
+    """
+    # 1) svm.classes -> svm._classes
+    try:
+        import sklearn.svm._classes as _svm_new
+        mod_name = "sklearn.svm.classes"
+        if mod_name not in sys.modules:
+            shim = types.ModuleType(mod_name)
+            for name in ("SVC","NuSVC","SVR","NuSVR","OneClassSVM","LinearSVC","LinearSVR"):
+                if hasattr(_svm_new, name):
+                    setattr(shim, name, getattr(_svm_new, name))
+            sys.modules[mod_name] = shim
+    except Exception:
+        pass
+
+    # 2) externals.joblib -> joblib
+    try:
+        import joblib as _jl
+        mod_name = "sklearn.externals.joblib"
+        if mod_name not in sys.modules:
+            sys.modules[mod_name] = _jl
+    except Exception:
+        pass
+
+    # 3) grid_search -> model_selection
+    try:
+        import sklearn.model_selection as _ms
+        mod_name = "sklearn.grid_search"
+        if mod_name not in sys.modules:
+            sys.modules[mod_name] = _ms
+    except Exception:
+        pass
+
+    # 4) cross_validation -> model_selection
+    try:
+        import sklearn.model_selection as _ms2
+        mod_name = "sklearn.cross_validation"
+        if mod_name not in sys.modules:
+            sys.modules[mod_name] = _ms2
+    except Exception:
+        pass
+
+    # 5) utils.fixes sometimes referenced; provide a harmless placeholder
+    mod_name = "sklearn.utils.fixes"
+    if mod_name not in sys.modules:
+        sys.modules[mod_name] = types.ModuleType(mod_name)
 
 
 def perform_ANN_prediction(RAC_dataframe: pd.DataFrame, predictor_name: str,
@@ -392,6 +506,7 @@ def load_keras_ann(predictor: str, suffix: str = 'model', compile: bool = False)
     # this function loads the ANN for property
     # "predictor"
     # disable TF output text to reduce console spam
+
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     key = get_key(predictor, suffix)
     if "clf" not in predictor:
@@ -438,6 +553,229 @@ def load_keras_ann(predictor: str, suffix: str = 'model', compile: bool = False)
     return loaded_model
 
 
+
+# --- sklearn loader + adapter ---
+def _try_load_sklearn_classifier(predictor: str):
+    """
+    If an sklearn model for the classifier exists under sklearn_models/<predictor>/,
+    load it with joblib and return an adapter that exposes predict/predict_proba.
+    Otherwise return None and let Keras fallback take over.
+    """
+    import joblib
+
+    here = Path(__file__).resolve()
+    # Allow override via env var if you want (optional)
+    base_override = os.environ.get("MOLSIMPLIFY_MODEL_DIR")  # e.g., /path/to/models
+    candidates = []
+    if base_override:
+        candidates.append(Path(base_override) / "sklearn_models" / predictor)
+    # common relative places
+    candidates += [
+        here.parent / "tf_nn" / predictor,               # molSimplify/python_nn/sklearn_models/geo_static_clf
+        here.parent.parent / "tf_nn" / predictor,        # molSimplify/sklearn_models/geo_static_clf
+        here.parent.parent.parent / "tf_nn" / predictor, # repo_root/sklearn_models/geo_static_clf
+    ]
+
+    filenames = ["model.joblib", "clf.joblib", "model.pkl", "clf.pkl"]
+    for d in candidates:
+        for fname in filenames:
+            p = d / fname
+            if p.exists():
+                sk = joblib.load(p)
+
+                class _SKAdapter:
+                    def __init__(self, skobj, name):
+                        self._sk = skobj
+                        self.name = name
+                    # mimic Keras .predict signature loosely
+                    def predict(self, X, batch_size=None, verbose=None):
+                        return self._sk.predict(X)
+                    def predict_proba(self, X):
+                        if hasattr(self._sk, "predict_proba"):
+                            return self._sk.predict_proba(X)
+                        raise AttributeError("This sklearn model has no predict_proba")
+                    # handy for debugging/logs
+                    def __repr__(self):
+                        return f"<SKAdapter {self.name}: {self._sk.__class__.__name__}>"
+
+                return _SKAdapter(sk, predictor)
+    return None
+
+def _fix_shape_for_model(model, X: np.ndarray) -> np.ndarray:
+    """
+    Ensure X matches model.input_shape:
+    - If model expects (None, None, F) and X is (N, F) -> make (N, 1, F)
+    - If model expects (None, F) and X is (N, 1, F)   -> squeeze to (N, F)
+    Returns float32 array.
+    """
+    inp_shape = getattr(model, "input_shape", None)
+    if isinstance(inp_shape, list):  # multi-input models → use first
+        inp_shape = inp_shape[0]
+
+    if inp_shape is not None:
+        # Normalize negative/None dims away from batch dimension
+        if len(inp_shape) == 3:
+            # (batch, timesteps, features)
+            if X.ndim == 2:
+                X = np.expand_dims(X, axis=1)  # (N, 1, F)
+        elif len(inp_shape) == 2:
+            # (batch, features)
+            if X.ndim == 3 and X.shape[1] == 1:
+                X = X[:, 0, :]  # (N, F)
+    else:
+        # If model has no input_shape attr, fall back to “add a time axis if 2D”
+        if X.ndim == 2:
+            X = np.expand_dims(X, axis=1)
+    return X.astype(np.float32, copy=False)
+
+
+def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False):
+    """
+    Loads legacy Keras (JSON+H5) or monolithic H5 models from anywhere under molSimplify/tf_nn/.
+    Searches recursively with glob so differing subdirectory layouts work automatically.
+    """
+    import os
+    from pathlib import Path
+    import glob
+    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
+
+    # --- Keras imports ---
+    try:
+        try:
+            from keras.saving.legacy.model_config import model_from_json as _legacy_model_from_json
+        except Exception:
+            _legacy_model_from_json = None
+    except Exception:
+        _legacy_model_from_json = None
+
+    here = Path(__file__).resolve()
+    tf_nn_root = here.parent.parent / "tf_nn"
+
+    def _adam_compat(**kwargs):
+        lr = kwargs.pop("lr", None)
+        kwargs.pop("decay", None)
+        if lr is not None:
+            kwargs["learning_rate"] = lr
+        return Adam(**kwargs)
+
+    def _glob_find(basename):
+        """
+        Recursively search tf_nn/ for basename (case-sensitive).
+        Returns the first match as a Path or None.
+        """
+        pattern = str(tf_nn_root / "**" / basename)
+        hits = glob.glob(pattern, recursive=True)
+        if hits:
+            return Path(hits[0])
+        return None
+
+    def _model_from_json_compat(model_json: str):
+        """
+        Minimal, mypy-safe loader for legacy Keras JSONs.
+        - Prefer keras.saving.legacy when available
+        - Otherwise fall back to keras / tf.keras with a small custom_objects dict
+        """
+        # 1) Try legacy loader (works without custom_objects)
+        try:
+            from keras.saving.legacy.model_config import model_from_json as _km_legacy_mfj  # type: ignore[attr-defined]
+            return _km_legacy_mfj(model_json)
+        except Exception:
+            pass
+
+        # 2) Try keras.* with explicit custom_objects
+        try:
+            from keras.models import model_from_json as _km_mfj, Sequential as _km_Sequential
+            from keras.layers import Dense as _km_Dense, Dropout as _km_Dropout, BatchNormalization as _km_BN, Activation as _km_Act
+            from keras.initializers import VarianceScaling as _km_VS, Zeros as _km_Z, Ones as _km_O
+            from keras.regularizers import L1L2 as _km_L1L2
+            _custom_objects = {
+                "Sequential": _km_Sequential,
+                "Dense": _km_Dense,
+                "Dropout": _km_Dropout,
+                "BatchNormalization": _km_BN,
+                "Activation": _km_Act,
+                "VarianceScaling": _km_VS,
+                "Zeros": _km_Z,
+                "Ones": _km_O,
+                "L1L2": _km_L1L2,
+            }
+            return _km_mfj(model_json, custom_objects=_custom_objects)
+        except Exception:
+            pass
+
+        # 3) Fallback to tf.keras.* with explicit custom_objects
+        from tensorflow.keras.models import model_from_json as _tk_mfj, Sequential as _tk_Sequential
+        from tensorflow.keras.layers import Dense as _tk_Dense, Dropout as _tk_Dropout, BatchNormalization as _tk_BN, Activation as _tk_Act
+        from tensorflow.keras.initializers import VarianceScaling as _tk_VS, Zeros as _tk_Z, Ones as _tk_O
+        from tensorflow.keras.regularizers import L1L2 as _tk_L1L2
+        _custom_objects = {
+            "Sequential": _tk_Sequential,
+            "Dense": _tk_Dense,
+            "Dropout": _tk_Dropout,
+            "BatchNormalization": _tk_BN,
+            "Activation": _tk_Act,
+            "VarianceScaling": _tk_VS,
+            "Zeros": _tk_Z,
+            "Ones": _tk_O,
+            "L1L2": _tk_L1L2,
+        }
+        return _tk_mfj(model_json, custom_objects=_custom_objects)
+
+    # -------- actual loading --------
+    if "clf" not in predictor:
+        json_name = f"{predictor}_{suffix}.json"
+        h5_name = f"{predictor}_{suffix}.h5"
+
+        json_path = _glob_find(json_name)
+        h5_path = _glob_find(h5_name)
+        if json_path is None:
+            raise FileNotFoundError(f"{json_name}")
+        if h5_path is None:
+            raise FileNotFoundError(f"{h5_name}")
+
+        model_json = json_path.read_text()
+        model = _model_from_json_compat(model_json)
+        model.load_weights(h5_path)
+    else:
+        # classifier = single .h5 file
+        h5_name = f"{predictor}_{suffix}.h5"
+        h5_path = _glob_find(h5_name)
+        if h5_path is None:
+            raise FileNotFoundError(h5_name)
+        model = load_model(h5_path, compile=False)
+
+    # -------- optional compile --------
+    if compile:
+        if predictor == "homo":
+            opt = _adam_compat(beta_2=1 - 0.0016204733101599046,
+                               beta_1=0.8718839135783554,
+                               lr=0.0004961686075897741)
+            model.compile(loss="mse", optimizer=opt, metrics=["mse", "mae", "mape"])
+        elif predictor == "gap":
+            opt = _adam_compat(beta_2=1 - 0.00010929248596488832,
+                               beta_1=0.8406735969305784,
+                               lr=0.0006759924688701965)
+            model.compile(loss="mse", optimizer=opt, metrics=["mse", "mae", "mape"])
+        elif predictor in ["oxo", "hat", "oxo20"]:
+            opt = _adam_compat(lr=0.0012838133056087084,
+                               beta_1=0.9811686522122317,
+                               beta_2=0.8264616523572279)
+            model.compile(loss="mse", optimizer=opt, metrics=["mse", "mae", "mape"])
+        elif predictor == "homo_empty":
+            opt = _adam_compat(lr=0.006677578283098809,
+                               beta_1=0.8556594887870226,
+                               beta_2=0.9463468021275508)
+            model.compile(loss="mse", optimizer=opt, metrics=["mse", "mae", "mape"])
+        elif predictor in ["geo_static_clf", "sc_static_clf"]:
+            opt = _adam_compat(lr=5e-5, beta_1=0.95, amsgrad=True)
+            model.compile(loss="binary_crossentropy", optimizer=opt, metrics=["accuracy"])
+        else:
+            model.compile(loss="mse", optimizer=Adam(), metrics=["mse", "mae", "mape"])
+
+    return model
+
+
+
 def tf_ANN_excitation_prepare(predictor: str, descriptors: List[float], descriptor_names: List[str]) -> np.ndarray:
     ## this function reforms the provided list of descriptors and their
     ## names to match the expectations of the target ANN model.
@@ -480,8 +818,14 @@ def ANN_supervisor(predictor: str,
     excitation = data_normalize(excitation, train_mean_x, train_var_x, debug=debug)
 
     ## fetch ANN
-    loaded_model = load_keras_ann(predictor)
-    result = data_rescale(loaded_model.predict(excitation, verbose=0), train_mean_y, train_var_y, debug=debug)
+    try:
+        loaded_model = load_keras_ann(predictor)
+        result = data_rescale(loaded_model.predict(excitation, verbose=0), train_mean_y, train_var_y, debug=debug)
+    except:
+        loaded_model = load_keras_ann2(predictor)
+        excitation = _fix_shape_for_model(loaded_model, excitation)
+        result = data_rescale(loaded_model.predict(excitation, verbose=0), train_mean_y, train_var_y, debug=debug)
+
     if "clf" not in predictor:
         if debug:
             print(f'LOADED MODEL HAS {len(loaded_model.layers)} layers, so latent space measure will be from first {len(loaded_model.layers) - 1} layers')
@@ -603,7 +947,11 @@ def find_ANN_latent_dist(predictor, latent_space_vector, debug=False):
     min_dist = 100000000
     min_ind = 0
 
-    loaded_model = load_keras_ann(predictor)
+    try:
+        loaded_model = load_keras_ann(predictor)
+    except:
+        loaded_model = load_keras_ann2(predictor)
+
 
     if debug:
         print('measuring latent distances:')
@@ -618,8 +966,12 @@ def find_ANN_latent_dist(predictor, latent_space_vector, debug=False):
         scaled_row = np.squeeze(
             data_normalize(rows, train_mean_x.T, train_var_x.T, debug=debug))  # Normalizing the row before finding the distance
         if version.parse(tf.__version__) >= version.parse('2.0.0'):
-            latent_train_row = get_layer_outputs(loaded_model, len(loaded_model.layers) - 2,
-                                                 [np.array([scaled_row])], training_flag=False)
+            try:
+                latent_train_row = get_layer_outputs(loaded_model, len(loaded_model.layers) - 2,
+                                                     [np.array([scaled_row])], training_flag=False)
+            except:
+                latent_train_row = get_layer_outputs2(loaded_model, len(loaded_model.layers) - 2,
+                                                     [np.array([scaled_row])], training_flag=False)
         else:
             latent_train_row = get_outputs([np.array([scaled_row]), 0])
         this_dist = np.linalg.norm(np.subtract(np.squeeze(latent_train_row), np.squeeze(latent_space_vector)))

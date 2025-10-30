@@ -26,7 +26,9 @@
 # fix OB bug: https://github.com/openbabel/openbabel/issues/1983
 import sys
 import os
+import numpy as np
 import argparse
+from molSimplify.Scripts.io import getlicores
 if not ('win' in sys.platform):
     flags = sys.getdlopenflags()
 if not ('win' in sys.platform):
@@ -40,7 +42,7 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
                                          parseinputs_ligdict, parseinputs_basic,
                                          parseCLI)
 from molSimplify.Scripts.generator import startgen
-from molSimplify.Classes.globalvars import globalvars
+from molSimplify.Classes.globalvars import globalvars, geometry_vectors
 from molSimplify.utils.tensorflow import tensorflow_silence
 
 
@@ -129,6 +131,8 @@ def main(args=None):
         from molSimplify.Scripts.enhanced_structgen import (
             create_ligand_list,
             generate_complex,
+            enhanced_init_ANN,
+            enforce_metal_ligand_distances_and_optimize
         )
 
         from molSimplify.Scripts.enhanced_structgen_functionality import check_badjob
@@ -177,6 +181,8 @@ def main(args=None):
 
         # Common build knobs (pass-through to generate_complex)
         parser.add_argument("--metal", default="Fe")
+        parser.add_argument("--ox", default=2)
+        parser.add_argument("--spin", default=1)
         parser.add_argument("--geometry", default="octahedral")
         parser.add_argument("--voxel-size", type=float, default=0.5)
         parser.add_argument("--vdw-scale", type=float, default=0.8)
@@ -185,6 +191,7 @@ def main(args=None):
         parser.add_argument("--max-steps", type=int, default=500)
         parser.add_argument("--ff-name", default="UFF")
         parser.add_argument("--verbose", action="store_true")
+        parser.add_argument("--ANN", action="store_true")
         parser.add_argument("--smart-generation", action="store_true", default=True)
         parser.add_argument("--no-smart-generation", dest="smart_generation", action="store_false")
 
@@ -222,6 +229,7 @@ def main(args=None):
 
 
         pargs = parser.parse_args(subargv)
+
 
         # Normalize lists: usercatoms/occupancies/isomers can be missing; create_ligand_list handles None
         ligands = pargs.ligands
@@ -281,7 +289,7 @@ def main(args=None):
             vis_view = (22, -60)
 
         # Run build
-        mol, clash, severity, fig = generate_complex(
+        mol, clash, severity, fig, batslist, backbone_core_indices = generate_complex(
             ligand_list,
             metals=pargs.metal,
             voxel_size=pargs.voxel_size,
@@ -309,6 +317,40 @@ def main(args=None):
             multibond_prefer_nearest_metal=pargs.multibond_prefer_nearest_metal,
             run_sterics=pargs.run_sterics,
         )
+
+        dents = []
+        for lig in ligand_list:
+            dents.append(len(lig[1]))
+
+        # -------------------- ANN ------------------------
+        ANN_bondl = None
+        if pargs.ANN == True:
+            metal = pargs.metal
+            ox = pargs.ox
+            spin = pargs.spin
+            ligands = pargs.ligands
+            occs = pargs.occupancies
+            dents = dents
+            batslist = batslist
+            tcats = [[],[],[],[],[],[]]
+            licores = getlicores()
+            geometry = pargs.geometry
+
+            try:
+                ANN_flag, ANN_bondl, ANN_reason, ANN_attributes, catalysis_flag = enhanced_init_ANN(metal, ox, spin, ligands, occs, dents,
+                     batslist, tcats, licores, geometry)
+            except:
+                print("ANN failed. Skipping...")
+
+        # -------------------- Metal-Ligand Bond Distance ------------------------
+        bondl = None
+        if ANN_bondl != None:
+            bondl = []
+            for length in ANN_bondl:
+                bondl.append(length[1])
+
+        bondl = None
+        mol = enforce_metal_ligand_distances_and_optimize(mol, bondl, backbone_core_indices)
 
         # -------------------- auto-build run name --------------------
         import re, hashlib

@@ -713,10 +713,18 @@ def evaluate_tmc_anns(this_complex: mol3D, metal: str, ox: int, spin: int,
             print(
                 'warning, ANN predicts a near degenerate ground state for this complex')
     print(f"ANN predicts a spin splitting (HS - LS) of {float(split[0]):.2f} kcal/mol at {100 * alpha:.0f}% HFX")
-    print('ANN low spin bond length (ax1/ax2/eq) is predicted to be: ' + " /".join(
-        [f"{float(i):.2f}" for i in r_ls[0]]) + ' angstrom')
-    print('ANN high spin bond length (ax1/ax2/eq) is predicted to be: ' + " /".join(
-        [f"{float(i):.2f}" for i in r_hs[0]]) + ' angstrom')
+
+    try:
+        print('ANN low spin bond length (ax1/ax2/eq) is predicted to be: ' + " /".join(
+            [f"{float(i):.2f}" for i in r_ls[0]]) + ' angstrom')
+        print('ANN high spin bond length (ax1/ax2/eq) is predicted to be: ' + " /".join(
+            [f"{float(i):.2f}" for i in r_hs[0]]) + ' angstrom')
+    except:
+        vals = _flat_floats(r_ls)
+        print('ANN low spin bond length (ax1/ax2/eq) is predicted to be: ' + ', '.join(f"{v:.2f}" for v in vals) + ' angstrom')
+        vals = _flat_floats(r_hs)
+        print('ANN high spin bond length (ax1/ax2/eq) is predicted to be: ' + ', '.join(f"{v:.2f}" for v in vals) + ' angstrom')
+
     print(f'distance to splitting energy training data is {split_dist:.2f}')
     print(splitting_ANN_trust_message)
     print()
@@ -732,6 +740,14 @@ def evaluate_tmc_anns(this_complex: mol3D, metal: str, ox: int, spin: int,
     # This is done to get rid of the attribute error that is a bug in tensorflow.
     K.clear_session()
     return ANN_attributes
+
+
+def _flat_floats(x):
+    import numpy as np
+    arr = np.asarray(x, dtype=float)
+    if arr.ndim > 1:
+        arr = arr[0]
+    return arr.ravel()
 
 
 def evaluate_catalytic_anns(this_complex: mol3D, metal: str, ox: int, spin: int,
