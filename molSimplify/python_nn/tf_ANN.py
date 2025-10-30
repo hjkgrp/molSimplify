@@ -649,7 +649,7 @@ def load_keras_ann2(predictor: str, suffix: str = "model", compile: bool = False
             kwargs["learning_rate"] = lr
         return Adam(**kwargs)
 
-    def _glob_find(basename: str) -> Path | None:
+    def _glob_find(basename):
         """
         Recursively search tf_nn/ for basename (case-sensitive).
         Returns the first match as a Path or None.
