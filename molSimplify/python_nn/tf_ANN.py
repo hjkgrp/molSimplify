@@ -18,10 +18,10 @@ import pandas as pd
 import scipy
 from typing import List, Tuple, Union, Optional
 from tensorflow.keras import backend as K
-from tensorflow.keras.models import model_from_json, load_model
 from importlib_resources import files as resource_files
 from packaging import version
 import tensorflow as tf
+import sys, types
 
 from molSimplify.python_nn.clf_analysis_tool import array_stack, get_layer_outputs, dist_neighbor, get_entropy
 
@@ -35,7 +35,6 @@ try:
     from keras.optimizers import Adam
 except Exception:
     from tensorflow.keras.models import load_model, model_from_json
-    from tensorflow.keras.optimizers import Adam
 
 # Optional: package data helper
 try:
@@ -43,13 +42,7 @@ try:
 except Exception:
     resource_files = None
 
-# --- add near the top with other imports ---
-# ---- add near imports ----
-import sys, types
 
-# put near other imports
-import numpy as np
-import tensorflow as tf
 
 def get_layer_outputs2(model, layer_index, input_array, training_flag=False):
     """
@@ -137,7 +130,7 @@ def _install_sklearn_compat_shims():
     if mod_name not in sys.modules:
         sys.modules[mod_name] = types.ModuleType(mod_name)
 
-
+    
 def perform_ANN_prediction(RAC_dataframe: pd.DataFrame, predictor_name: str,
                            RAC_column: str = 'RACs') -> pd.DataFrame:
     # Performs a correctly normalized/rescaled prediction for a property specified by predictor_name.
@@ -504,7 +497,7 @@ def load_keras_ann(predictor: str, suffix: str = 'model', compile: bool = False)
     # this function loads the ANN for property
     # "predictor"
     # disable TF output text to reduce console spam
-
+    
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
     key = get_key(predictor, suffix)
     if "clf" not in predictor:
@@ -803,7 +796,7 @@ def ANN_supervisor(predictor: str,
         loaded_model = load_keras_ann2(predictor)
         excitation = _fix_shape_for_model(loaded_model, excitation)
         result = data_rescale(loaded_model.predict(excitation, verbose=0), train_mean_y, train_var_y, debug=debug)
-
+        
     if "clf" not in predictor:
         if debug:
             print(f'LOADED MODEL HAS {len(loaded_model.layers)} layers, so latent space measure will be from first {len(loaded_model.layers) - 1} layers')
@@ -929,7 +922,7 @@ def find_ANN_latent_dist(predictor, latent_space_vector, debug=False):
         loaded_model = load_keras_ann(predictor)
     except:
         loaded_model = load_keras_ann2(predictor)
-
+    
 
     if debug:
         print('measuring latent distances:')
