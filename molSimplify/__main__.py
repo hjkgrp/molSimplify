@@ -349,7 +349,6 @@ def main(args=None):
             for length in ANN_bondl:
                 bondl.append(length[1])
 
-        bondl = None
         mol = enforce_metal_ligand_distances_and_optimize(mol, bondl, backbone_core_indices)
 
         # -------------------- auto-build run name --------------------
