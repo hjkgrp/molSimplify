@@ -6885,57 +6885,74 @@ class mol3D:
         Combines two molecules. Each atom in the second molecule
         is appended to the first while preserving orders. Assumes
         operation with a given mol3D instance, when handed a second mol3D instance.
-
-        Parameters
-        ----------
-            mol : mol3D
-                mol3D class instance containing molecule to be added.
-            catoms : TODO
-                TODO
-            bond_to_add : list, optional
-                List of tuples (ind1,ind2,order) bonds to add. Default is empty.
-            dirty : bool, optional
-                Add atoms without worrying about bond orders. Default is False.
-
-        Returns
-        -------
-            cmol : mol3D
-                New mol3D class containing the two molecules combined.
         """
 
         cmol = self
         bo_dict = cmol.bo_dict
 
-        if cmol.bo_dict == False:
+        if cmol.bo_dict is False:
             # Only central metal
             bo_dict = {}
+
         new_bo_dict = copy.deepcopy(bo_dict)
 
-        # Add ligand connections.
-        for bo in mol.bo_dict:
-            ind1 = bo[0] + len(cmol.atoms)
-            ind2 = bo[1] + len(cmol.atoms)
-            new_bo_dict[(ind1,ind2)]=mol.bo_dict[(bo[0],bo[1])]
+        # Add ligand internal bonds (shift indices by current atom count)
+        offset = len(cmol.atoms)
+        for (i, j), order in mol.bo_dict.items():
+            ind1 = i + offset
+            ind2 = j + offset
+            new_bo_dict[(ind1, ind2)] = order
 
         # Connect metal to ligand.
         metal_ind = cmol.findMetal(transition_metals_only=False)[0]
         for atom in catoms:
             ind1 = metal_ind
-            ind2 = atom + len(cmol.atoms)
-            new_bo_dict[(ind1,ind2)]=1
+            ind2 = atom + offset
+            new_bo_dict[(ind1, ind2)] = 1  # metal–ligand bond order
 
+        # Optional: add any extra bonds passed in bond_to_add
+        for (i, j, order) in bond_to_add:
+            new_bo_dict[(i, j)] = order
+
+        # Append atoms from mol to cmol
         for atom in mol.atoms:
-            cmol.addAtom(atom, auto_populate_bo_dict = False)
+            cmol.addAtom(atom, auto_populate_bo_dict=False)
+
+        # Helper: coerce bond-order values to float
+        def _coerce_bo(v):
+            # already numeric
+            if isinstance(v, (int, float)):
+                return float(v)
+
+            # string-like bond orders
+            if isinstance(v, str):
+                s = v.strip().lower()
+                if s in ("ar", "aro", "aromatic"):
+                    return 1.5
+                if s in ("am",):
+                    return 1.0
+                # try to parse numeric string like "1", "1.0"
+                try:
+                    return float(s)
+                except ValueError:
+                    raise ValueError(f"Unrecognized bond order value: {v!r}")
+
+            # anything else is unexpected
+            raise ValueError(f"Unsupported bond order type: {type(v)}, value={v!r}")
+
+        # Build bond-order matrix
+        bo_mat = np.zeros((cmol.natoms, cmol.natoms))
+        for (i, j), v in new_bo_dict.items():
+            val = _coerce_bo(v)
+            bo_mat[i, j] = val
+            bo_mat[j, i] = val
 
         cmol.bo_dict = new_bo_dict
-        bo_mat = np.zeros((cmol.natoms, cmol.natoms))
-        for k, v in new_bo_dict.items():
-            bo_mat[k[0], k[1]] = v
-            bo_mat[k[1], k[0]] = v
         cmol.bo_mat = bo_mat
         cmol.graph = (cmol.bo_mat > 0).astype(int)
 
         return cmol
+
 
     def mindist(self, mol, exclude1=[], exclude2=[]):
         """
