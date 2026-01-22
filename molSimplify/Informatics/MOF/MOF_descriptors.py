@@ -75,7 +75,7 @@ def get_primitive(data_path, write_path, occupancy_tolerance=1):
 
     """
     from pymatgen.io.cif import CifParser
-    s = CifParser(data_path, occupancy_tolerance=occupancy_tolerance).get_structures()[0]
+    s = CifParser(data_path, occupancy_tolerance=occupancy_tolerance).parse_structures(primitive=True)[0]
     sprim = s.get_primitive_structure()
     sprim.to(filename=write_path, fmt="cif")  # Output structure to a file.
 

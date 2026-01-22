@@ -23,7 +23,7 @@ import networkx as nx
 
 def get_primitive(data_path, write_path):
     from pymatgen.io.cif import CifParser
-    s = CifParser(data_path, occupancy_tolerance=1).get_structures()[0]
+    s = CifParser(data_path, occupancy_tolerance=1).parse_structures(primitive=True)[0]
     sprim = s.get_primitive_structure()
     sprim.to(filename=write_path, fmt="cif")
 
