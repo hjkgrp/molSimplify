@@ -123,7 +123,7 @@ def identify_main_chain(temp_mol, link_list):
         The longest path length between two anchoring atoms.
 
     """
-    G = nx.from_numpy_matrix(temp_mol.graph)
+    G = nx.from_numpy_array(temp_mol.graph)
     pairs = []
     shortest = 0
     longest = 0
@@ -179,7 +179,7 @@ def get_molcif_cycles_no_metal(molcif):
         Flattened list of subcycle atoms (indices).
 
     """
-    G=nx.from_numpy_matrix(molcif.graph)
+    G=nx.from_numpy_array(molcif.graph)
     cycles = nx.minimum_cycle_basis(G) # gets all closed rings in graph
     subcycle_list = []
     for cycle in cycles:

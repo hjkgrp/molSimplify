@@ -38,7 +38,7 @@ def get_primitive(data_path, write_path):
 
 def make_MOF_SBU_RACs(SBU_list, SBU_subgraph, molcif, depth, name, cell, anchoring_atoms, sbu_path=False, connections_list=False, connections_subgraphlist=False):
     print(SBU_list)
-    G=nx.from_numpy_matrix(molcif.graph)
+    G=nx.from_numpy_array(molcif.graph)
     cycles = nx.minimum_cycle_basis(G) # gets all closed rings in graph
     subcycle_list = []
     for cycle in cycles:
