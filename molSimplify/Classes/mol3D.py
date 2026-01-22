@@ -4784,10 +4784,9 @@ class mol3D:
         """
 
         # Use this as dummy mol3D class. Shouldn't interfere with other functionality.
-        self.my_mol_trunc = mol3D()
         nh = len([x for x in self.symvect() if x == 'H'])  # Get initial hydrogens count.
         smi = self.get_smiles(use_mol2=True, canonicalize=True)
-        self.my_mol_trunc.read_smiles(smi, steps=0, ff=False)
+        self.my_mol_trunc = mol3D.from_smiles(smi, gen3d=False)
         charge = self.my_mol_trunc.OBMol.GetTotalCharge()
         formula = self.my_mol_trunc.OBMol.GetFormula()
         if 'H' in formula:
@@ -6398,9 +6397,15 @@ class mol3D:
         else:
             print(("chargefile does not exist.", chargefile))
 
+    @deprecated('read_smiles is deprecated and will be removed in a future release. '
+                'Use mol3D.from_smiles() instead.')
     def read_smiles(self, smiles, ff="mmff94", steps=2500):
         """
         Read a smiles string and convert it to a mol3D class instance.
+
+        .. deprecated:: 
+            This method is deprecated and will be removed in a future release.
+            Use :meth:`from_smiles` instead.
 
         Parameters
         ----------
@@ -6982,9 +6987,15 @@ class mol3D:
         return mind
 
 
+    @deprecated('substruct_add is deprecated and will be removed in a future release. '
+                'Use decorate_molecule from molSimplify.Informatics.decoration_manager instead.')
     def substruct_add(self, dec, base_idx, sub_idx, force_field=True):
         """
         This function allows for substructure addition/functionalization.
+
+        .. deprecated:: 
+            This method is deprecated and will be removed in a future release.
+            Use :func:`molSimplify.Informatics.decoration_manager.decorate_molecule` instead.
 
         Parameters
         ----------
