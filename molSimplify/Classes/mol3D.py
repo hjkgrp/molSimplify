@@ -6403,7 +6403,7 @@ class mol3D:
         """
         Read a smiles string and convert it to a mol3D class instance.
 
-        .. deprecated:: 
+        .. deprecated::
             This method is deprecated and will be removed in a future release.
             Use :meth:`from_smiles` instead.
 
@@ -6993,7 +6993,7 @@ class mol3D:
         """
         This function allows for substructure addition/functionalization.
 
-        .. deprecated:: 
+        .. deprecated::
             This method is deprecated and will be removed in a future release.
             Use :func:`molSimplify.Informatics.decoration_manager.decorate_molecule` instead.
 
