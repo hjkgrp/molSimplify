@@ -738,6 +738,15 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
     if 'molcas' in molsim_data.lower():
         output_qcin = myjobdir + '/molcas.input'
 
+    # qcgen writes name.in when -name is set (parse4test sets it); fallback so QC comparison works
+    if (
+        output_qcin == myjobdir + '/terachem_input'
+        and not os.path.exists(output_qcin)
+    ):
+        alt_qcin = myjobdir + '/' + name + '.in'
+        if os.path.exists(alt_qcin):
+            output_qcin = alt_qcin
+
     parent_folder = get_parent_folder(name)
     ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
     ref_report = resource_path_root / "refs" / parent_folder / f"{name}.report"
