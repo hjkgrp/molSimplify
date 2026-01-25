@@ -55,12 +55,18 @@ def resolve_existing_directory(
             '\nDirectory ' + dirpath +
             ' already exists. Keep both (k), replace (r) or skip (s) k/r/s: ')
         reply = get_input_fn(prompt)
-        if 'k' in reply.lower():
+        first = (reply.strip().lower() + ' ')[0]
+        if first == 'k':
             flagdir = 'keep'
-        elif 's' in reply.lower():
+        elif first == 'r':
+            flagdir = 'replace'
+        elif first == 's':
             flagdir = 'skip'
         else:
-            flagdir = 'replace'
+            raise ValueError(
+                f"Invalid choice {reply!r}. Please enter k (keep both), "
+                "r (replace), or s (skip)."
+            )
     if flagdir == 'replace':
         shutil.rmtree(dirpath)
         os.makedirs(dirpath)
