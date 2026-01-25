@@ -141,8 +141,6 @@ def main(args=None):
         # Extract only the subcommand args (strip the token 'build-complex')
         subargv = [a for a in args if a != 'build-complex']
 
-        import argparse
-
         def _maybe_none(x: str):
             return None if x is None or str(x).strip().lower() in {"none", "null", ""} else x
 
@@ -471,52 +469,53 @@ def main(args=None):
 
     ## print help ###
     if '-h' in args or '-H' in args or '--help' in args:
-        if 'advanced' in args:
-            parser = argparse.ArgumentParser(description=DescString_advanced)
-            parseinputs_advanced(parser)
-        if 'slabgen' in args:
-            parser = argparse.ArgumentParser(description=DescString_slabgen)
-            parseinputs_slabgen(parser)
-        #    elif 'chainb' in args:
-        #        parser = argparse.ArgumentParser(description=DescString_chainb)
-        #        parseinputs_chainb(parser)
-        #    elif 'autocorr' in args:
-        #        parser = argparse.ArgumentParser(description=DescString_autocorr)
-        #        parseinputs_autocorr(parser)
-        elif 'db' in args:
-            parser = argparse.ArgumentParser(description=DescString_db)
-            parseinputs_db(parser)
-        elif 'inputgen' in args:
-            parser = argparse.ArgumentParser(description=DescString_inputgen)
-            parseinputs_inputgen(parser)
-        elif 'postproc' in args:
-            parser = argparse.ArgumentParser(description=DescString_postproc)
-            parseinputs_postproc(parser)
-        elif 'random' in args:
-            parser = argparse.ArgumentParser(description=DescString_random)
-            parseinputs_random(parser)
-        elif 'binding' in args:
-            parser = argparse.ArgumentParser(description=DescString_binding)
-            parseinputs_binding(parser)
-        elif 'tsgen' in args:
-            parser = argparse.ArgumentParser(description=DescString_tsgen)
-            parseinputs_tsgen(parser)
-        elif 'customcore' in args:
-            parser = argparse.ArgumentParser(description=DescString_customcore)
-            parseinputs_customcore(parser)
-        elif 'naming' in args:
-            parser = argparse.ArgumentParser(description=DescString_naming)
-            parseinputs_naming(parser)
-        elif 'liganddict' in args:
-            # The formatter class allows for the display of new lines.
-            parser = argparse.ArgumentParser(description=DescString_ligdict,
-                                             formatter_class=argparse.RawTextHelpFormatter)
-            parseinputs_ligdict(parser)
-        else:
-            # print basic help
-            parser = argparse.ArgumentParser(description=DescString_basic,
-                                             formatter_class=argparse.RawDescriptionHelpFormatter)
-            parseinputs_basic(parser)
+        # So that parseinputs_* (which use parser.parse_args() → sys.argv[1:]) see the right args
+        # when main() was called with explicit args (e.g. from tests). Normal CLI has args=sys.argv[1:]
+        # already, so this is a no-op for that case.
+        _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
+        try:
+            if 'advanced' in args:
+                parser = argparse.ArgumentParser(description=DescString_advanced)
+                parseinputs_advanced(parser)
+            elif 'slabgen' in args:
+                parser = argparse.ArgumentParser(description=DescString_slabgen)
+                parseinputs_slabgen(parser)
+            elif 'db' in args:
+                parser = argparse.ArgumentParser(description=DescString_db)
+                parseinputs_db(parser)
+            elif 'inputgen' in args:
+                parser = argparse.ArgumentParser(description=DescString_inputgen)
+                parseinputs_inputgen(parser)
+            elif 'postproc' in args:
+                parser = argparse.ArgumentParser(description=DescString_postproc)
+                parseinputs_postproc(parser)
+            elif 'random' in args:
+                parser = argparse.ArgumentParser(description=DescString_random)
+                parseinputs_random(parser)
+            elif 'binding' in args:
+                parser = argparse.ArgumentParser(description=DescString_binding)
+                parseinputs_binding(parser)
+            elif 'tsgen' in args:
+                parser = argparse.ArgumentParser(description=DescString_tsgen)
+                parseinputs_tsgen(parser)
+            elif 'customcore' in args:
+                parser = argparse.ArgumentParser(description=DescString_customcore)
+                parseinputs_customcore(parser)
+            elif 'naming' in args:
+                parser = argparse.ArgumentParser(description=DescString_naming)
+                parseinputs_naming(parser)
+            elif 'liganddict' in args:
+                # The formatter class allows for the display of new lines.
+                parser = argparse.ArgumentParser(description=DescString_ligdict,
+                                                 formatter_class=argparse.RawTextHelpFormatter)
+                parseinputs_ligdict(parser)
+            else:
+                # print basic help
+                parser = argparse.ArgumentParser(description=DescString_basic,
+                                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+                parseinputs_basic(parser)
+        finally:
+            sys.argv = _argv_saved
         return
     elif len(args) == 0:
         print('No arguments supplied. GUI is no longer supported. Exiting.')
