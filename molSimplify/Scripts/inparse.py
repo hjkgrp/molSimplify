@@ -1220,14 +1220,16 @@ def parseinputs_advanced(*p):
     parser.add_argument(
         "-decoration_index",
         help="list of indices on each ligand to decorate (1-based). Examples: -decoration_index 7; "
-        "-decoration_index [7,9]; -decoration_index 7 9 for multiple ligands.",
+        "-decoration_index [7,9]; -decoration_index 7 9 for multiple ligands. "
+        "If using brackets on the command line, quote the value (e.g. -decoration_index '[7,9]') so the shell does not expand them.",
         action="store_true")  # decoration indexes, one list per ligand
     parser.add_argument(
         "-decoration",
         help="SMILES for each decoration (one per ligand or per site). Examples: "
         "molsimplify -core Fe -lig pyridine chloride -ligocc 4 2 -decoration Cl -decoration_index 7; "
-        "molsimplify -core Fe -lig pyridine chloride -ligocc 4 2 -decoration [Cl,CO] -decoration_index [7,9]; "
-        "molsimplify -core Fe -lig pyridine pyridine pyridine chloride -ligocc 1 1 2 2 -decoration Cl CO -decoration_index 7 9.",
+        "molsimplify -core Fe -lig pyridine chloride -ligocc 4 2 -decoration '[Cl,CO]' -decoration_index '[7,9]'; "
+        "molsimplify -core Fe -lig pyridine pyridine pyridine chloride -ligocc 1 1 2 2 -decoration Cl CO -decoration_index 7 9. "
+        "If using brackets, quote the value (e.g. -decoration '[Cl,CO]') so the shell does not expand them.",
         action="store_true")  # decoration, one list per ligand
     parser.add_argument(
         "-ligalign", help="smart alignment of ligands in the structure generation (default False)", default=False)
