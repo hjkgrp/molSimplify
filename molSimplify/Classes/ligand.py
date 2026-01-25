@@ -1366,7 +1366,7 @@ def ligand_assign_consistent(mol, liglist, ligdents, ligcons, loud=False,
                 print(('pair of atoms, angle', pair, angle))
             angle_list_eq.append(angle)
         opposite_lig = combos[np.argmax(angle_list_eq)][1]
-        others = list(set([1, 2, 3])-set([opposite_lig]))
+        others = sorted(set([1, 2, 3]) - set([opposite_lig]))
         eq_order = [0, others[0], opposite_lig, others[1]]
         # Reorder equatorial plane
         eq_con_list = [eq_con_list[x] for x in eq_order]

@@ -16,6 +16,7 @@ def test_six_monodentate(resource_path_root):
     # Expecting:
     # ax_ligands: ['water', 'carbonyl']
     # eq_ligands: ['hydrogensulfide', 'ammonia', 'hydrocyanide', 'formaldehyde']
+    # (equatorial order is deterministic via reorder step in ligand_assign_consistent)
 
     ax_formulas = [lig.mol.make_formula(latex=False) for lig in ax_ligand_list]
     assert ax_formulas == ['H2O', 'CO']
