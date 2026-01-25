@@ -12,6 +12,13 @@ from molSimplify.__main__ import main
 #        "fe_oct_2_water_6_s_5_conf_1.report")
 
 
+def test_help_no_error():
+    """Ensure 'molsimplify -h' (and --help) do not raise, e.g. UnboundLocalError on argparse."""
+    main(args=["-h"])
+    main(args=["--help"])
+    # If we get here, neither call raised.
+
+
 @pytest.mark.skip("Test for help not working yet.")
 def test_help(capsys):
     main(args=["--help",])

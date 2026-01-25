@@ -141,8 +141,6 @@ def main(args=None):
         # Extract only the subcommand args (strip the token 'build-complex')
         subargv = [a for a in args if a != 'build-complex']
 
-        import argparse
-
         def _maybe_none(x: str):
             return None if x is None or str(x).strip().lower() in {"none", "null", ""} else x
 
