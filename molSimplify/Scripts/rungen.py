@@ -496,7 +496,6 @@ def rungen(rundir, args: Namespace, chspfname=None, write_files: bool = True):
                 skip = True
             else:
                 pass
-                rootcheck = resolved
         elif rootcheck and (not os.path.isdir(rootcheck) or not args.checkdirt) and not skip:
             if args.debug:
                 print(f'rootcheck is {rootcheck}')
