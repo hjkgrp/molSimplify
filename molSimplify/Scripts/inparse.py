@@ -1145,7 +1145,7 @@ def parseinputs_basic(*p):
         "-custom_data_dir", help="optional custom data directory to override the path in ~/.molSimplify"
     )
     parser.add_argument(
-        "-smicat", help="connecting atoms corresponding to smiles. Indexing starts at 1 which is the default value as well. Use [] for multiple SMILES ligands, e.g., [1],[2]", action="store_true")
+        "-smicat", help="connecting atoms corresponding to smiles. Indexing starts at 1 which is the default value as well. Use [] for multiple SMILES ligands, e.g., [1],[2]. From the command line, wrap the value in single quotes (e.g. -smicat '[[1,4]]') so the shell does not expand brackets.", action="store_true")
     parser.add_argument(
         "-ligloc", help="force location of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
