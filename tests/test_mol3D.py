@@ -270,17 +270,6 @@ def test_add_bond():
     assert mol.get_graph_hash() == 'df21357bb47fe3aa2e062c7e3a3b573e'
 
 
-@pytest.mark.skip(reason='Mutating the state of an atom3D can not be detected '
-                         ' by the mol3D class')
-def test_mutating_atoms():
-    mol = mol3D()
-    mol.addAtom(atom3D(Sym='Fe'))
-    assert mol.findMetal() == [0]
-
-    mol.atoms[0].mutate('C')
-    assert mol.findMetal() == []
-
-
 def test_readfromxyz(resource_path_root):
     xyz_file = resource_path_root / "inputs" / "xyz_files" / "cr3_f6_optimization.xyz"
     mol = mol3D()

@@ -1,5 +1,4 @@
 import pytest
-from helperFuncs import compare_report_new
 from molSimplify.__main__ import main
 
 
