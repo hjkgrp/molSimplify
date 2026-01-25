@@ -15,6 +15,7 @@ from scipy.spatial import Delaunay
 from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.globalvars import globalvars
+from molSimplify.Scripts.io import resolve_existing_directory
 from molSimplify.Scripts.cellbuilder_tools import (cell_ffopt,
                                                    center_of_sym,
                                                    check_top_layer_correct,
@@ -1223,8 +1224,13 @@ def slab_module_supervisor(args, rootdir):
     if slab_gen:
         print('Generating a new slab...')
         print(rootdir)
-        if not os.path.exists(rootdir + 'slab'):
-            os.makedirs(rootdir + 'slab')
+        slab_dir = rootdir + 'slab'
+        if os.path.isdir(slab_dir):
+            resolved, skipped = resolve_existing_directory(
+                slab_dir, getattr(args, 'rprompt', False))
+            slab_dir = None if skipped else resolved
+        else:
+            os.makedirs(slab_dir)
 
         if cif_path:
             print('testing cif')
@@ -1233,7 +1239,8 @@ def slab_module_supervisor(args, rootdir):
                 print(f'cell vector from cif is {cell_vector}')
 
         # testing
-        unit_cell.writexyz(rootdir + 'slab/before_COB.xyz')
+        if slab_dir:
+            unit_cell.writexyz(slab_dir + '/before_COB.xyz')
         print('loaded')
 
         if miller_flag:
@@ -1244,8 +1251,8 @@ def slab_module_supervisor(args, rootdir):
             print('coords in old UC')
             for j in point_coefficients:
                 print(j)
-            if debug:
-                unit_cell.writexyz(rootdir + 'slab/step_0.xyz')
+            if debug and slab_dir:
+                unit_cell.writexyz(slab_dir + '/step_0.xyz')
                 print('\n\n')
                 print('cell vector was')
                 print(cell_vector[0])
@@ -1300,8 +1307,8 @@ def slab_module_supervisor(args, rootdir):
         super_cell = unit_to_super(unit_cell, cell_vector, duplication_vector)
         ####################################################################
 
-        if debug:
-            super_cell.writexyz(rootdir + 'slab/after_enlargement.xyz')
+        if debug and slab_dir:
+            super_cell.writexyz(slab_dir + '/after_enlargement.xyz')
 
         if debug:
             print('ext_dup vector is:')
@@ -1334,7 +1341,8 @@ def slab_module_supervisor(args, rootdir):
             print(ext_duplication_vector[0])
             print(ext_duplication_vector[1])
             print(ext_duplication_vector[2])
-            super_cell.writexyz(rootdir + 'slab/after_rotate.xyz')
+            if slab_dir:
+                super_cell.writexyz(slab_dir + '/after_rotate.xyz')
 
         if miller_index:  # get rid of the extra padding we added:
             super_cell = shave_under_layer(super_cell)
@@ -1343,8 +1351,8 @@ def slab_module_supervisor(args, rootdir):
             super_cell = shave_surface_layer(super_cell)
             super_cell = shave_surface_layer(super_cell)
             super_cell = zero_z(super_cell)
-        if debug:
-            super_cell.writexyz(rootdir + 'slab/after_millercut.xyz')
+        if debug and slab_dir:
+            super_cell.writexyz(slab_dir + '/after_millercut.xyz')
 
         # check angle between v1 and x for aligining nicely
         angle = -1*vecangle(cell_vector[0], [1, 0, 0])
@@ -1370,8 +1378,8 @@ def slab_module_supervisor(args, rootdir):
                 if counter > 20:
                     print('stopping after 10 cuts, zmax not obtained')
                     stop_flag = True
-        if debug:
-            super_cell.writexyz(rootdir + 'slab/after_size_control.xyz')
+        if debug and slab_dir:
+            super_cell.writexyz(slab_dir + '/after_size_control.xyz')
         # measure and recored slab vectors
         super_cell_vector = copy.copy(ext_duplication_vector)
 
@@ -1417,21 +1425,24 @@ def slab_module_supervisor(args, rootdir):
 
         #################################
         # write slab output
-        super_cell.writexyz(rootdir + 'slab/super' +
-                            ''.join([str(i) for i in duplication_vector])+'.xyz')
+        if slab_dir:
+            super_cell.writexyz(slab_dir + '/super' +
+                                ''.join([str(i) for i in duplication_vector])+'.xyz')
         print(f'\n Created a supercell in {rootdir}\n')
 
         # let's check if the periodicity is correct
         super_duper_cell = unit_to_super(super_cell, cell_vector, [2, 2, 1])
-        super_duper_cell.writexyz(rootdir + 'slab/SD.xyz')
+        if slab_dir:
+            super_duper_cell.writexyz(slab_dir + '/SD.xyz')
 
         # get some vapourspace
         final_cv = copy.deepcopy(super_cell_vector)
         final_cv[2][2] = float(final_cv[2][2]) + 20
         print('final cell vector, inc vapour space is :')
         print(final_cv)
-        write_periodic_mol3d_to_qe(
-            super_cell, final_cv, rootdir + 'slab/slab.in')
+        if slab_dir:
+            write_periodic_mol3d_to_qe(
+                super_cell, final_cv, slab_dir + '/slab.in')
     elif not slab_gen:  # placement only, skip slabbing!
         super_cell = unit_cell
         super_cell_vector = cell_vector
@@ -1462,19 +1473,25 @@ def slab_module_supervisor(args, rootdir):
                                                     control_angle=control_angle, align_ind=angle_control_partner, align_axis=angle_surface_axis,
                                                     duplicate=duplicate, number_of_placements=num_placements, coverage=coverage,
                                                     weighting_method='linear', weight=weight, masklength=num_surface_atoms, surface_atom_ind=surface_atom_ind, debug=debug)
-        if not os.path.exists(rootdir + 'loaded_slab'):
-            os.makedirs(rootdir + 'loaded_slab')
-        if freeze and not slab_gen:  # freezing happens at gen time
-            if isinstance(freeze, int):
-                print('freezing')
-                loaded_cell = freeze_bottom_n_layers(loaded_cell, freeze)
-            else:
-                loaded_cell = freeze_bottom_n_layers(loaded_cell, 1)
+        loaded_slab_dir = rootdir + 'loaded_slab'
+        if os.path.isdir(loaded_slab_dir):
+            resolved, skipped = resolve_existing_directory(
+                loaded_slab_dir, getattr(args, 'rprompt', False))
+            loaded_slab_dir = None if skipped else resolved
+        else:
+            os.makedirs(loaded_slab_dir)
+        if loaded_slab_dir:
+            if freeze and not slab_gen:  # freezing happens at gen time
+                if isinstance(freeze, int):
+                    print('freezing')
+                    loaded_cell = freeze_bottom_n_layers(loaded_cell, freeze)
+                else:
+                    loaded_cell = freeze_bottom_n_layers(loaded_cell, 1)
 
-        loaded_cell.writexyz(rootdir + 'loaded_slab/loaded.xyz')
-        super_duper_cell = unit_to_super(
-            loaded_cell, new_dup_vector, [2, 2, 1])
+            loaded_cell.writexyz(loaded_slab_dir + '/loaded.xyz')
+            super_duper_cell = unit_to_super(
+                loaded_cell, new_dup_vector, [2, 2, 1])
 
-        super_duper_cell.writexyz(rootdir + 'loaded_slab/SD.xyz')
-        write_periodic_mol3d_to_qe(
-            loaded_cell, new_dup_vector, rootdir + 'loaded_slab/loaded_slab.in')
+            super_duper_cell.writexyz(loaded_slab_dir + '/SD.xyz')
+            write_periodic_mol3d_to_qe(
+                loaded_cell, new_dup_vector, loaded_slab_dir + '/loaded_slab.in')
