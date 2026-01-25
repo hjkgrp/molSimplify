@@ -469,11 +469,10 @@ def main(args=None):
 
     ## print help ###
     if '-h' in args or '-H' in args or '--help' in args:
-        # When main() was called with explicit args (e.g. from tests), make the parser see those
-        # instead of the process argv. parseinputs_* use parser.parse_args() which reads sys.argv[1:].
-        _argv_saved = None
-        if args is not None:
-            _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
+        # So that parseinputs_* (which use parser.parse_args() → sys.argv[1:]) see the right args
+        # when main() was called with explicit args (e.g. from tests). Normal CLI has args=sys.argv[1:]
+        # already, so this is a no-op for that case.
+        _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
         try:
             if 'advanced' in args:
                 parser = argparse.ArgumentParser(description=DescString_advanced)
@@ -516,8 +515,7 @@ def main(args=None):
                                                  formatter_class=argparse.RawDescriptionHelpFormatter)
                 parseinputs_basic(parser)
         finally:
-            if _argv_saved is not None:
-                sys.argv = _argv_saved
+            sys.argv = _argv_saved
         return
     elif len(args) == 0:
         print('No arguments supplied. GUI is no longer supported. Exiting.')
