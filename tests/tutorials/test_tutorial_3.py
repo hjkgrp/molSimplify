@@ -13,3 +13,4 @@ def test_tutorial_3(tmp_path, resource_path_root):
     assert passLG
     assert passOG
     assert pass_report
+    assert hp.runtest_reportonly(tmp_path, resource_path_root, testName)
