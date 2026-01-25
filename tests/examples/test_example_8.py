@@ -12,4 +12,5 @@ def test_example_8(tmp_path, resource_path_root):
     assert passMLBL
     assert passLG
     assert passOG
-    assert pass_report, pass_qcin
+    assert pass_report
+    assert pass_qcin
