@@ -34,7 +34,7 @@ def test_tutorial_6_mno4(tmp_path, resource_path_root):
     threshOG = 2.0
     [passNumAtoms, passOG] = hp.runtest_molecule_on_slab(
         tmp_path, resource_path_root, testName, threshOG,
-        xyz_relative_paths={'-target_molecule': "../xyz_files/mno5.xyz"})
+        xyz_relative_paths={'-target_molecule': "../../xyz_files/mno5.xyz"})
     assert passNumAtoms
     assert passOG
 
@@ -46,6 +46,6 @@ def test_tutorial_6_fepo(tmp_path, resource_path_root):
     threshOG = 2.0
     [passNumAtoms, passOG] = hp.runtest_molecule_on_slab(
         tmp_path, resource_path_root, testName, threshOG,
-        xyz_relative_paths={'-target_molecule': "../xyz_files/fepo.xyz"})
+        xyz_relative_paths={'-target_molecule': "../../xyz_files/fepo.xyz"})
     assert passNumAtoms
     assert passOG

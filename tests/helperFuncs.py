@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import random
 import shutil
 import numpy as np
@@ -73,6 +74,39 @@ def get_parent_folder(test_name):
     # If get to this point in the code,
     # no parent folder was identified.
     raise Exception('No parent folder identified.')
+
+
+def get_in_files_subfolder(name: str) -> str:
+    """
+    Return the in_files subfolder for a given test name (e.g. tutorial_5, example_1_noff).
+    Used to organize inputs/in_files into tutorial_2/, tutorial_5/, example_1/, etc.
+    """
+    stem = name.split(".", 1)[0] if "." in name else name
+    lower = stem.lower()
+    if lower.startswith("tutorial_"):
+        m = re.match(r"tutorial_(\d+)(?:_|$)", lower)
+        if m:
+            return "tutorial_" + m.group(1)
+        return "tutorial"
+    if lower.startswith("example_"):
+        parts = lower.split("_", 2)
+        if len(parts) >= 2:
+            return "example_" + parts[1]
+        return "example"
+    return get_parent_folder(stem)
+
+
+def get_ref_subfolder(parent_folder: str, name: str) -> str:
+    """
+    Return the ref subfolder under refs/<parent_folder>/ for a given test name.
+    For tutorial/example this is e.g. tutorial_5, example_1; for others it is ''.
+    """
+    stem = name.split(".", 1)[0] if "." in name else name
+    if parent_folder == "tutorial":
+        return get_in_files_subfolder(stem)
+    if parent_folder == "example":
+        return get_in_files_subfolder(stem)
+    return ""
 
 
 @contextmanager
@@ -722,7 +756,8 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
     # Set seeds to eliminate randomness from test results.
     random.seed(seed)
     np.random.seed(seed)
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, myjobdir = parse4test(infile, tmp_path)
     args = ['main.py', '-i', newinfile]
     with working_directory(tmp_path):
@@ -748,9 +783,17 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
             output_qcin = alt_qcin
 
     parent_folder = get_parent_folder(name)
-    ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
-    ref_report = resource_path_root / "refs" / parent_folder / f"{name}.report"
-    ref_qcin = resource_path_root / "refs" / parent_folder / f"{name}.qcin"
+    ref_sub = get_ref_subfolder(parent_folder, name)
+    ref_base = resource_path_root / "refs" / parent_folder
+    ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+
+    def _ref_path(fname):
+        p = ref_root / fname
+        return p if p.exists() else ref_base / fname
+
+    ref_xyz = _ref_path(f"{name}.xyz")
+    ref_report = _ref_path(f"{name}.report")
+    ref_qcin = _ref_path(f"{name}.qcin")
 
     print("Test input file: ", newinfile)
     print("Test output files are generated in ", myjobdir)
@@ -828,14 +871,22 @@ def runtest_multispin(
         pass_qcin : bool
             True if each spin's QC input file matches its reference.
     """
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, _ = parse4test(infile, tmp_path, skip_jobdir=True)
     args = ['main.py', '-i', newinfile]
     with working_directory(tmp_path):
         startgen(args, False, False)
 
     parent_folder = get_parent_folder(name)
-    ref_root = resource_path_root / "refs" / parent_folder
+    ref_sub = get_ref_subfolder(parent_folder, name)
+    ref_base = resource_path_root / "refs" / parent_folder
+    ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+
+    def _ref_path(fname):
+        p = ref_root / fname
+        return p if p.exists() else ref_base / fname
+
     search_root = Path(tmp_path)
 
     for i, sp in enumerate(expected_spins):
@@ -844,9 +895,9 @@ def runtest_multispin(
         out_xyz = next(p for p in search_root.rglob('*.xyz') if spin_subdir in p.parts)
         out_report = out_xyz.parent / (out_xyz.stem + '.report')
         out_qcin = out_xyz.parent / 'terachem_input'
-        ref_xyz = ref_root / f"{name}_s{sp}.xyz"
-        ref_report = ref_root / f"{name}_s{sp}.report"
-        ref_qcin = ref_root / f"{name}_s{sp}.qcin"
+        ref_xyz = _ref_path(f"{name}_s{sp}.xyz")
+        ref_report = _ref_path(f"{name}_s{sp}.report")
+        ref_qcin = _ref_path(f"{name}_s{sp}.qcin")
         pass_xyz = compareGeo(str(out_xyz), str(ref_xyz), threshMLBL, threshLG, threshOG)
         pr = compare_report_new(str(out_report), str(ref_report))
         pq = compare_qc_input(str(out_qcin), str(ref_qcin))
@@ -891,7 +942,8 @@ def runtest_slab(tmp_path, resource_path_root, name, threshOG, extra_files=None)
             Verdict on whether the geometries of the
             output and reference are roughly equal overall.
     """
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, _ = parse4test(infile, tmp_path)
     if extra_files is not None:
         for file_name in extra_files:
@@ -902,7 +954,11 @@ def runtest_slab(tmp_path, resource_path_root, name, threshOG, extra_files=None)
         startgen(args, False, False)
     output_xyz = tmp_path / 'slab' / 'super332.xyz'
     parent_folder = get_parent_folder(name)
-    ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
+    ref_base = resource_path_root / "refs" / parent_folder
+    ref_sub = get_ref_subfolder(parent_folder, name)
+    ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+    _ref_path = lambda fname: ref_root / fname if (ref_root / fname).exists() else ref_base / fname
+    ref_xyz = _ref_path(f"{name}.xyz")
     print(f"Output xyz file: {output_xyz}")
     pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0,
                           threshOG=threshOG, slab=True)
@@ -930,7 +986,8 @@ def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra
             Extra files to be copied to the test directory.
         xyz_relative_paths : dict, optional
             Override paths for -unit_cell and -target_molecule, relative to
-            inputs/in_files (e.g. "../xyz_files/slab.xyz").
+            the in file's directory (e.g. "../../xyz_files/slab.xyz" from
+            in_files/tutorial_6/).
             Default: slab.xyz and co.xyz.
 
     Returns
@@ -943,13 +1000,14 @@ def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra
             output and reference are roughly equal overall.
     """
     default_paths = {
-        '-unit_cell': "../xyz_files/slab.xyz",
-        '-target_molecule': "../xyz_files/co.xyz",
+        '-unit_cell': "../../xyz_files/slab.xyz",
+        '-target_molecule': "../../xyz_files/co.xyz",
     }
     extra_args = default_paths if xyz_relative_paths is None else {
         **default_paths, **xyz_relative_paths
     }
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, _ = parse4test(infile, tmp_path, extra_args=extra_args)
     if extra_files is not None:
         for file_name in extra_files:
@@ -960,7 +1018,11 @@ def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra
         startgen(args, False, False)
     output_xyz = tmp_path / "loaded_slab" / "loaded.xyz"
     parent_folder = get_parent_folder(name)
-    ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
+    ref_base = resource_path_root / "refs" / parent_folder
+    ref_sub = get_ref_subfolder(parent_folder, name)
+    ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+    _ref_path = lambda fname: ref_root / fname if (ref_root / fname).exists() else ref_base / fname
+    ref_xyz = _ref_path(f"{name}.xyz")
     print(f"Output xyz file: {output_xyz}")
     pass_xyz = compareGeo(output_xyz, ref_xyz, threshMLBL=0, threshLG=0,
                           threshOG=threshOG, slab=True)
@@ -1063,7 +1125,8 @@ def runtestNoFF(tmp_path, resource_path_root, name, threshMLBL, threshLG, thresh
             Verdict on whether the output and reference
             qc input files are equal.
     """
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, myjobdir = parse4testNoFF(infile, tmp_path)
     [passNumAtoms, passMLBL, passLG, passOG, pass_report,
      pass_qcin] = [True, True, True, True, True, True]
@@ -1082,9 +1145,13 @@ def runtestNoFF(tmp_path, resource_path_root, name, threshMLBL, threshLG, thresh
         if 'molcas' in molsim_data.lower():
             output_qcin = myjobdir + '/molcas.input'
         parent_folder = get_parent_folder(name)
-        ref_xyz = resource_path_root / "refs" / parent_folder / f"{newname}.xyz"
-        ref_report = resource_path_root / "refs" / parent_folder / f"{newname}.report"
-        ref_qcin = resource_path_root / "refs" / parent_folder / f"{name}.qcin"
+        ref_base = resource_path_root / "refs" / parent_folder
+        ref_sub = get_ref_subfolder(parent_folder, name)
+        ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+        _ref_path = lambda fname: ref_root / fname if (ref_root / fname).exists() else ref_base / fname
+        ref_xyz = _ref_path(f"{newname}.xyz")
+        ref_report = _ref_path(f"{newname}.report")
+        ref_qcin = _ref_path(f"{name}.qcin")
         print("Test input file: ", newinfile)
         print("Test output files are generated in ", myjobdir)
         print("Output xyz file: ", output_xyz)
@@ -1129,7 +1196,8 @@ def runtest_reportonly(tmp_path, resource_path_root, name, seed=31415):
     # Set seeds to eliminate randomness from test results.
     random.seed(seed)
     np.random.seed(seed)
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    in_sub = get_in_files_subfolder(name)
+    infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     # Copy the input file to the temporary folder.
     shutil.copy(infile, tmp_path/f'{name}_reportonly.in')
     # Add the report only flag.
@@ -1143,7 +1211,11 @@ def runtest_reportonly(tmp_path, resource_path_root, name, seed=31415):
         startgen(args, False, False)
     output_report = myjobdir + '/' + name + '_reportonly.report'
     parent_folder = get_parent_folder(name)
-    ref_report = resource_path_root / "refs" / parent_folder / f"{name}.report"
+    ref_base = resource_path_root / "refs" / parent_folder
+    ref_sub = get_ref_subfolder(parent_folder, name)
+    ref_root = (ref_base / ref_sub) if ref_sub else ref_base
+    _ref_path = lambda fname: ref_root / fname if (ref_root / fname).exists() else ref_base / fname
+    ref_report = _ref_path(f"{name}.report")
     # Copy the reference report to the temporary folder.
     shutil.copy(ref_report, tmp_path/f'{name}_ref.report')
     with open(tmp_path/f'{name}_ref.report', 'r') as f:
