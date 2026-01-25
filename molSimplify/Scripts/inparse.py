@@ -1159,7 +1159,7 @@ def parseinputs_basic(*p):
         "-custom_data_dir", help="optional custom data directory to override the path in ~/.molSimplify"
     )
     parser.add_argument(
-        "-smicat", help="connecting atoms corresponding to smiles. Indexing starts at 1 which is the default value as well. Use [] for multiple SMILES ligands, e.g., [1],[2]. From the command line, wrap the value in single quotes (e.g. -smicat '[[1,4]]') so the shell does not expand brackets.", action="store_true")
+        "-smicat", help="connecting atoms for SMILES ligands (1-based). Examples: -smicat 1 (single connection point); -smicat '[[1,4],[2,5]]' for multiple ligands or multiple connection points on one ligand. Brackets are used for those cases; quote the value on the command line so the shell does not expand them.", action="store_true")
     parser.add_argument(
         "-ligloc", help="force location of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
@@ -1196,10 +1196,22 @@ def parseinputs_advanced(*p):
         "-calccharge", help="automatically calculate net complex charge. By default this is ON", default=True)
     parser.add_argument(
         "-genall", help="generate complex both with and without FF opt, default False", action="store_true")  # geometry
-    parser.add_argument("-decoration_index", help="list of indices on each ligand to decorate",
-                        action="store_true")  # decoration indexes, one list per ligand
-    parser.add_argument("-decoration", help="list of SMILES for each decoratation",
-                        action="store_true")  # decoration, one list ligand
+    parser.add_argument(
+        "-decoration_index",
+        help="list of indices on each ligand to decorate (1-based). Examples:\n"
+        "  -decoration_index 7\n"
+        "  -decoration_index [7,9]  (quote in shell: -decoration_index '[7,9]')\n"
+        "  -decoration_index 7 9 for multiple ligands.\n"
+        "If using brackets on the command line, quote the value so the shell does not expand them.",
+        action="store_true")  # decoration indexes, one list per ligand
+    parser.add_argument(
+        "-decoration",
+        help="SMILES for each decoration (one per ligand or per site). Examples:\n"
+        "  -decoration Cl -decoration_index 7\n"
+        "  -decoration '[Cl,CO]' -decoration_index '[7,9]'\n"
+        "  -decoration Cl CO -decoration_index 7 9\n"
+        "If using brackets on the command line, quote the value (e.g. -decoration '[Cl,CO]') so the shell does not expand them.",
+        action="store_true")  # decoration, one list per ligand
     parser.add_argument(
         "-ligalign", help="smart alignment of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
