@@ -1,6 +1,11 @@
+import os
+
 import pytest
 
 import helperFuncs as hp
+
+# Skip slow test in CI (takes >10s); still runs when pytest is invoked locally.
+_IN_CI = os.environ.get("CI", "").lower() in ("true", "1")
 
 
 # Tutorial 6: place_on_slab — single CO on Pd slab (1co case).
@@ -34,7 +39,7 @@ def test_tutorial_6_mno4(tmp_path, resource_path_root):
     assert passOG
 
 
-@pytest.mark.skip(reason="takes >10s")
+@pytest.mark.skipif(_IN_CI, reason="takes >10s, skipped in CI")
 def test_tutorial_6_fepo(tmp_path, resource_path_root):
     """Tutorial 6 variant: FePO fragment (fepo.xyz) on Pd slab, object_align Fe."""
     testName = "tutorial_6_fepo"
