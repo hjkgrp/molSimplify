@@ -3,7 +3,7 @@ import os
 import random
 import shutil
 import numpy as np
-from typing import List
+from typing import List, Tuple
 from molSimplify.Scripts.geometry import kabsch, distance
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import (dict_oneempty_check_st,
@@ -453,7 +453,8 @@ def jobdir(infile):
     return mydir
 
 
-def parse4test(infile, tmp_path: Path, extra_args: Dict[str, str] = {}) -> str:
+def parse4test(infile, tmp_path: Path, extra_args: Dict[str, str] = {},
+               skip_jobdir: bool = False) -> str:
     """
     Parse the in file and rewrite it,
     taking into account extra_args.
@@ -466,6 +467,9 @@ def parse4test(infile, tmp_path: Path, extra_args: Dict[str, str] = {}) -> str:
             Pre-defined pytest fixture. Temporary folder path to run the test.
         extra_args : dict
             Extra arguments to be written to the new job in file.
+        skip_jobdir : bool
+            If True, do not append -jobdir or -name (e.g. for multispin runs
+            that need spin subdirs S1, S5, ... under rundir).
 
     Returns
     -------
@@ -495,15 +499,15 @@ def parse4test(infile, tmp_path: Path, extra_args: Dict[str, str] = {}) -> str:
             abs_smi = os.path.dirname(infile) + '/' + smi
             newdata += "-lig " + abs_smi + "\n"
     newdata += f"-rundir {tmp_path}\n"
-    newdata += "-jobdir " + name + "\n"
+    if not skip_jobdir:
+        newdata += "-jobdir " + name + "\n"
+        newdata += "-name " + name + "\n"
     print('=====')
-    print(newdata)
-    newdata += "-name " + name + "\n"
     print(newdata)
     with open(newname, 'w') as fi:
         fi.write(newdata)
     print(f"Input file parsed for test is located: {newname}")
-    jobdir = str(tmp_path / name)
+    jobdir = str(tmp_path) if skip_jobdir else str(tmp_path / name)
     return newname, jobdir
 
 
@@ -754,6 +758,100 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
     print("Reference qc input file: ", ref_qcin)
     print("Test qc input file:", output_qcin)
     print("Qc input status:", pass_qcin)
+    return passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin
+
+
+def runtest_multispin(
+    tmp_path: Path,
+    resource_path_root: Path,
+    name: str,
+    expected_spins: List[str],
+    threshMLBL: float,
+    threshLG: float,
+    threshOG: float,
+) -> Tuple[bool, bool, bool, bool, bool, bool]:
+    """
+    Run molSimplify with multiple spin states and assess outputs like runtest.
+
+    Runs structure generation from the input file {name}.in (with -spin listing
+    several multiplicities, e.g. 1 5). The jobdir then contains one subdir per
+    spin (S1, S5, ...), each with generated .xyz and .report files. Each spin's
+    output is compared to references in resource_path_root / "refs" /
+    parent_folder, using the same geometry and report checks as runtest. Pass
+    flags are combined across all spins (all must pass).
+
+    Parameters
+    ----------
+        tmp_path : pathlib.PosixPath
+            Pre-defined pytest fixture. Temporary folder path to run the test.
+        resource_path_root : pathlib.PosixPath
+            Variable from pytest-resource-path. Points to
+            molSimplify/tests/testresources.
+        name : str
+            Test name; input file is inputs/in_files/{name}.in, refs live under
+            refs / get_parent_folder(name).
+        expected_spins : list of str
+            Spin multiplicities that were requested (e.g. ['1', '5']). Used to
+            locate subdirs S1, S5, ... under the jobdir.
+        threshMLBL : float
+            Tolerance for metal–ligand bond length comparison.
+        threshLG : float
+            RMSD tolerance for ligand geometry comparison.
+        threshOG : float
+            RMSD tolerance for overall geometry comparison.
+
+    Returns
+    -------
+        passNumAtoms : bool
+            True if each spin's structure has the same number of atoms as its
+            reference.
+        passMLBL : bool
+            True if each spin's M–L bond lengths match the reference within
+            threshMLBL.
+        passLG : bool
+            True if each spin's ligand geometries match the references within
+            threshLG.
+        passOG : bool
+            True if each spin's overall geometry matches the reference within
+            threshOG.
+        pass_report : bool
+            True if each spin's report matches its reference.
+        pass_qcin : bool
+            True if each spin's QC input file matches its reference.
+    """
+    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    newinfile, _ = parse4test(infile, tmp_path, skip_jobdir=True)
+    args = ['main.py', '-i', newinfile]
+    with working_directory(tmp_path):
+        startgen(args, False, False)
+
+    parent_folder = get_parent_folder(name)
+    ref_root = resource_path_root / "refs" / parent_folder
+    search_root = Path(tmp_path)
+
+    for i, sp in enumerate(expected_spins):
+        spin_subdir = 'S' + sp
+        # xyz may be in S1/.../file.xyz or S1/file.xyz (conf subdirs)
+        out_xyz = next(p for p in search_root.rglob('*.xyz') if spin_subdir in p.parts)
+        out_report = out_xyz.parent / (out_xyz.stem + '.report')
+        out_qcin = out_xyz.parent / 'terachem_input'
+        ref_xyz = ref_root / out_xyz.name
+        ref_report = ref_root / (out_xyz.stem + '.report')
+        ref_qcin = ref_root / (out_xyz.stem + '.qcin')
+        pass_xyz = compareGeo(str(out_xyz), str(ref_xyz), threshMLBL, threshLG, threshOG)
+        pr = compare_report_new(str(out_report), str(ref_report))
+        pq = compare_qc_input(str(out_qcin), str(ref_qcin))
+        if i == 0:
+            passNumAtoms, passMLBL, passLG, passOG = pass_xyz
+            pass_report = pr
+            pass_qcin = pq
+        else:
+            passNumAtoms = passNumAtoms and pass_xyz[0]
+            passMLBL = passMLBL and pass_xyz[1]
+            passLG = passLG and pass_xyz[2]
+            passOG = passOG and pass_xyz[3]
+            pass_report = pass_report and pr
+            pass_qcin = pass_qcin and pq
     return passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin
 
 
