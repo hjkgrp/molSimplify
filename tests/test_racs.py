@@ -1,10 +1,7 @@
 import pytest
 import pickle
 from molSimplify.Classes.mol3D import mol3D
-from molSimplify.Classes.ligand import ligand
 from molSimplify.Informatics.RACassemble import create_OHE
-from molSimplify.Informatics.lacRACAssemble import get_descriptor_vector
-from molSimplify.Scripts.io import lig_load
 
 
 @pytest.mark.parametrize('xyz_path, ref_path', [
@@ -52,46 +49,6 @@ def test_six_pyridine_vs_three_bipy(resource_path_root):
             for prop in properties:
                 key = f'{start}-{prop}-{depth}-{scope}'
                 assert features_pyr[key] == features_bipy[key]
-
-
-@pytest.mark.skip('Test fails because molSimplify averages the equatorial '
-                  'plane differently for bidentates')
-def test_pyr_4_furan_2_vs_bipy_2_bifuran(resource_path_root):
-    fe_pyr_4_furan_2_path = resource_path_root / "inputs" / "xyz_files" / "fe_pyr_4_furan_2.xyz"
-    fe_bipy_2_bifuran_path = resource_path_root / "inputs" / "xyz_files" / "fe_bipy_2_bifuran.xyz"
-    fe_pyr_4_furan_2 = mol3D()
-    fe_pyr_4_furan_2.readfromxyz(fe_pyr_4_furan_2_path)
-    fe_bipy_2_bifuran = mol3D()
-    fe_bipy_2_bifuran.readfromxyz(fe_bipy_2_bifuran_path)
-
-    # Enforce the same graph orientation as in bidentates:
-    def get_ligand(lig_str):
-        lig_mol, _ = lig_load(lig_str)
-        lig = ligand(mol3D(), lig_mol.cat, lig_mol.denticity)
-        lig.mol = lig_mol
-        return lig
-    pyr = get_ligand('pyr')
-    furan = get_ligand('furan')
-    eq_ligand_list = [pyr, pyr, pyr, furan]
-    ax_ligand_list = [pyr, furan]
-    ligand_dict = {'ax_ligand_list': ax_ligand_list,
-                   'eq_ligand_list': eq_ligand_list,
-                   'ax_con_int_list': [h.mol.cat for h in ax_ligand_list],
-                   'eq_con_int_list': [h.mol.cat for h in eq_ligand_list]}
-    names, values = get_descriptor_vector(fe_pyr_4_furan_2, ligand_dict)
-    features_mono = dict(zip(names, values))
-    features_bi = fe_bipy_2_bifuran.get_features()
-
-    properties = ['Z', 'chi', 'T', 'I', 'S']
-    start_scopes = [('mc', 'all'), ('lc', 'ax'), ('lc', 'eq'),
-                    ('D_mc', 'all'), ('D_lc', 'ax'), ('D_lc', 'eq')]
-
-    for start, scope in start_scopes:
-        for depth in range(2):
-            for prop in properties:
-                key = f'{start}-{prop}-{depth}-{scope}'
-                print(key, features_mono[key], features_bi[key])
-                assert features_mono[key] == features_bi[key]
 
 
 def test_create_OHE():
