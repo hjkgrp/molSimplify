@@ -738,6 +738,15 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
     if 'molcas' in molsim_data.lower():
         output_qcin = myjobdir + '/molcas.input'
 
+    # qcgen writes name.in when -name is set (parse4test sets it)
+    if (
+        output_qcin == myjobdir + '/terachem_input'
+        and not os.path.exists(output_qcin)
+    ):
+        alt_qcin = myjobdir + '/' + name + '.in'
+        if os.path.exists(alt_qcin):
+            output_qcin = alt_qcin
+
     parent_folder = get_parent_folder(name)
     ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
     ref_report = resource_path_root / "refs" / parent_folder / f"{name}.report"
@@ -1093,6 +1102,46 @@ def runtestNoFF(tmp_path, resource_path_root, name, threshMLBL, threshLG, thresh
         print("Test qc input file: ", output_qcin)
         print("Qc input status: ", pass_qcin)
     return passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin
+
+
+def runtest_nogeo(tmp_path, resource_path_root, name, seed=31415):
+    """
+    Run job and check only atom count, report, and QC input (no geometry/LG/MLBL).
+
+    Use when full geometry comparison is unreliable (e.g. ligand partitioning
+    differs between runs). Returns (passNumAtoms, pass_report, pass_qcin).
+    """
+    random.seed(seed)
+    np.random.seed(seed)
+    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    newinfile, myjobdir = parse4test(infile, tmp_path)
+    args = ['main.py', '-i', newinfile]
+    with working_directory(tmp_path):
+        startgen(args, False, False)
+    output_xyz = myjobdir + '/' + name + '.xyz'
+    output_report = myjobdir + '/' + name + '.report'
+    output_qcin = myjobdir + '/terachem_input'
+    with open(newinfile, 'r') as f_in:
+        molsim_data = f_in.read()
+    if 'orca' in molsim_data.lower():
+        output_qcin = myjobdir + '/orca.in'
+    if 'molcas' in molsim_data.lower():
+        output_qcin = myjobdir + '/molcas.input'
+    if (
+        output_qcin == myjobdir + '/terachem_input'
+        and not os.path.exists(output_qcin)
+    ):
+        alt_qcin = myjobdir + '/' + name + '.in'
+        if os.path.exists(alt_qcin):
+            output_qcin = alt_qcin
+    parent_folder = get_parent_folder(name)
+    ref_xyz = resource_path_root / "refs" / parent_folder / f"{name}.xyz"
+    ref_report = resource_path_root / "refs" / parent_folder / f"{name}.report"
+    ref_qcin = resource_path_root / "refs" / parent_folder / f"{name}.qcin"
+    passNumAtoms = compareNumAtoms(output_xyz, str(ref_xyz))
+    pass_report = compare_report_new(output_report, str(ref_report))
+    pass_qcin = compare_qc_input(output_qcin, str(ref_qcin))
+    return passNumAtoms, pass_report, pass_qcin
 
 
 def runtest_reportonly(tmp_path, resource_path_root, name, seed=31415):

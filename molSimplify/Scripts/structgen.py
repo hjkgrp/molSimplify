@@ -2732,14 +2732,19 @@ def mcomplex(args: Namespace, ligs: List[str], ligoc: List[int], smart_generatio
                     print('**************************')
             totlig += denticity
             ligsused += 1
-    # perform FF optimization if requested
-    if 'a' in args.ffoption or args.ff_final_opt:
+    # perform FF optimization if requested, or when decorations were used (to relieve clashes)
+    has_decoration = bool(args.decoration) and any(
+        d for d in args.decoration if d
+    )
+    if 'a' in args.ffoption or args.ff_final_opt or has_decoration:
         if args.debug:
             print('Performing final FF opt')
         # idxes
         midx = core3D.findMetal()[0]
-        # If args.ff_final_opt is None (default) use args.ff
+        # If args.ff_final_opt is None (default) use args.ff; with decoration-driven opt use uff if ff off
         ff = args.ff_final_opt or args.ff
+        if not ff and has_decoration:
+            ff = 'uff'
         core3D, enc = ffopt(ff=ff,
                             mol=core3D,
                             connected=connected,

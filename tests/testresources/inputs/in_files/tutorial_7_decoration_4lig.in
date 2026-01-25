@@ -1,0 +1,9 @@
+# Tutorial 7 four ligand types: Fe + 1× 2× 2× pyridine + 2× chloride, decorate 1st with Cl at 7, 2nd with CO at 9
+-core Fe
+-lig pyridine pyridine pyridine chloride
+-ligocc 1 1 2 2
+-decoration Cl CO
+-decoration_index 7 9
+-geometry oct
+-coord 6
+-oxstate 2

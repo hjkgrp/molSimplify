@@ -1,0 +1,16 @@
+# file created with molSimplify
+run energy
+timings yes
+maxit 500
+scrdir ./scr
+method ub3lyp
+basis lacvps_ecp
+spinmult 5
+charge 0
+gpus 1
+scf diis+a
+levelshift yes
+levelshiftvala 0.25
+levelshiftvalb 0.25
+coordinates tutorial_7_decoration_multi.xyz
+end
