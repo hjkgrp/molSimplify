@@ -835,9 +835,9 @@ def runtest_multispin(
         out_xyz = next(p for p in search_root.rglob('*.xyz') if spin_subdir in p.parts)
         out_report = out_xyz.parent / (out_xyz.stem + '.report')
         out_qcin = out_xyz.parent / 'terachem_input'
-        ref_xyz = ref_root / out_xyz.name
-        ref_report = ref_root / (out_xyz.stem + '.report')
-        ref_qcin = ref_root / (out_xyz.stem + '.qcin')
+        ref_xyz = ref_root / f"{name}_s{sp}.xyz"
+        ref_report = ref_root / f"{name}_s{sp}.report"
+        ref_qcin = ref_root / f"{name}_s{sp}.qcin"
         pass_xyz = compareGeo(str(out_xyz), str(ref_xyz), threshMLBL, threshLG, threshOG)
         pr = compare_report_new(str(out_report), str(ref_report))
         pq = compare_qc_input(str(out_qcin), str(ref_qcin))
