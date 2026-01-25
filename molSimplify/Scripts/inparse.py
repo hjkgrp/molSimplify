@@ -706,45 +706,24 @@ def parseinputfile(args, inputfile_str=None):
                     args.sminame = l[1:]
             if '-smicat' in line:
                 args.smicat = []
-                raw = line.split('smicat', 1)[1].replace(' ', '')  # noqa: E741
-                # Bracket-free form (no quoting needed in zsh): "1,4" or "1,4;2,5"
-                if not raw.lstrip().startswith('['):
-                    for part in raw.split(';'):
-                        part = part.strip()
-                        if not part:
-                            continue
-                        lloc = []
-                        for ll in part.split(','):
-                            ll = ll.strip()
-                            try:
-                                if ll.lower() != 'pi':
-                                    lloc.append(int(ll) - 1)
-                                else:
-                                    lloc.append(ll.lower())
-                            except ValueError:
-                                print(f'ERROR: smicat processing failed at {ll}')
-                                print('Use 1-based indices and "pi", e.g. -smicat 1,4 or -smicat 1,4;2,5')
-                                break
-                        else:
-                            args.smicat.append(lloc)
-                else:
-                    # Bracket form: [[1,4]] or [[1,4],[2,5]]
-                    l = raw.split('],[')  # noqa: E741
-                    for smicats in l:
-                        smicats = smicats.strip('[]')
-                        smicats = smicats.split(',')
-                        lloc = list()
-                        for ll in smicats:
-                            try:
-                                if ll.lower() != 'pi':
-                                    lloc.append(int(ll)-1)
-                                else:
-                                    lloc.append(ll.lower())
-                            except ValueError:
-                                print(f'ERROR: smicat processing failed at {ll}')
-                                print(
-                                    'Please use integers or  "pi" and divide by smiles ligand using [],[]')
-                        args.smicat.append(lloc)
+                l = line.split('smicat', 1)[1]  # noqa: E741
+                l = l.replace(' ', '')  # noqa: E741
+                l = l.split('],[')  # noqa: E741
+                for smicats in l:
+                    smicats = smicats.strip('[]')
+                    smicats = smicats.split(',')
+                    lloc = list()
+                    for ll in smicats:
+                        try:
+                            if ll.lower() != 'pi':
+                                lloc.append(int(ll)-1)
+                            else:
+                                lloc.append(ll.lower())
+                        except ValueError:
+                            print(f'ERROR: smicat processing failed at {ll}')
+                            print(
+                                'Please use integers or  "pi" and divide by smiles ligand using [],[]')
+                    args.smicat.append(lloc)
 
                 print(f'final smicat set to {args.smicat}')
             if (l[0] == '-nconfs' and len(l[1:]) > 0):
@@ -1180,7 +1159,7 @@ def parseinputs_basic(*p):
         "-custom_data_dir", help="optional custom data directory to override the path in ~/.molSimplify"
     )
     parser.add_argument(
-        "-smicat", help="connecting atoms for SMILES ligands (1-based). Bracket-free: -smicat 1,4 or -smicat 1,4;2,5 for multiple ligands. If using brackets on the command line (e.g. [[1,4],[2,5]]), quote: -smicat '[[1,4],[2,5]]'.", action="store_true")
+        "-smicat", help="connecting atoms for SMILES ligands (1-based). Examples: -smicat 1 (single connection point); -smicat '[[1,4],[2,5]]' for multiple ligands or multiple connection points on one ligand. Brackets are used for those cases; quote the value on the command line so the shell does not expand them.", action="store_true")
     parser.add_argument(
         "-ligloc", help="force location of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
