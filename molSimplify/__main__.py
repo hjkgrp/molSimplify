@@ -159,6 +159,10 @@ def main(args=None):
         _run_help(args)
         return
 
+    if len(args) == 0:
+        print('No arguments supplied. GUI is no longer supported. Exiting.')
+        return
+
     # Issue a call to test TF, this is needed to keep
     # ordering between openbabel and TF calls consistent
     # on some systems
@@ -519,10 +523,8 @@ def main(args=None):
         # ---------------------- end subcommand: build-complex ----------------------
 
 
-    if len(args) == 0:
-        print('No arguments supplied. GUI is no longer supported. Exiting.')
     ## if input file is specified ###
-    elif '-i' in args:
+    if '-i' in args:
         print('Input file detected, reading arguments from input file.')
         print('molSimplify is starting!')
         # run from commandline
