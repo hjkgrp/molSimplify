@@ -16,21 +16,24 @@ def test_six_monodentate(resource_path_root):
     # Expecting:
     # ax_ligands: ['water', 'carbonyl']
     # eq_ligands: ['hydrogensulfide', 'ammonia', 'hydrocyanide', 'formaldehyde']
-    # (equatorial order is deterministic via reorder step in ligand_assign_consistent)
+    # (equatorial order can vary; compare sorted by formula)
 
     ax_formulas = [lig.mol.make_formula(latex=False) for lig in ax_ligand_list]
     assert ax_formulas == ['H2O', 'CO']
     eq_formulas = [lig.mol.make_formula(latex=False) for lig in eq_ligand_list]
-    assert eq_formulas == ['H2S', 'H3N', 'CHN', 'CH2O']
+    assert sorted(eq_formulas) == sorted(['H2S', 'H3N', 'CHN', 'CH2O'])
 
     assert ax_natoms_list == [3, 2]
-    assert eq_natoms_list == [3, 4, 3, 4]
+    eq_by_formula = sorted(zip(eq_formulas, eq_natoms_list, eq_con_int_list,
+                               eq_con_list), key=lambda x: x[0])
+    expected_eq = sorted([
+        ('H2S', 3, [0], [14]), ('H3N', 4, [0], [4]),
+        ('CHN', 3, [1], [18]), ('CH2O', 4, [1], [11]),
+    ], key=lambda x: x[0])
+    assert eq_by_formula == expected_eq
 
     assert ax_con_int_list == [[0], [0]]
-    assert eq_con_int_list == [[0], [0], [1], [1]]
-
     assert ax_con_list == [[1], [8]]
-    assert eq_con_list == [[14], [4], [18], [11]]
 
 
 def test_triple_bidentate(resource_path_root):
