@@ -101,20 +101,72 @@ DescString_naming = 'Printing custom filename help.'
 # Ligand dictionary help description string
 DescString_ligdict = 'Printing ligand dictionary help.'
 
+
+def _run_help(args):
+    """Print help and return; used for -h/--help so TensorFlow is never loaded."""
+    _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
+    try:
+        if 'advanced' in args:
+            parser = argparse.ArgumentParser(description=DescString_advanced)
+            parseinputs_advanced(parser)
+        elif 'slabgen' in args:
+            parser = argparse.ArgumentParser(description=DescString_slabgen)
+            parseinputs_slabgen(parser)
+        elif 'db' in args:
+            parser = argparse.ArgumentParser(description=DescString_db)
+            parseinputs_db(parser)
+        elif 'inputgen' in args:
+            parser = argparse.ArgumentParser(description=DescString_inputgen)
+            parseinputs_inputgen(parser)
+        elif 'postproc' in args:
+            parser = argparse.ArgumentParser(description=DescString_postproc)
+            parseinputs_postproc(parser)
+        elif 'random' in args:
+            parser = argparse.ArgumentParser(description=DescString_random)
+            parseinputs_random(parser)
+        elif 'binding' in args:
+            parser = argparse.ArgumentParser(description=DescString_binding)
+            parseinputs_binding(parser)
+        elif 'tsgen' in args:
+            parser = argparse.ArgumentParser(description=DescString_tsgen)
+            parseinputs_tsgen(parser)
+        elif 'customcore' in args:
+            parser = argparse.ArgumentParser(description=DescString_customcore)
+            parseinputs_customcore(parser)
+        elif 'naming' in args:
+            parser = argparse.ArgumentParser(description=DescString_naming)
+            parseinputs_naming(parser)
+        elif 'liganddict' in args:
+            parser = argparse.ArgumentParser(description=DescString_ligdict,
+                                             formatter_class=argparse.RawTextHelpFormatter)
+            parseinputs_ligdict(parser)
+        else:
+            parser = argparse.ArgumentParser(description=DescString_basic,
+                                             formatter_class=argparse.RawDescriptionHelpFormatter)
+            parseinputs_basic(parser)
+    finally:
+        sys.argv = _argv_saved
+
+
 # Main function
 #  @param args Argument namespace
 def main(args=None):
-    # issue a call to test TF, this is needed to keep
+    if args is None:
+        args = sys.argv[1:]
+
+    # Handle -h/--help immediately so we never load TensorFlow for help-only.
+    if '-h' in args or '-H' in args or '--help' in args:
+        _run_help(args)
+        return
+
+    # Issue a call to test TF, this is needed to keep
     # ordering between openbabel and TF calls consistent
-    # on some sytems
+    # on some systems
     if globs.testTF():
         print('TensorFlow connection successful.')
         tensorflow_silence()
     else:
         print('TensorFlow connection failed.')
-
-    if args is None:
-        args = sys.argv[1:]
 
     # ------------------------ subcommand: build-complex ------------------------
     # Usage:
@@ -467,57 +519,7 @@ def main(args=None):
         # ---------------------- end subcommand: build-complex ----------------------
 
 
-    ## print help ###
-    if '-h' in args or '-H' in args or '--help' in args:
-        # So that parseinputs_* (which use parser.parse_args() → sys.argv[1:]) see the right args
-        # when main() was called with explicit args (e.g. from tests). Normal CLI has args=sys.argv[1:]
-        # already, so this is a no-op for that case.
-        _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
-        try:
-            if 'advanced' in args:
-                parser = argparse.ArgumentParser(description=DescString_advanced)
-                parseinputs_advanced(parser)
-            elif 'slabgen' in args:
-                parser = argparse.ArgumentParser(description=DescString_slabgen)
-                parseinputs_slabgen(parser)
-            elif 'db' in args:
-                parser = argparse.ArgumentParser(description=DescString_db)
-                parseinputs_db(parser)
-            elif 'inputgen' in args:
-                parser = argparse.ArgumentParser(description=DescString_inputgen)
-                parseinputs_inputgen(parser)
-            elif 'postproc' in args:
-                parser = argparse.ArgumentParser(description=DescString_postproc)
-                parseinputs_postproc(parser)
-            elif 'random' in args:
-                parser = argparse.ArgumentParser(description=DescString_random)
-                parseinputs_random(parser)
-            elif 'binding' in args:
-                parser = argparse.ArgumentParser(description=DescString_binding)
-                parseinputs_binding(parser)
-            elif 'tsgen' in args:
-                parser = argparse.ArgumentParser(description=DescString_tsgen)
-                parseinputs_tsgen(parser)
-            elif 'customcore' in args:
-                parser = argparse.ArgumentParser(description=DescString_customcore)
-                parseinputs_customcore(parser)
-            elif 'naming' in args:
-                parser = argparse.ArgumentParser(description=DescString_naming)
-                parseinputs_naming(parser)
-            elif 'liganddict' in args:
-                # The formatter class allows for the display of new lines.
-                parser = argparse.ArgumentParser(description=DescString_ligdict,
-                                                 formatter_class=argparse.RawTextHelpFormatter)
-                parseinputs_ligdict(parser)
-            else:
-                # print basic help
-                parser = argparse.ArgumentParser(description=DescString_basic,
-                                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-                parseinputs_basic(parser)
-        finally:
-            sys.argv = _argv_saved
-        return
-    elif len(args) == 0:
+    if len(args) == 0:
         print('No arguments supplied. GUI is no longer supported. Exiting.')
     ## if input file is specified ###
     elif '-i' in args:
