@@ -1180,7 +1180,7 @@ def parseinputs_basic(*p):
         "-custom_data_dir", help="optional custom data directory to override the path in ~/.molSimplify"
     )
     parser.add_argument(
-        "-smicat", help="connecting atoms for SMILES ligands (1-based). Bracket-free (no quotes in zsh): -smicat 1,4 or -smicat 1,4;2,5 for multiple ligands. If using brackets (e.g. [[1,4],[2,5]]), quote in zsh: -smicat '[[1,4],[2,5]]'.", action="store_true")
+        "-smicat", help="connecting atoms for SMILES ligands (1-based). Bracket-free: -smicat 1,4 or -smicat 1,4;2,5 for multiple ligands. If using brackets on the command line (e.g. [[1,4],[2,5]]), quote: -smicat '[[1,4],[2,5]]'.", action="store_true")
     parser.add_argument(
         "-ligloc", help="force location of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
@@ -1219,17 +1219,19 @@ def parseinputs_advanced(*p):
         "-genall", help="generate complex both with and without FF opt, default False", action="store_true")  # geometry
     parser.add_argument(
         "-decoration_index",
-        help="list of indices on each ligand to decorate (1-based). Examples: -decoration_index 7; "
-        "-decoration_index [7,9]; -decoration_index 7 9 for multiple ligands. "
-        "If using brackets on the command line, quote the value (e.g. -decoration_index '[7,9]') so the shell does not expand them.",
+        help="list of indices on each ligand to decorate (1-based). Examples:\n"
+        "  -decoration_index 7\n"
+        "  -decoration_index [7,9]  (quote in shell: -decoration_index '[7,9]')\n"
+        "  -decoration_index 7 9 for multiple ligands.\n"
+        "If using brackets on the command line, quote the value so the shell does not expand them.",
         action="store_true")  # decoration indexes, one list per ligand
     parser.add_argument(
         "-decoration",
-        help="SMILES for each decoration (one per ligand or per site). Examples: "
-        "molsimplify -core Fe -lig pyridine chloride -ligocc 4 2 -decoration Cl -decoration_index 7; "
-        "molsimplify -core Fe -lig pyridine chloride -ligocc 4 2 -decoration '[Cl,CO]' -decoration_index '[7,9]'; "
-        "molsimplify -core Fe -lig pyridine pyridine pyridine chloride -ligocc 1 1 2 2 -decoration Cl CO -decoration_index 7 9. "
-        "If using brackets, quote the value (e.g. -decoration '[Cl,CO]') so the shell does not expand them.",
+        help="SMILES for each decoration (one per ligand or per site). Examples:\n"
+        "  -decoration Cl -decoration_index 7\n"
+        "  -decoration '[Cl,CO]' -decoration_index '[7,9]'\n"
+        "  -decoration Cl CO -decoration_index 7 9\n"
+        "If using brackets on the command line, quote the value (e.g. -decoration '[Cl,CO]') so the shell does not expand them.",
         action="store_true")  # decoration, one list per ligand
     parser.add_argument(
         "-ligalign", help="smart alignment of ligands in the structure generation (default False)", default=False)

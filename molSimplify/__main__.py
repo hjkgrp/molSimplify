@@ -107,7 +107,9 @@ def _run_help(args):
     _argv_saved, sys.argv = sys.argv, ['molsimplify'] + list(args)
     try:
         if 'advanced' in args:
-            parser = argparse.ArgumentParser(description=DescString_advanced)
+            parser = argparse.ArgumentParser(
+                description=DescString_advanced,
+                formatter_class=argparse.RawTextHelpFormatter)
             parseinputs_advanced(parser)
         elif 'slabgen' in args:
             parser = argparse.ArgumentParser(description=DescString_slabgen)
