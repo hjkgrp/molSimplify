@@ -1468,6 +1468,9 @@ def slab_module_supervisor(args, rootdir):
             print(angle_surface_axis)
 
         print(f'object_align {object_align}')
+        seed = getattr(args, 'placement_seed', None)
+        if seed is not None:
+            random.seed(seed)
         loaded_cell = molecule_placement_supervisor(super_cell, super_cell_vector, target_molecule,
                                                     align_method, object_align, align_dist, surface_atom_type,
                                                     control_angle=control_angle, align_ind=angle_control_partner, align_axis=angle_surface_axis,
