@@ -517,12 +517,24 @@ def cleaninput(args):
                 if op[0].lower() == 'a':
                     args.ffoption += 'a'
 
+# Unicode dash-like characters that users may paste (e.g. from docs) instead of ASCII hyphen
+_CLI_UNICODE_DASHES = '\u2010\u2011\u2012\u2013\u2014\u2212'  # hyphen, nbsp-hyphen, figure, en, em, minus
+
+
 # Generates input file from command line input
 #  @param args Namespace of arguments
 #  @return CLIinput.inp (file name)
 
 
 def parseCLI(args):
+    # Normalize option flags: replace leading Unicode dashes with ASCII hyphen so
+    # e.g. "–core" / "–lig" (en-dash) are recognized like "-core" / "-lig"
+    normalized = []
+    for a in args:
+        if a and len(a) > 0 and a[0] in _CLI_UNICODE_DASHES:
+            a = '-' + a[1:]
+        normalized.append(a)
+    args = normalized
     cliargs = ' '.join(args)
     cliargs = ' ' + cliargs
     s = [_f for _f in cliargs.split(' -') if _f]
