@@ -1,0 +1,8 @@
+# Tutorial 7: Fe(II) + 4× pyridine + 2× chloride, generate structures for spin 1 and 5
+-core Fe
+-lig pyridine chloride
+-ligocc 4 2
+-spin 1 5
+-geometry oct
+-coord 6
+-oxstate 2

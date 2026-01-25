@@ -1,0 +1,9 @@
+# Tutorial 7 multi-decoration: Fe + 4× pyridine + 2× chloride, decorate with Cl at 7 and CO at 9
+-core Fe
+-lig pyridine chloride
+-ligocc 4 2
+-decoration [Cl,CO]
+-decoration_index [7,9]
+-geometry oct
+-coord 6
+-oxstate 2
