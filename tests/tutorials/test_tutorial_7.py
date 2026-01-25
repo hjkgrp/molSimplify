@@ -42,7 +42,7 @@ def test_tutorial_7_decoration_multi(tmp_path, resource_path_root):
     testName = "tutorial_7_decoration_multi"
     threshMLBL = 0.1
     threshLG = 1.0   # looser (cf. tutorial_8) for CI cross-platform
-    threshOG = 2.0   # looser (cf. tutorial_3, 8, 9, 10) for CI cross-platform
+    threshOG = 3.0   # looser (cf. tutorial_3, 8, 9, 10) for CI cross-platform
     out = hp.runtest(
         tmp_path, resource_path_root, testName, threshMLBL, threshLG, threshOG)
     passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin = out

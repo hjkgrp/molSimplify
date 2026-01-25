@@ -9,7 +9,7 @@ def run_db_search(tmp_path, resource_path_root, name):
     globs = globalvars()
     globs.chemdbdir = str(resource_path_root / "inputs" / "tutorial_4")
 
-    infile = resource_path_root / "inputs" / "in_files" / name
+    infile = resource_path_root / "inputs" / "in_files" / "tutorial_4" / name
     newinfile, _ = parse4test(infile, tmp_path)
     args = ['main.py', '-i', newinfile]
 

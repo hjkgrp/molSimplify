@@ -63,7 +63,7 @@ def test_checkinput(monkeypatch):
 def test_parseinputfile_inputfile_kwarg(resource_path_root):
     """Test that both methods of calling parseinputfile
     (with an args.i file or inputfile_str kwarg) yield the same result"""
-    infile = resource_path_root / "inputs" / "in_files" / "example_1.in"
+    infile = resource_path_root / "inputs" / "in_files" / "example_1" / "example_1.in"
 
     args1 = Namespace(i=infile)
     parseinputfile(args1)
