@@ -1,0 +1,10 @@
+-place_on_slab
+-unit_cell slab.xyz
+-cell_vector [[11.973, 0, 0], [0, 11.973000000000001, 0], [0, 0, 27.982]]
+-target_molecule co.xyz
+-align_method alignpair
+-num_surface_atoms 2
+-surface_atom_type Pd
+-object_align C
+-num_placements 3
+-placement_seed 31415

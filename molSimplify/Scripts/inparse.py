@@ -1069,6 +1069,8 @@ def parseinputfile(args, inputfile_str=None):
             if (l[0] == '-surface_atom_ind'):  # 6
                 args.surface_atom_ind = [
                     int(i.strip('(){}<>[],.')) for i in l[1:]]
+            if (l[0] == '-placement_seed'):
+                args.placement_seed = int(l[1].strip('()[]<>.,'))
         # control GUI prompt
             if (l[0] == '-rprompt'):
                 args.rprompt = True
@@ -1293,6 +1295,8 @@ def parseinputs_slabgen(*p):
         '-duplicate', help="bool, duplicate asorbate above and below slab", action="store_true")  # 14
     parser.add_argument('-surface_atom_ind',
                         help="list of int, surface atoms to use by index")  # 15
+    parser.add_argument('-placement_seed',
+                        help="int, random seed for deterministic multi-placement site choice")  # 16
     if len(p) == 1:  # only one input, printing help only
         args = parser.parse_args()
         return args

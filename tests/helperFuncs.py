@@ -803,9 +803,10 @@ def runtest_slab(tmp_path, resource_path_root, name, threshOG, extra_files=None)
     return passNumAtoms, passOG
 
 
-def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra_files=None):
+def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra_files=None,
+                             xyz_relative_paths=None):
     """
-    Performs test for slab builder with a CO molecule adsorbed.
+    Performs test for slab builder with a molecule adsorbed on a slab.
 
     Parameters
     ----------
@@ -820,6 +821,10 @@ def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra
             Tolerance for RMSD comparison of overall geometries.
         extra_files : list of str
             Extra files to be copied to the test directory.
+        xyz_relative_paths : dict, optional
+            Override paths for -unit_cell and -target_molecule, relative to
+            inputs/in_files (e.g. "../xyz_files/slab.xyz").
+            Default: slab.xyz and co.xyz.
 
     Returns
     -------
@@ -830,11 +835,15 @@ def runtest_molecule_on_slab(tmp_path, resource_path_root, name, threshOG, extra
             Verdict on whether the geometries of the
             output and reference are roughly equal overall.
     """
-    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
-    newinfile, _ = parse4test(infile, tmp_path, extra_args={
+    default_paths = {
         '-unit_cell': "../xyz_files/slab.xyz",
         '-target_molecule': "../xyz_files/co.xyz",
-        })
+    }
+    extra_args = default_paths if xyz_relative_paths is None else {
+        **default_paths, **xyz_relative_paths
+    }
+    infile = resource_path_root / "inputs" / "in_files" / f"{name}.in"
+    newinfile, _ = parse4test(infile, tmp_path, extra_args=extra_args)
     if extra_files is not None:
         for file_name in extra_files:
             file_path = resource_path_root / "inputs" / f"{file_name}"
