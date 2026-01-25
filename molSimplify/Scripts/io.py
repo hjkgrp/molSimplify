@@ -30,6 +30,52 @@ from molSimplify.Classes.globalvars import (globalvars,
 from molSimplify.Classes.mol3D import mol3D
 
 
+def resolve_existing_directory(
+    dirpath: str,
+    rprompt: bool = False,
+    get_input_fn: Optional[Any] = None,
+) -> Tuple[Optional[str], bool]:
+    """
+    When dirpath already exists, prompt for keep (k), replace (r), or skip (s).
+    Call only when os.path.isdir(dirpath) is True.
+
+    Returns
+    -------
+    resolved_path : str or None
+        Path to use: dirpath on replace, dirpath_N on keep, None on skip.
+    skipped : bool
+        True if user chose skip.
+    """
+    if get_input_fn is None:
+        get_input_fn = input
+    if rprompt:
+        flagdir = 'replace'
+    else:
+        prompt = (
+            '\nDirectory ' + dirpath +
+            ' already exists. Keep both (k), replace (r) or skip (s) k/r/s: ')
+        reply = get_input_fn(prompt)
+        if 'k' in reply.lower():
+            flagdir = 'keep'
+        elif 's' in reply.lower():
+            flagdir = 'skip'
+        else:
+            flagdir = 'replace'
+    if flagdir == 'replace':
+        shutil.rmtree(dirpath)
+        os.makedirs(dirpath)
+        return (dirpath, False)
+    if flagdir == 'skip':
+        return (None, True)
+    # keep both: dirpath_1, dirpath_2, ...
+    n = 1
+    while os.path.exists(dirpath + '_' + str(n)):
+        n += 1
+    newpath = dirpath + '_' + str(n)
+    os.makedirs(newpath)
+    return (newpath, False)
+
+
 # Print available geometries.
 def printgeoms():
     globs = globalvars()

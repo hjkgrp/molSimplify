@@ -27,6 +27,7 @@ from molSimplify.Scripts.io import (
     lig_load,
     name_complex,
     name_ts_complex,
+    resolve_existing_directory,
     substr_load,
     )
 from molSimplify.Scripts.qcgen import (
@@ -489,31 +490,12 @@ def rungen(rundir, args: Namespace, chspfname=None, write_files: bool = True):
             # check for top directory
         if rootcheck and os.path.isdir(rootcheck) and not args.checkdirt and not skip:
             args.checkdirt = True
-            if args.rprompt:
-                flagdir = 'replace'
-            else:
-                flagdir = get_input('\nDirectory ' + rootcheck +
-                                    ' already exists. Keep both (k), replace (r) or skip (s) k/r/s: ')
-                if 'k' in flagdir.lower():
-                    flagdir = 'keep'
-                elif 's' in flagdir.lower():
-                    flagdir = 'skip'
-                else:
-                    flagdir = 'replace'
-            # replace existing directory
-            if (flagdir == 'replace'):
-                shutil.rmtree(rootcheck)
-                os.mkdir(rootcheck)
-            # skip existing directory
-            elif flagdir == 'skip':
+            resolved, skipped = resolve_existing_directory(
+                rootcheck, getattr(args, 'rprompt', False), get_input)
+            if skipped:
                 skip = True
-            # keep both (default)
             else:
-                ifold = 1
-                while glob.glob(f'{rootdir}_{ifold}'):
-                    ifold += 1
-                    rootcheck += '_'+str(ifold)
-                    os.mkdir(rootcheck)
+                rootcheck = resolved
         elif rootcheck and (not os.path.isdir(rootcheck) or not args.checkdirt) and not skip:
             if args.debug:
                 print(f'rootcheck is {rootcheck}')
@@ -526,31 +508,12 @@ def rungen(rundir, args: Namespace, chspfname=None, write_files: bool = True):
             # check for actual directory
         if os.path.isdir(rootdir) and not args.checkdirb and not skip and not args.jobdir:
             args.checkdirb = True
-            if args.rprompt:
-                flagdir = 'replace'
-            else:
-                flagdir = get_input(
-                    '\nDirectory '+rootdir + ' already exists. Keep both (k), replace (r) or skip (s) k/r/s: ')
-                if 'k' in flagdir.lower():
-                    flagdir = 'keep'
-                elif 's' in flagdir.lower():
-                    flagdir = 'skip'
-                else:
-                    flagdir = 'replace'
-            # replace existing directory
-            if (flagdir == 'replace'):
-                shutil.rmtree(rootdir)
-                os.mkdir(rootdir)
-            # skip existing directory
-            elif flagdir == 'skip':
+            resolved, skipped = resolve_existing_directory(
+                rootdir, getattr(args, 'rprompt', False), get_input)
+            if skipped:
                 skip = True
-            # keep both (default)
             else:
-                ifold = 1
-                while glob.glob(f'{rootdir}_{ifold}'):
-                    ifold += 1
-                rootdir += '_'+str(ifold)
-                os.mkdir(rootdir)
+                rootdir = resolved
         elif not os.path.isdir(rootdir) or not args.checkdirb and not skip:
             if not os.path.isdir(rootdir):
                 if write_files:
