@@ -520,6 +520,58 @@ def cleaninput(args):
 # Unicode dash-like characters that users may paste (e.g. from docs) instead of ASCII hyphen
 _CLI_UNICODE_DASHES = '\u2010\u2011\u2012\u2013\u2014\u2212'  # hyphen, nbsp-hyphen, figure, en, em, minus
 
+# Options whose values use brackets and may be split by the shell when unquoted
+_CLI_BRACKET_OPTIONS = ('-smicat', '-decoration', '-decoration_index')
+
+
+def _cli_is_option(s):
+    """Return True if s looks like an option (e.g. -core, -lig), not a negative number."""
+    if not s or len(s) < 2 or s[0] != '-':
+        return False
+    if s[1] in '0123456789.':
+        return False
+    if s[:2] == '--':
+        return False
+    return True
+
+
+def coalesce_bracket_args(args, options=_CLI_BRACKET_OPTIONS):
+    """Merge argv tokens that form bracket expressions after -smicat/-decoration/-decoration_index
+    so that brackets do not need to be quoted on the command line.
+    """
+    out = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a not in options or i + 1 >= len(args):
+            out.append(a)
+            i += 1
+            continue
+        out.append(a)
+        i += 1
+        opt = a
+        while i < len(args) and not _cli_is_option(args[i]):
+            tokens = []
+            depth = 0
+            while i < len(args):
+                t = args[i]
+                for c in t:
+                    if c == '[':
+                        depth += 1
+                    elif c == ']':
+                        depth -= 1
+                tokens.append(t)
+                i += 1
+                if depth == 0:
+                    break
+            if tokens:
+                out.append(''.join(tokens))
+            if opt == '-smicat':
+                break
+            if i >= len(args) or _cli_is_option(args[i]):
+                break
+    return out
+
 
 # Generates input file from command line input
 #  @param args Namespace of arguments
@@ -527,6 +579,8 @@ _CLI_UNICODE_DASHES = '\u2010\u2011\u2012\u2013\u2014\u2212'  # hyphen, nbsp-hyp
 
 
 def parseCLI(args):
+    # Reassemble bracket expressions that may have been split by the shell (so quotes aren't needed)
+    args = coalesce_bracket_args(args)
     # Normalize option flags: replace leading Unicode dashes with ASCII hyphen so
     # e.g. "–core" / "–lig" (en-dash) are recognized like "-core" / "-lig"
     normalized = []
@@ -1159,7 +1213,7 @@ def parseinputs_basic(*p):
         "-custom_data_dir", help="optional custom data directory to override the path in ~/.molSimplify"
     )
     parser.add_argument(
-        "-smicat", help="connecting atoms corresponding to smiles. Indexing starts at 1 which is the default value as well. Use [] for multiple SMILES ligands, e.g., [1],[2]. From the command line, wrap the value in single quotes (e.g. -smicat '[[1,4]]') so the shell does not expand brackets.", action="store_true")
+        "-smicat", help="connecting atoms corresponding to smiles. Indexing starts at 1 which is the default value as well. Use [] for multiple SMILES ligands, e.g., [1],[2]. Example: -smicat [[1,4]].", action="store_true")
     parser.add_argument(
         "-ligloc", help="force location of ligands in the structure generation (default False)", default=False)
     parser.add_argument(
