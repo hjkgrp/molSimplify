@@ -7,7 +7,7 @@ from helperFuncs import parse4test, working_directory
 def run_db_search(tmp_path, resource_path_root, name):
     # Set the path for the data base file:
     globs = globalvars()
-    globs.chemdbdir = str(resource_path_root / "inputs" / "tutorial_4")
+    globs.chemdbdir = str(resource_path_root / "inputs" / "in_files" / "tutorial_4")
 
     infile = resource_path_root / "inputs" / "in_files" / "tutorial_4" / name
     newinfile, _ = parse4test(infile, tmp_path)
