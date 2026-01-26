@@ -168,33 +168,19 @@ def _raise_custom_data_dir_missing(fname: str, from_err: Optional[Exception] = N
             raise from_err
         return
     base = str(globs.custom_path).rstrip('/')
-    fname_str = os.path.normpath(str(fname))
-    base_norm = os.path.normpath(base)
-    if not (fname_str == base_norm or fname_str.startswith(base_norm + os.sep)):
-        if from_err is not None:
-            raise from_err
-        return
-    config_path = getattr(
-        globs, 'molsimplify_config_path',
-        os.path.join(os.path.expanduser("~"), ".molSimplify")
-    )
-    default_config = os.path.join(os.path.expanduser("~"), ".molSimplify")
-    if os.path.normpath(config_path) == os.path.normpath(default_config):
-        config_hint = "usually at ~/.molSimplify"
-    else:
-        config_hint = f"at {config_path}"
+    default_cfg = os.path.join(os.path.expanduser("~"), ".molSimplify")
+    cfg = getattr(globs, 'molsimplify_config_path', default_cfg)
+    hint = "usually at ~/.molSimplify" if os.path.normpath(cfg) == os.path.normpath(default_cfg) else f"at {cfg}"
     msg = (
         f"The custom data directory no longer exists.\n"
         f"  Configured path: {base}\n"
         f"  Missing file: {fname}\n\n"
         f"molSimplify is configured to use this directory (CUSTOM_DATA_PATH in your "
         f"molSimplify config file), but the directory has been deleted or moved.\n\n"
-        f"To fix this, edit your molSimplify config file ({config_hint}) and "
+        f"To fix this, edit your molSimplify config file ({hint}) and "
         f"remove the line containing CUSTOM_DATA_PATH."
     )
-    if from_err is not None:
-        raise FileNotFoundError(msg) from from_err
-    raise FileNotFoundError(msg)
+    raise FileNotFoundError(msg) from from_err
 
 
 # Read data into dictionary.
