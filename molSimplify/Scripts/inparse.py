@@ -1697,7 +1697,7 @@ def parseinputs_ligdict(*p):
     available_ligands = "\n".join(available_ligands)  # Converting back from a list to a string
     available_ligands = (
         "ligands to be included in complex; available ligands in the ligands dictionary at "
-        "molSimplify/molSimplify/Ligands/ligands.dict are: \n%s}" % available_ligands
+        "molSimplify/molSimplify/Ligands/ligands.dict are: \n%s" % available_ligands
     )
 
     parser.add_argument(
