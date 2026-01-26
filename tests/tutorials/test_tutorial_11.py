@@ -12,7 +12,7 @@ def test_tutorial_11_isoct(resource_path_root):
     Checks that the return value of IsOct (flag_oct, flag_list, dict_oct_info)
     matches the reference for the tutorial octahedral.xyz (Fe(NH3)6).
     """
-    xyz_path = resource_path_root / "inputs" / "tutorial_11" / "octahedral.xyz"
+    xyz_path = resource_path_root / "inputs" / "in_files" / "tutorial_11" / "octahedral.xyz"
     ref_path = resource_path_root / "refs" / "tutorial" / "tutorial_11" / "ref.json"
 
     assert xyz_path.exists(), f"Input {xyz_path} missing"
