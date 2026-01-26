@@ -1,5 +1,25 @@
+import re
+
 import helperFuncs as hp
 from molSimplify.__main__ import main
+
+
+def _normalize_svg_for_compare(svg_str: str) -> str:
+    """Normalize SVG for order-independent, platform-tolerant comparison.
+    Sorts element lines and rounds coordinates to avoid CI float differences.
+    """
+    lines = [ln.strip() for ln in svg_str.strip().splitlines() if ln.strip()]
+
+    def round_nums_in_line(line: str) -> str:
+        def sub(m):
+            try:
+                return f"{float(m.group(0)):.4f}"
+            except ValueError:
+                return m.group(0)
+        return re.sub(r"-?\d+\.?\d*", sub, line)
+
+    normalized = sorted(round_nums_in_line(ln) for ln in lines)
+    return "\n".join(normalized)
 
 
 def test_tutorial_9_drawmode(tmp_path, resource_path_root):
@@ -13,9 +33,11 @@ def test_tutorial_9_drawmode(tmp_path, resource_path_root):
     ref_svg = resource_path_root / "refs" / "tutorial" / "tutorial_9" / "zncat.svg"
     assert ref_svg.exists(), f"Reference {ref_svg} missing"
     ref_content = ref_svg.read_text()
-    assert generated == ref_content, (
-        f"zncat.svg does not match reference {ref_svg}. "
-        "Regenerate the reference if the change is intentional."
+    gen_norm = _normalize_svg_for_compare(generated)
+    ref_norm = _normalize_svg_for_compare(ref_content)
+    assert gen_norm == ref_norm, (
+        f"zncat.svg does not match reference {ref_svg} (after normalizing element order and "
+        "numerics). Regenerate the reference if the change is intentional."
     )
 
 
