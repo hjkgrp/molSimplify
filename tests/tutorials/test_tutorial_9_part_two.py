@@ -1,8 +1,8 @@
 import helperFuncs as hp
 
 
-def test_tutorial_09_part_two(tmp_path, resource_path_root):
-    testName = "tutorial_09_part_two"
+def test_tutorial_9_part_two(tmp_path, resource_path_root):
+    testName = "tutorial_9_part_two"
     threshMLBL = 0.1
     threshLG = 2.0
     threshOG = 2.0
