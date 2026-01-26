@@ -710,7 +710,8 @@ def compare_qc_input(inp, inp_ref):
     return passQcInputCheck
 
 
-def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, seed=31415):
+def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, seed=31415,
+            custom_data_dir=None):
     """
     Performs test for specified test name.
 
@@ -731,6 +732,9 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
             The RMSD tolerance used for overall geometry comparison.
         seed : int
             The random seed.
+        custom_data_dir : str or pathlib.Path, optional
+            If set, appends -custom_data_dir to the run input so the job uses
+            this path (e.g. when the test adds ligands to a custom dir first).
 
     Returns
     -------
@@ -759,6 +763,9 @@ def runtest(tmp_path, resource_path_root, name, threshMLBL, threshLG, threshOG, 
     in_sub = get_in_files_subfolder(name)
     infile = resource_path_root / "inputs" / "in_files" / in_sub / f"{name}.in"
     newinfile, myjobdir = parse4test(infile, tmp_path)
+    if custom_data_dir is not None:
+        with open(newinfile, 'a') as f:
+            f.write(f"-custom_data_dir {custom_data_dir}\n")
     args = ['main.py', '-i', newinfile]
     with working_directory(tmp_path):
         startgen(args, False, False)
