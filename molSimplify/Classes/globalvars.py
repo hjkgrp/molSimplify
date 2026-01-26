@@ -690,6 +690,7 @@ class globalvars(metaclass=Singleton):
         self.chemdbdir = ''
         self.multiwfn = ''
         self.custom_path = False
+        self.molsimplify_config_path = homedir + '/.' + self.PROGRAM
         # ##### check for ~/.molSimplify ######
         if glob.glob(homedir + '/.' + self.PROGRAM):
             with open(homedir + '/.' + self.PROGRAM, 'r') as fin:

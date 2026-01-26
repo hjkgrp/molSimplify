@@ -160,13 +160,53 @@ def getgeoms():
         geomgroups[count].append(geomshorts[i])
     return coords, geomnames, geomshorts, geomgroups
 
+def _raise_custom_data_dir_missing(fname: str, from_err: Optional[Exception] = None) -> None:
+    """Raise a clear error when a needed file is under a custom data path that no longer exists."""
+    globs = globalvars()
+    if not globs.custom_path:
+        if from_err is not None:
+            raise from_err
+        return
+    base = str(globs.custom_path).rstrip('/')
+    fname_str = os.path.normpath(str(fname))
+    base_norm = os.path.normpath(base)
+    if not (fname_str == base_norm or fname_str.startswith(base_norm + os.sep)):
+        if from_err is not None:
+            raise from_err
+        return
+    config_path = getattr(
+        globs, 'molsimplify_config_path',
+        os.path.join(os.path.expanduser("~"), ".molSimplify")
+    )
+    default_config = os.path.join(os.path.expanduser("~"), ".molSimplify")
+    if os.path.normpath(config_path) == os.path.normpath(default_config):
+        config_hint = "usually at ~/.molSimplify"
+    else:
+        config_hint = f"at {config_path}"
+    msg = (
+        f"The custom data directory no longer exists.\n"
+        f"  Configured path: {base}\n"
+        f"  Missing file: {fname}\n\n"
+        f"molSimplify is configured to use this directory (CUSTOM_DATA_PATH in your "
+        f"molSimplify config file), but the directory has been deleted or moved.\n\n"
+        f"To fix this, edit your molSimplify config file ({config_hint}) and "
+        f"remove the line containing CUSTOM_DATA_PATH."
+    )
+    if from_err is not None:
+        raise FileNotFoundError(msg) from from_err
+    raise FileNotFoundError(msg)
+
+
 # Read data into dictionary.
 #  @param fname Filename containing dictionary data
 #  @return Dictionary
 def readdict(fname):
     d = dict()
-    with open(fname, 'r') as f:
-        lines = [_f for _f in f.readlines() if _f]
+    try:
+        with open(fname, 'r') as f:
+            lines = [_f for _f in f.readlines() if _f]
+    except FileNotFoundError as e:
+        _raise_custom_data_dir_missing(fname, from_err=e)
     for line in lines:
         if (line[0] != '#') and line.strip():
             key = "".join([_f for _f in line.split(':')[0] if _f])
@@ -187,8 +227,11 @@ def readdict(fname):
 #  @return Dictionary
 def readdict_sub(fname):
     d = dict()
-    with open(fname, 'r') as f:
-        txt = f.read()
+    try:
+        with open(fname, 'r') as f:
+            txt = f.read()
+    except FileNotFoundError as e:
+        _raise_custom_data_dir_missing(fname, from_err=e)
     lines = [_f for _f in txt.splitlines() if _f]
     for line in lines:
         if (line[0] != '#') and line.strip():
