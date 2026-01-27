@@ -25,7 +25,7 @@ def _normalize_svg_for_compare(svg_str: str) -> str:
 def test_tutorial_9_drawmode(tmp_path, resource_path_root):
     """Run `molsimplify -core zncat -drawmode` and check that zncat.svg matches the reference."""
     with hp.working_directory(tmp_path):
-        main(args=["-core", "zncat", "-drawmode"])
+        main(args=["legacy", "-core", "zncat", "-drawmode"])
     svg_path = tmp_path / "zncat.svg"
     assert svg_path.exists(), f"Expected vector graphic {svg_path} to exist"
     generated = svg_path.read_text()
