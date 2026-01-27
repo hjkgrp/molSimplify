@@ -480,13 +480,13 @@ def rungen(rundir, args: Namespace, chspfname=None, write_files: bool = True):
         rootcheck = ""
         if chspfname is not None:
             rootcheck = rootdir
-            rootdir = rootdir + '/' + chspfname
+            rootdir = os.path.join(rootdir, chspfname)
         if (args.suff):
             rootdir += args.suff
         # check for manual overwrite of
         # directory name
         if args.jobdir:
-            rootdir = rundir + args.jobdir
+            rootdir = os.path.join(rundir, args.jobdir.lstrip('/'))
             # check for top directory
         if rootcheck and os.path.isdir(rootcheck) and not args.checkdirt and not skip:
             args.checkdirt = True
