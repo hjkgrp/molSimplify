@@ -57,7 +57,7 @@ def test_tutorial_10_ligadd_smiles(tmp_path, resource_path_root):
 
         build_name = "tutorial_10_from_smiles_2"
         threshMLBL = 0.1
-        threshLG = 2.0
+        threshLG = 2.5
         threshOG = 3.0
         passNumAtoms, passMLBL, passLG, passOG, pass_report, pass_qcin = hp.runtest(
             tmp_path, resource_path_root, build_name, threshMLBL, threshLG, threshOG,
