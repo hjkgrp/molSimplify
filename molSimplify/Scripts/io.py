@@ -1174,7 +1174,7 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum: int,
                  args, nconf=False, sanity=False, bind=False, bsmi=False) -> str:
     # new version of the above, designed to
     # produce more human and machine-readable formats
-    if args.name:  # if set externerally
+    if args.name:  # if set externally
         name = rootdir+'/'+args.name
     else:
         center = ''
@@ -1246,7 +1246,7 @@ def name_ts_complex(rootdir, core, geometry, ligs, ligoc, substrate, subcatoms,
                     bind=False, bsmi=False) -> str:
     # new version of the above, designed to
     # produce more human and machine-readable formats
-    if args.name:  # if set externerally
+    if args.name:  # if set externally
         name = rootdir+'/'+args.name
     else:
         center = ''
