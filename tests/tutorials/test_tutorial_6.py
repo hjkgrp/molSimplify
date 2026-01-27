@@ -49,3 +49,17 @@ def test_tutorial_6_fepo(tmp_path, resource_path_root):
         xyz_relative_paths={'-target_molecule': "../../xyz_files/fepo.xyz"})
     assert passNumAtoms
     assert passOG
+
+
+def test_tutorial_6_loaded_fepo(tmp_path, resource_path_root):
+    """Tutorial 6 variant: CO on loaded FePO slab (loaded_fepo.xyz), surface_atom_type Fe, object_align C."""
+    testName = "tutorial_6_loaded_fepo"
+    threshOG = 2.0
+    [passNumAtoms, passOG] = hp.runtest_molecule_on_slab(
+        tmp_path, resource_path_root, testName, threshOG,
+        xyz_relative_paths={
+            '-unit_cell': "../../xyz_files/loaded_fepo.xyz",
+            '-target_molecule': "../../xyz_files/co.xyz"
+        })
+    assert passNumAtoms
+    assert passOG
