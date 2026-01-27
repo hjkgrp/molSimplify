@@ -451,7 +451,25 @@ def generate_complex(
     # NEW: produce the final ordered list of core indices per filled backbone site
     backbone_core_indices = [core for (site, core) in sorted(backbone_core_pairs, key=lambda x: x[0])]  # NEW
 
-    # OLD + NEW: append backbone_core_indices at the end
+    # -------------------- FINAL: unconstrained FF relax --------------------
+    try:
+        # make sure OBMol matches our current coords/bonds before the FF pass
+        core3D.convert2OBMol(force_clean=True)
+        replace_bonds(core3D.OBMol, core3D.bo_dict)
+
+        optimized_coords = constrained_forcefield_optimization(
+            core3D,
+            fixed_atom_indices=None,
+            max_steps=max_steps,
+            ff_name=ff_name
+        )
+        core3D = set_new_coords(core3D, optimized_coords)
+        # re-sync OBMol again for downstream writeout / sterics
+        core3D.convert2OBMol(force_clean=True)
+        replace_bonds(core3D.OBMol, core3D.bo_dict)
+    except Exception as e:
+        if verbose:
+            print(f"[warn] Final unconstrained FF relax failed; keeping previous geometry. ({e})")
     return core3D, clashes, severity, fig, batslist, backbone_core_indices
 
 def run_sterics_check(core3D, max_steps, ff_name):
@@ -789,6 +807,8 @@ def enforce_metal_ligand_distances_and_optimize(
     max_steps: int = 500,
     constrain: bool = True,
     tolerate_zero_vec: float = 1e-6,
+    final_relax: bool = True,           
+    final_relax_steps: int = 2000,       
 ):
     """
     Adjust metal–ligand distances and perform a constrained FF optimization.
@@ -875,18 +895,41 @@ def enforce_metal_ligand_distances_and_optimize(
             direction = vec / dist
 
         new_coords[donor_idx] = M + direction * target_dist
-
     core3D = set_new_coords(core3D, new_coords)
 
     # 6) Constrained FF optimization (freeze metals + donors)
     if constrain:
+        core3D.convert2OBMol(force_clean=True)
+        replace_bonds(core3D.OBMol, core3D.bo_dict)
         frozen = sorted(set(metal_indices + donor_idxs))
-        optimized = constrained_forcefield_optimization(
-            core3D,
-            frozen,
-            max_steps=max_steps,
-            ff_name=ff_name,
-        )
+        optimized = constrained_forcefield_optimization(core3D, frozen, max_steps=max_steps, ff_name=ff_name)
         core3D = set_new_coords(core3D, optimized)
 
+    # 7) Final FF relaxation (haptics-aware behavior lives inside constrained_forcefield_optimization)
+    if final_relax:
+        had_haptics = bool(getattr(core3D, "_haptic_groups_global", None) or [])
+
+        # Always resync OBMol/bonds before FF
+        core3D.convert2OBMol(force_clean=True)
+        replace_bonds(core3D.OBMol, core3D.bo_dict)
+
+        # Ask for fully-unconstrained relax.
+        # If haptics exist, constrained_forcefield_optimization will automatically
+        # freeze metal atoms only and disable rotor search (per our new implementation).
+        optimized2 = constrained_forcefield_optimization(
+            core3D,
+            fixed_atom_indices=None,
+            max_steps=final_relax_steps,
+            ff_name=ff_name,
+        )
+        core3D = set_new_coords(core3D, optimized2)
+
+        # Final sync and reapply haptics for visual consistency
+        core3D.convert2OBMol(force_clean=True)
+        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        if had_haptics:
+            reapply_all_haptics_and_sync(core3D, bond_order=1, prefer_nearest_metal=True)
+
     return core3D
+
+
