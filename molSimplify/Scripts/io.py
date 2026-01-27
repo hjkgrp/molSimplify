@@ -1175,7 +1175,7 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum: int,
     # new version of the above, designed to
     # produce more human and machine-readable formats
     if args.name:  # if set externally
-        name = rootdir+'/'+args.name
+        name = os.path.join(rootdir, args.name)
     else:
         center = ''
         if sanity:
@@ -1186,7 +1186,7 @@ def name_complex(rootdir: str, core, geometry, ligs, ligoc, sernum: int,
             if ('.xyz' in core):
                 core = core.split('.')[0]
             center += str(core).lower()
-        name = rootdir + '/' + center
+        name = os.path.join(rootdir, center)
         if args.oxstate:
             if args.oxstate in list(romans.keys()):
                 ox = str(romans[args.oxstate])
@@ -1247,7 +1247,7 @@ def name_ts_complex(rootdir, core, geometry, ligs, ligoc, substrate, subcatoms,
     # new version of the above, designed to
     # produce more human and machine-readable formats
     if args.name:  # if set externally
-        name = rootdir+'/'+args.name
+        name = os.path.join(rootdir, args.name)
     else:
         center = ''
         if sanity:
@@ -1258,7 +1258,7 @@ def name_ts_complex(rootdir, core, geometry, ligs, ligoc, substrate, subcatoms,
             if ('.xyz' in core):
                 core = core.split('.')[0]
             center += str(core).lower()
-        name = rootdir + '/' + center
+        name = os.path.join(rootdir, center)
         if args.oxstate:
             if args.oxstate in list(romans.keys()):
                 ox = str(romans[args.oxstate])

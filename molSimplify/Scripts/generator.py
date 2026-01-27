@@ -163,7 +163,8 @@ def startgen(argv, flag, inputfile_str=None, write_files=True):
         del args
         return emsg
     # check for jobs directory
-    rundir = args.rundir+'/' if (args.rundir) else rundir
+    if args.rundir:
+        rundir = args.rundir
     if not os.path.isdir(rundir):
         if write_files:
             os.mkdir(rundir)
