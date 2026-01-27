@@ -5239,7 +5239,7 @@ class mol3D:
         metal_idx = self.findMetal()
         non_metals = [i for i in range(self.natoms) if i not in metal_idx]
 
-        # Ensure that non-bonded atoms are well-seperated (not close to overlapping or crowded).
+        # Ensure that non-bonded atoms are well-separated (not close to overlapping or crowded).
         for atom1 in non_metals:
             bonds = self.graph[atom1]
             for atom2 in non_metals:

@@ -103,7 +103,7 @@ def accquire_file(path):
 def correlation_supervisor(path, rootdir, simple=False, lig_only=False, max_descriptors=False):
     # load the files from the given input file
     file_dict, fail_dict = accquire_file(path)
-    # loop over sucessful imports to get descriptors:
+    # loop over successful imports to get descriptors:
     big_mat = list()
     col_names = list()
     for i, keyv in enumerate(file_dict.keys()):
