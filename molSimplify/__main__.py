@@ -562,7 +562,7 @@ def main(args=None):
 
     # -------------------- implicit legacy: old CLI flags --------------------
     # If user uses legacy-only flags like -ligadd, route them automatically.
-    LEGACY_ONLY_FLAGS = {"-ligadd"} 
+    LEGACY_ONLY_FLAGS = {"-ligadd"}
     if any(f in args for f in LEGACY_ONLY_FLAGS):
         print(
             "[note] Detected legacy CLI flag(s) (e.g., -ligadd).\n"
