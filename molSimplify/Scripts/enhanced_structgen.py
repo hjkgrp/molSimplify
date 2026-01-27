@@ -807,8 +807,8 @@ def enforce_metal_ligand_distances_and_optimize(
     max_steps: int = 500,
     constrain: bool = True,
     tolerate_zero_vec: float = 1e-6,
-    final_relax: bool = True,           
-    final_relax_steps: int = 2000,       
+    final_relax: bool = True,
+    final_relax_steps: int = 2000,
 ):
     """
     Adjust metal–ligand distances and perform a constrained FF optimization.
@@ -931,5 +931,3 @@ def enforce_metal_ligand_distances_and_optimize(
             reapply_all_haptics_and_sync(core3D, bond_order=1, prefer_nearest_metal=True)
 
     return core3D
-
-
