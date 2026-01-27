@@ -40,7 +40,7 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
                                          parseinputs_binding, parseinputs_tsgen,
                                          parseinputs_customcore, parseinputs_naming,
                                          parseinputs_ligdict, parseinputs_basic,
-                                         parseCLI)
+                                         parseCLI, _CLI_UNICODE_DASHES)
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import globalvars, geometry_vectors
 from molSimplify.utils.tensorflow import tensorflow_silence
@@ -155,6 +155,17 @@ def _run_help(args):
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
+
+    # Normalize Unicode dashes in args (e.g., en-dash/em-dash from web tutorials)
+    # This fixes issues when users copy-paste commands from web tutorials
+    normalized_args = []
+    for a in args:
+        if a and len(a) > 0 and a[0] in _CLI_UNICODE_DASHES:
+            a = '-' + a[1:]
+        normalized_args.append(a)
+    args = normalized_args
+    # Also update sys.argv to use normalized args for consistency
+    sys.argv = [sys.argv[0]] + args
 
     # Handle -h/--help immediately so we never load TensorFlow for help-only.
     if '-h' in args or '-H' in args or '--help' in args:
