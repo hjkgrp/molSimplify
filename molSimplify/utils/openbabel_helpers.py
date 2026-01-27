@@ -10,10 +10,18 @@ def constrained_forcefield_optimization(
     return_per_atom_nonbonded=False,   # deprecated path (delete-one-atom)
     return_vdw_energy=False,
     *,
-    return_per_atom_ff_force=False,    # NEW: preferred embedding
+    return_per_atom_ff_force=False,    # preferred embedding
     fd_delta=1e-3,                     # Å, finite-difference step
     isolate_vdw=False                  # True -> zero partial charges to emphasize vdW
 ):
+    """
+    Run an OpenBabel forcefield optimization on mol.OBMol, optionally freezing atoms.
+
+    Haptics-aware behavior:
+      - If mol has _haptic_groups_global and caller requested an unconstrained relax
+        (fixed_atom_indices is None/empty), we automatically freeze metal atoms only.
+      - Rotor search is skipped when metals or haptics are present (prevents "peeling").
+    """
     from openbabel import openbabel
     import numpy as np
 
@@ -32,17 +40,65 @@ def constrained_forcefield_optimization(
     if not ff.Setup(obmol):
         raise RuntimeError("Failed to set up forcefield on molecule.")
 
-    if fixed_atom_indices:
-        constraints = openbabel.OBFFConstraints()
-        for idx in fixed_atom_indices:
-            constraints.AddAtomConstraint(int(idx) + 1)  # 1-based
-        ff.SetConstraints(constraints)
+    # -------------------- haptics-aware defaults --------------------
+    groups = getattr(mol, "_haptic_groups_global", None) or []
+    has_haptics = bool(groups)
 
-    ff.ConjugateGradients(max_steps)
+    # Detect metals (prefer mol3D metal finder; fall back to OB atomic numbers)
+    try:
+        metals = mol.findMetal(transition_metals_only=False) or []
+    except Exception:
+        tm_atomic_nums = {
+            21,22,23,24,25,26,27,28,29,30,
+            39,40,41,42,43,44,45,46,47,48,
+            57,72,73,74,75,76,77,78,79,80
+        }
+        metals = []
+        for i, a in enumerate(openbabel.OBMolAtomIter(obmol)):
+            if a.GetAtomicNum() in tm_atomic_nums:
+                metals.append(i)
+    has_metal = bool(metals)
+
+    # Normalize fixed list
+    effective_fixed = None
+    if fixed_atom_indices:
+        effective_fixed = [int(i) for i in fixed_atom_indices]
+    else:
+        effective_fixed = None
+
+    # If caller asked for "fully free" but haptics exist, freeze metal(s) only.
+    # This prevents η^n ligands from drifting / breaking under FF.
+    if (effective_fixed is None) and has_haptics and has_metal:
+        effective_fixed = sorted(set(int(i) for i in metals))
+
+    # -------------------- constraints (always set; avoids sticky constraints) --------------------
+    constraints = openbabel.OBFFConstraints()
+    if effective_fixed:
+        for idx in effective_fixed:
+            constraints.AddAtomConstraint(int(idx) + 1)  # OB is 1-based
+    ff.SetConstraints(constraints)
+
+    # -------------------- optimization schedule --------------------
+    # SD warmup helps escape large clashes; CG finishes near minimum.
+    sd_steps = min(500, max_steps // 4 if max_steps >= 4 else max_steps)
+    cg_steps = max(1, max_steps - sd_steps)
+
+    ff.SteepestDescent(sd_steps)
+
+    # Rotor search can unstick torsions, but it's risky for TM complexes / haptics.
+    if (not has_haptics) and (not has_metal):
+        try:
+            ff.WeightedRotorSearch(50, 25)
+        except Exception:
+            pass
+
+    ff.ConjugateGradients(cg_steps)
     ff.GetCoordinates(obmol)
 
-    optimized_coords = np.array([[a.GetX(), a.GetY(), a.GetZ()]
-                                 for a in openbabel.OBMolAtomIter(obmol)], dtype=float)
+    optimized_coords = np.array(
+        [[a.GetX(), a.GetY(), a.GetZ()] for a in openbabel.OBMolAtomIter(obmol)],
+        dtype=float
+    )
 
     # Early exit (original behavior)
     if not (return_per_atom_nonbonded or return_vdw_energy or return_per_atom_ff_force):
@@ -71,14 +127,13 @@ def constrained_forcefield_optimization(
 
         def _apply_coords(xyz):
             for k, atom in enumerate(openbabel.OBMolAtomIter(obmol)):
-                atom.SetVector(float(xyz[k,0]), float(xyz[k,1]), float(xyz[k,2]))
+                atom.SetVector(float(xyz[k, 0]), float(xyz[k, 1]), float(xyz[k, 2]))
             ff.SetCoordinates(obmol)
 
         _apply_coords(optimized_coords)
 
-        fixed_set = set(int(i) for i in (fixed_atom_indices or []))
+        fixed_set = set(int(i) for i in (effective_fixed or []))
         for i in range(N):
-            # you can skip fixed atoms if you want: if i in fixed_set: continue
             gi = np.zeros(3, dtype=float)
             for d in range(3):
                 x_f = optimized_coords.copy(); x_f[i, d] += fd_delta
@@ -87,6 +142,7 @@ def constrained_forcefield_optimization(
                 _apply_coords(x_b); Eb = ff.Energy()
                 gi[d] = (Ef - Eb) / (2.0 * fd_delta)
             force_mag[i] = float(np.linalg.norm(gi))
+
         # restore minimized coords
         _apply_coords(optimized_coords)
         results.append(force_mag)
