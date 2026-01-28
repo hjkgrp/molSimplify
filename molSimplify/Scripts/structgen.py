@@ -1678,8 +1678,9 @@ def get_batoms(batslist, ligsused):
     """
     batoms = batslist[ligsused]
     if len(batoms) < 1:
-        emsg = 'Connecting all ligands is not possible. Check your input!'
+        return []
     return batoms
+
 
 
 def align_dent2_catom2_coarse(args, lig3D, core3D, catoms, r1, r0, m3D, batoms, corerefcoords):
@@ -2500,6 +2501,10 @@ def mcomplex(args: Namespace, ligs: List[str], ligoc: List[int], smart_generatio
                 coreref = corerefatoms.getAtom(totlig)
                 # connecting point in backbone to align ligand to
                 batoms = get_batoms(batslist, ligsused)
+                if not batoms:
+                    emsg = "Connecting all ligands is not possible (no backbone connecting points left). Check your input ligands/occupancies."
+                    break  # or `return core3D, complex3D, emsg, this_diag, subcatoms_ext, mligcatoms_ext` depending on this function’s structure
+
                 cpoint = m3D.getAtom(batoms[0])
                 # attach ligand depending on the denticity
                 # optimize geometry by minimizing steric effects
