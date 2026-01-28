@@ -424,12 +424,18 @@ def rungen(rundir, args: Namespace, chspfname=None, write_files: bool = True):
                     ssatoms = catoms[multidx][mcount].split(',')
                     lloc = [int(scat)-1 for scat in ssatoms]
                     # append connection atoms if specified in smiles
-                    if args.smicat and len(args.smicat) > 0:
-                        for i in range(len(args.smicat), multidx):
-                            args.smicat.append([])
-                    else:
-                        args.smicat = [lloc]
-                    args.smicat[multidx] = lloc
+                    if args.smicat is None:
+                        args.smicat = []
+                    # pad so index multidx exists
+                    while len(args.smicat) <= multidx:
+                        args.smicat.append([])
+                    # structgen.mcomplex indexes smicat by "smiles ligand number", not ligand position
+                    smiles_slot = 0  # this .smi corresponds to the first SMILES ligand encountered
+                    if args.smicat is None:
+                        args.smicat = []
+                    while len(args.smicat) <= smiles_slot:
+                        args.smicat.append([])
+                    args.smicat[smiles_slot] = lloc
         if (args.lig):
             ligands = args.lig
             if (args.ligocc):
