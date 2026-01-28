@@ -249,10 +249,17 @@ def tf_check_ligands(ligs: List[str], batslist: List[List[int]],
     if debug:
         print(f'eq occupations {eq_occs}')
         print(f'eq dent {eq_dent}')
-    if not (4.0 / (float(eq_dent) * sum(eq_occs)) == 1):
-        print('ANN setup error: equatorial ligs error: ',
-              equatorial_ligs, eq_dent, eq_tcat)
+   # Guard against malformed equatorial assignment (prevents ZeroDivisionError)
+    eq_occ_sum = sum(eq_occs)
+    if eq_dent == 0 or eq_occ_sum == 0:
+        print('ANN setup error: equatorial ligs undefined (no equatorial dent/occupancy): ',
+            equatorial_ligs, eq_dent, eq_tcat, eq_occs)
         valid = False
+    else:
+        if not (4.0 / (float(eq_dent) * eq_occ_sum) == 1):
+            print('ANN setup error: equatorial ligs error: ',
+                equatorial_ligs, eq_dent, eq_tcat)
+            valid = False
     if valid and len(axial_ind_list) == 0:  # get the index position in ligs
         axial_ind_list = [ligs.index(ax_lig) for ax_lig in axial_ligs]
     if valid and len(equatorial_ind_list) == 0:  # get the index position in ligs
