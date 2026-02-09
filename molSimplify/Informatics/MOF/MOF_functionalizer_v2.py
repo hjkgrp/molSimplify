@@ -1443,7 +1443,7 @@ def functionalize_MOF_at_indices_mol3D_merge(cif_file, path2write, functional_gr
 
     # Load in the mol3D from the folder molSimplify folder monofunctionalized_BDC.
     functional_group_template = mol3D()
-    func_group_xyz_path = resource_filename(Requirement.parse(
+    func_group_xyz_path = resource_filename(Requirement(
                 "molSimplify"), f"molSimplify/Informatics/MOF/monofunctionalized_BDC/{functional_group}.xyz")
     functional_group_template.readfromxyz(func_group_xyz_path) # This is a whole BDC linker with the requested functional group on it.
 
