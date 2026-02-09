@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
@@ -17,13 +19,29 @@ from molSimplify.Informatics.MOF.PBC_functions import (
         write_cif,
         overlap_removal,
         )
-from pkg_resources import resource_filename, Requirement
 import numpy as np
 import scipy
 import networkx as nx
 import os
 import shutil
 import pickle
+
+
+from typing import Callable
+
+try:
+    # Python 3.9+
+    from importlib.resources import files as resource_files  # type: ignore[attr-defined]
+except ImportError:
+    # Backport, if ever needed
+    from importlib_resources import files as resource_files  # type: ignore[no-redef]
+
+from packaging.requirements import Requirement
+
+
+def resource_filename(req_or_pkg: object, resource: str) -> str:
+    pkg = req_or_pkg.name if isinstance(req_or_pkg, Requirement) else str(req_or_pkg)
+    return str(resource_files(pkg).joinpath(resource))
 ### Beginning of functions ###
 
 ##### THE INPUT REQUIRES A P1 CELL ######
@@ -1422,7 +1440,7 @@ def functionalize_MOF_at_indices_mol3D_merge(cif_file, path2write, functional_gr
 
     # Load in the mol3D from the folder molSimplify folder monofunctionalized_BDC.
     functional_group_template = mol3D()
-    func_group_xyz_path = resource_filename(Requirement.parse(
+    func_group_xyz_path = resource_filename(Requirement(
                 "molSimplify"), f"molSimplify/Informatics/MOF/monofunctionalized_BDC/{functional_group}.xyz")
     functional_group_template.readfromxyz(func_group_xyz_path) # This is a whole BDC linker with the requested functional group on it.
 

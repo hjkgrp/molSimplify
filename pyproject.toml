@@ -15,7 +15,8 @@ dependencies = [
     "pyyaml",
     "importlib-resources",
     "matplotlib",
-    "pydentate"
+    "pydentate",
+    "setuptools",
 ]
 
 [project.optional-dependencies]
