@@ -1,6 +1,7 @@
+from __future__ import annotations
 import networkx as nx
 import numpy as np
-from typing import List, Union
+from typing import Dict, Iterable, List, Optional, Tuple, Union
 from packaging import version
 from molSimplify.Classes.globalvars import globalvars
 from molSimplify.Classes.mol3D import mol3D as Mol3D
@@ -10,6 +11,9 @@ try:
     from openbabel import openbabel  # version 3 style import
 except ImportError:
     import openbabel  # fallback to version 2
+
+
+
 
 
 class Mol2D(nx.Graph):
@@ -347,11 +351,6 @@ class Mol2D(nx.Graph):
         hapticity = [len(path) for path in coordination_paths]
 
         return denticity, hapticity, coordination_paths
-
-from __future__ import annotations
-
-import networkx as nx
-from typing import Dict, Iterable, List, Optional, Tuple, Union
 
 
 def substructure_search(
