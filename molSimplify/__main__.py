@@ -56,24 +56,22 @@ except Exception:
 
 globs = globalvars()
 # Basic help description string
-DescString_basic = (
-    'Welcome to molSimplify. Only basic usage is described here.\n'
-    'For help on advanced modules, please refer to our documentation at '
-    'molsimplify.mit.edu or provide additional commands to -h, as below:\n'
-    '-h advanced: advanced structure generation help\n'
-    '-h slabgen: slab builder help\n'
-    # '-h chainb: chain builder help\n'
-    '-h autocorr: automated correlation analysis help\n'
-    '-h db: database search help\n'
-    '-h inputgen: quantum chemistry code input file generation help\n'
-    '-h postproc: post-processing help\n'
-    '-h random: random generation help\n'
-    '-h binding: binding species (second molecule) generation help\n'
-    '-h customcore: custom core functionalization help\n'
-    '-h tsgen: transition state generation help\n'
-    '-h naming: custom filename help\n'
-    '-h liganddict: ligands.dict help\n'
-)
+DescString_basic = '''
+Welcome to molSimplify. Only basic usage is described here.
+For help on advanced modules, please refer to our documentation at molsimplify.mit.edu or provide additional commands to -h, as below:
+-h advanced: advanced structure generation help
+-h slabgen: slab builder help
+-h autocorr: automated correlation analysis help
+-h db: database search help
+-h inputgen: quantum chemistry code input file generation help
+-h postproc: post-processing help
+-h random: random generation help
+-h binding: binding species (second molecule) generation help
+-h customcore: custom core functionalization help
+-h tsgen: transition state generation help
+-h naming: custom filename help
+-h liganddict: ligands.dict help
+'''.strip()
 # Advanced help description string
 DescString_advanced = 'Printing advanced structure generation help.'
 # Slab builder help description string
