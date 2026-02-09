@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from molSimplify.Classes.mol3D import mol3D
 from molSimplify.Classes.atom3D import atom3D
 from molSimplify.Scripts.cellbuilder_tools import import_from_cif
@@ -24,27 +26,22 @@ import os
 import shutil
 import pickle
 
-from importlib import resources as importlib_resources
+
+from typing import Callable
+
+try:
+    # Python 3.9+
+    from importlib.resources import files as resource_files  # type: ignore[attr-defined]
+except ImportError:
+    # Backport, if ever needed
+    from importlib_resources import files as resource_files  # type: ignore[no-redef]
+
 from packaging.requirements import Requirement
 
-def resource_filename(req_or_pkg, resource: str) -> str:
-    """
-    Replacement for pkg_resources.resource_filename.
 
-    Parameters
-    ----------
-    req_or_pkg : str | Requirement
-        Package name (e.g. "molSimplify") or Requirement("molSimplify").
-    resource : str
-        Path inside the package, e.g. "Informatics/MOF/foo.txt"
-
-    Returns
-    -------
-    str
-        Resolved filesystem path (as a string).
-    """
+def resource_filename(req_or_pkg: object, resource: str) -> str:
     pkg = req_or_pkg.name if isinstance(req_or_pkg, Requirement) else str(req_or_pkg)
-    return str(importlib_resources.files(pkg).joinpath(resource))
+    return str(resource_files(pkg).joinpath(resource))
 ### Beginning of functions ###
 
 ##### THE INPUT REQUIRES A P1 CELL ######
