@@ -347,3 +347,124 @@ class Mol2D(nx.Graph):
         hapticity = [len(path) for path in coordination_paths]
 
         return denticity, hapticity, coordination_paths
+
+from __future__ import annotations
+
+import networkx as nx
+from typing import Dict, Iterable, List, Optional, Tuple, Union
+
+
+def substructure_search(
+    list_of_mol2Ds: List["Mol2D"],
+    r: int,
+    atom_filter: Optional[Union[Iterable[str], set]] = None,
+    wl_iterations: int = 5,
+    include_occurrences: bool = True,
+) -> Dict[str, dict]:
+    """
+    Radius-based motif search over Mol2D graphs using Weisfeiler–Lehman hashing.
+
+    For each molecule and for each allowed starting atom, this builds the induced
+    subgraph containing all atoms within graph distance <= r (number of bonds),
+    computes a node-attributed WL hash, and groups identical hashes as "motifs".
+
+    Parameters
+    ----------
+    list_of_mol2Ds : list[Mol2D]
+        Molecules to search.
+    r : int
+        Radius in number of bonds (graph distance) around each starting atom.
+        r=0 -> single atom motifs; r=1 -> nearest neighbors; r=2 -> next-nearest; etc.
+    atom_filter : iterable[str] | set[str] | None
+        If provided, only atoms whose `symbol` is in this set are used as starting atoms.
+        Example: {"Fe", "Co", "Ni"} or {"C", "N", "O"}.
+    wl_iterations : int
+        Number of WL refinement iterations for hashing (default 5).
+    include_occurrences : bool
+        If True, store where each motif occurs (mol index, center atom, nodes in subgraph).
+
+    Returns
+    -------
+    dict
+        Mapping: motif_hash -> {
+            "count": int,
+            "unique_molecules": int,
+            "occurrences": list[tuple]  # optional
+        }
+
+        Each occurrence tuple is (mol_idx, center_atom_idx, tuple(sorted(nodes_in_subgraph))).
+
+    Notes
+    -----
+    - Motifs are defined purely by graph topology + node symbols within radius r.
+    - If your Mol2D nodes have "symbol" attributes (as in your class), this works out of the box.
+    """
+    if r < 0:
+        raise ValueError("r must be >= 0")
+
+    allowed: Optional[set] = set(atom_filter) if atom_filter is not None else None
+
+    motifs: Dict[str, dict] = {}
+
+    for mol_idx, mol in enumerate(list_of_mol2Ds):
+        # Defensive: ensure it's a graph with nodes
+        if mol is None or mol.number_of_nodes() == 0:
+            continue
+
+        for center in mol.nodes:
+            sym = mol.nodes[center].get("symbol", "X")
+            if allowed is not None and sym not in allowed:
+                continue
+
+            # Nodes within radius r (graph distance <= r)
+            lengths = nx.single_source_shortest_path_length(mol, center, cutoff=r)
+            nodes_in_ball = list(lengths.keys())
+
+            # Induced subgraph (copy so WL hash doesn't see view-only)
+            subG = mol.subgraph(nodes_in_ball).copy()
+
+            # WL hash (node-attributed)
+            h = nx.weisfeiler_lehman_graph_hash(
+                subG, node_attr="symbol", iterations=wl_iterations
+            )
+
+            if h not in motifs:
+                motifs[h] = {
+                    "count": 0,
+                    "molecule_set": set(),  # internal bookkeeping
+                }
+                if include_occurrences:
+                    motifs[h]["occurrences"] = []
+
+            motifs[h]["count"] += 1
+            motifs[h]["molecule_set"].add(mol_idx)
+            if include_occurrences:
+                motifs[h]["occurrences"].append(
+                    (mol_idx, int(center), tuple(sorted(nodes_in_ball)))
+                )
+
+    # finalize: replace molecule_set with unique_molecules
+    for h, d in motifs.items():
+        d["unique_molecules"] = len(d["molecule_set"])
+        del d["molecule_set"]
+
+    return motifs
+
+
+def motif_counts_only(
+    list_of_mol2Ds: List["Mol2D"],
+    r: int,
+    atom_filter: Optional[Union[Iterable[str], set]] = None,
+    wl_iterations: int = 5,
+) -> Dict[str, int]:
+    """
+    Convenience wrapper: returns only hash -> count.
+    """
+    motifs = substructure_search(
+        list_of_mol2Ds,
+        r,
+        atom_filter=atom_filter,
+        wl_iterations=wl_iterations,
+        include_occurrences=False,
+    )
+    return {h: d["count"] for h, d in motifs.items()}
