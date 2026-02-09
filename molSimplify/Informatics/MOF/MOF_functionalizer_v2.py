@@ -17,13 +17,34 @@ from molSimplify.Informatics.MOF.PBC_functions import (
         write_cif,
         overlap_removal,
         )
-from pkg_resources import resource_filename, Requirement
 import numpy as np
 import scipy
 import networkx as nx
 import os
 import shutil
 import pickle
+
+from importlib import resources as importlib_resources
+from packaging.requirements import Requirement
+
+def resource_filename(req_or_pkg, resource: str) -> str:
+    """
+    Replacement for pkg_resources.resource_filename.
+
+    Parameters
+    ----------
+    req_or_pkg : str | Requirement
+        Package name (e.g. "molSimplify") or Requirement("molSimplify").
+    resource : str
+        Path inside the package, e.g. "Informatics/MOF/foo.txt"
+
+    Returns
+    -------
+    str
+        Resolved filesystem path (as a string).
+    """
+    pkg = req_or_pkg.name if isinstance(req_or_pkg, Requirement) else str(req_or_pkg)
+    return str(importlib_resources.files(pkg).joinpath(resource))
 ### Beginning of functions ###
 
 ##### THE INPUT REQUIRES A P1 CELL ######
