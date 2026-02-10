@@ -43,7 +43,6 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
                                          parseCLI)
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import globalvars, geometry_vectors
-from molSimplify.utils.tensorflow import tensorflow_silence
 
 
 # subcommand deps (safe to import here)
@@ -480,19 +479,15 @@ def run_build_complex(args):
 # Main function
 #  @param args Argument namespace
 def main(args=None):
-    # issue a call to test TF, this is needed to keep
-    # ordering between openbabel and TF calls consistent
-    # on some sytems
-    if globs.testTF():
-        print('TensorFlow connection successful.')
-        tensorflow_silence()
-    else:
-        print('TensorFlow connection failed.')
-
     if args is None:
         args = sys.argv[1:]
 
-    ## print help ###
+    # No arguments: exit early (GUI no longer supported), before any TF import
+    if len(args) == 0:
+        print('No arguments supplied. GUI is no longer supported. Exiting.')
+        return
+
+    ## print help ### (skip TF import when only help is requested)
     if '-h' in args or '-H' in args or '--help' in args:
         if 'advanced' in args:
             parser = argparse.ArgumentParser(description=DescString_advanced)
@@ -541,6 +536,14 @@ def main(args=None):
                                              formatter_class=argparse.RawDescriptionHelpFormatter)
             parseinputs_basic(parser)
         return
+
+    # TF import deferred until after help/no-args exit (keeps molsimplify -h fast)
+    from molSimplify.utils.tensorflow import tensorflow_silence
+    if globs.testTF():
+        print('TensorFlow connection successful.')
+        tensorflow_silence()
+    else:
+        print('TensorFlow connection failed.')
 
     # -------------------- explicit legacy mode --------------------
     if len(args) > 0 and args[0] == 'legacy':
