@@ -43,7 +43,6 @@ from molSimplify.Scripts.inparse import (parseinputs_advanced, parseinputs_slabg
                                          parseCLI)
 from molSimplify.Scripts.generator import startgen
 from molSimplify.Classes.globalvars import globalvars, geometry_vectors
-from molSimplify.utils.tensorflow import tensorflow_silence
 
 
 # subcommand deps (safe to import here)
@@ -56,24 +55,22 @@ except Exception:
 
 globs = globalvars()
 # Basic help description string
-DescString_basic = (
-    'Welcome to molSimplify. Only basic usage is described here.\n'
-    'For help on advanced modules, please refer to our documentation at '
-    'molsimplify.mit.edu or provide additional commands to -h, as below:\n'
-    '-h advanced: advanced structure generation help\n'
-    '-h slabgen: slab builder help\n'
-    # '-h chainb: chain builder help\n'
-    '-h autocorr: automated correlation analysis help\n'
-    '-h db: database search help\n'
-    '-h inputgen: quantum chemistry code input file generation help\n'
-    '-h postproc: post-processing help\n'
-    '-h random: random generation help\n'
-    '-h binding: binding species (second molecule) generation help\n'
-    '-h customcore: custom core functionalization help\n'
-    '-h tsgen: transition state generation help\n'
-    '-h naming: custom filename help\n'
-    '-h liganddict: ligands.dict help\n'
-)
+DescString_basic = '''
+Welcome to molSimplify. Only basic usage is described here.
+For help on advanced modules, please refer to our documentation at molsimplify.mit.edu or provide additional commands to -h, as below:
+-h advanced: advanced structure generation help
+-h slabgen: slab builder help
+-h autocorr: automated correlation analysis help
+-h db: database search help
+-h inputgen: quantum chemistry code input file generation help
+-h postproc: post-processing help
+-h random: random generation help
+-h binding: binding species (second molecule) generation help
+-h customcore: custom core functionalization help
+-h tsgen: transition state generation help
+-h naming: custom filename help
+-h liganddict: ligands.dict help
+'''.strip()
 # Advanced help description string
 DescString_advanced = 'Printing advanced structure generation help.'
 # Slab builder help description string
@@ -482,19 +479,15 @@ def run_build_complex(args):
 # Main function
 #  @param args Argument namespace
 def main(args=None):
-    # issue a call to test TF, this is needed to keep
-    # ordering between openbabel and TF calls consistent
-    # on some sytems
-    if globs.testTF():
-        print('TensorFlow connection successful.')
-        tensorflow_silence()
-    else:
-        print('TensorFlow connection failed.')
-
     if args is None:
         args = sys.argv[1:]
 
-    ## print help ###
+    # No arguments: exit early (GUI no longer supported), before any TF import
+    if len(args) == 0:
+        print('No arguments supplied. GUI is no longer supported. Exiting.')
+        return
+
+    ## print help ### (skip TF import when only help is requested)
     if '-h' in args or '-H' in args or '--help' in args:
         if 'advanced' in args:
             parser = argparse.ArgumentParser(description=DescString_advanced)
@@ -543,6 +536,14 @@ def main(args=None):
                                              formatter_class=argparse.RawDescriptionHelpFormatter)
             parseinputs_basic(parser)
         return
+
+    # TF import deferred until after help/no-args exit (keeps molsimplify -h fast)
+    from molSimplify.utils.tensorflow import tensorflow_silence
+    if globs.testTF():
+        print('TensorFlow connection successful.')
+        tensorflow_silence()
+    else:
+        print('TensorFlow connection failed.')
 
     # -------------------- explicit legacy mode --------------------
     if len(args) > 0 and args[0] == 'legacy':

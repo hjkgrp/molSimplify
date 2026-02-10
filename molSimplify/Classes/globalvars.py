@@ -628,31 +628,30 @@ class globalvars(metaclass=Singleton):
     def __init__(self):
         # Program name
         self.PROGRAM = 'molSimplify'
-        program_info = [
-        f'\nmolSimplify v{get_version()}',
-        'Freely distributed under the GNU GPL license.',
-        'Copyright 2017 Kulik Lab @ MIT',
-        'Developed by: Efthymios Ioannidis',
-        'Contributions by:',
-        '\tHeather J. Kulik (corresponding developer; hjkulik@mit.edu)',
-        '\tNaveen Arunachalam',
-        '\tChenru Duan',
-        '\tFreya Edholm',
-        '\tTerry Gani',
-        '\tDaniel Harper',
-        '\tJP Janet',
-        '\tFang Liu',
-        '\tRalf Meyer',
-        '\tAditya Nandy',
-        '\tMichael Taylor',
-        '\tGianmarco Terrones',
-        '\tTzuhsiung (Nick) Yang',
-        'E.I. Ioannidis, T.Z.H. Gani, H.J. Kulik. J. Comput. Chem. 2016, 37, 2106-2117.',
-        'J.P. Janet, Q. Zhao, E.I. Ioannidis, H.J. Kulik. Mol. Simul. 2017, 43(5-6), 327-345.',
-        'J.P. Janet, T.Z.H. Gani, A.H. Steeves, E.I. Ioannidis, H.J. Kulik. Ind. Eng. Chem. Res. 2017, 56(17), 4898-4910.',
-        'For an extended list of references, please see https://molsimplify.readthedocs.io/en/latest/Citation.html'
-        ]
-        s = '\n'.join(program_info)
+        s = f'''
+molSimplify v{get_version()}
+Freely distributed under the GNU GPL license.
+Copyright 2017 Kulik Lab @ MIT
+Developed by: Efthymios Ioannidis
+Contributions by:
+\tHeather J. Kulik (corresponding developer; hjkulik@mit.edu)
+\tNaveen Arunachalam
+\tChenru Duan
+\tFreya Edholm
+\tTerry Gani
+\tDaniel Harper
+\tJP Janet
+\tFang Liu
+\tRalf Meyer
+\tAditya Nandy
+\tMichael Taylor
+\tGianmarco Terrones
+\tTzuhsiung (Nick) Yang
+E.I. Ioannidis, T.Z.H. Gani, H.J. Kulik. J. Comput. Chem. 2016, 37, 2106-2117.
+J.P. Janet, Q. Zhao, E.I. Ioannidis, H.J. Kulik. Mol. Simul. 2017, 43(5-6), 327-345.
+J.P. Janet, T.Z.H. Gani, A.H. Steeves, E.I. Ioannidis, H.J. Kulik. Ind. Eng. Chem. Res. 2017, 56(17), 4898-4910.
+For an extended list of references, please see https://molsimplify.readthedocs.io/en/latest/Citation.html
+'''.rstrip('\n')
 
         # About message
         self.about = s
