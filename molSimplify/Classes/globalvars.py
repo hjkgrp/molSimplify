@@ -650,6 +650,7 @@ Contributions by:
 E.I. Ioannidis, T.Z.H. Gani, H.J. Kulik. J. Comput. Chem. 2016, 37, 2106-2117.
 J.P. Janet, Q. Zhao, E.I. Ioannidis, H.J. Kulik. Mol. Simul. 2017, 43(5-6), 327-345.
 J.P. Janet, T.Z.H. Gani, A.H. Steeves, E.I. Ioannidis, H.J. Kulik. Ind. Eng. Chem. Res. 2017, 56(17), 4898-4910.
+G.G. Terrones, R.G. St. Michel, J.W. Toney, A.K. Ball, Y. Wang, A.G. Garrison, A. Nandy, R. Meyer, F. Edholm, C. Oh, S.G. Pujet, D.B.K. Chu, D. Muhammetgulyyev, H.J. Kulik. J. Chem. Inf. Model. 2026, XXX, XXX-XXX.
 For an extended list of references, please see https://molsimplify.readthedocs.io/en/latest/Citation.html
 '''.rstrip('\n')
 
