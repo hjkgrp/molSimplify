@@ -121,6 +121,18 @@ url = {https://doi.org/10.1021/acs.iecr.8b04015},
 doi = {10.1021/acs.iecr.8b04015},
 year = {2018},
 }
+
+@Article(molSimplify2.0,
+author = {Terrones, Gianmarco G. and St. Michel, Roland G. and Toney, Jacob W. and Ball, Akash K. and Wang, Yiran and Garrison, Aaron G. and Nandy, Aditya and Meyer, Ralf and Edholm, Freya and Oh, Changhwan and Pujet, Sebastian G. and Chu, Daniel B. K. and Muhammetgulyyev, Davut and Kulik, Heather J.},
+title = {molSimplify 2.0: Improved Structure Generation for Automating Discovery in Inorganic Molecular and Reticular Chemistry},
+volume = {XXX},
+number = {XXX},
+pages = {XXX-XXX},
+issn = {XXX-XXX},
+url = {https://doi.org/10.1021/acs.jcim.5c02733},
+doi = {10.1021/acs.jcim.5c02733},
+year = {2026},
+)
 ```
 
 If you use any machine learning (ML) models in molSimplify, please cite the corresponding reference in [this ML model reference page](https://github.com/hjkgrp/molSimplify/blob/master/MLmodel-reference.md).
