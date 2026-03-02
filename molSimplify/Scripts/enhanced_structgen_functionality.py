@@ -46,7 +46,7 @@ def apply_aromatic_flags_from_bodict(core3D):
         a = obmol.GetAtom(i+1); b = obmol.GetAtom(j+1)
         if hasattr(a, "SetAromatic"): a.SetAromatic(True)
         if hasattr(b, "SetAromatic"): b.SetAromatic(True)
-            
+
 def sync_obmol_from_bodict(core3D):
     core3D.convert2OBMol(force_clean=True)
     replace_bonds(core3D.OBMol, core3D.bo_dict)
@@ -54,7 +54,7 @@ def sync_obmol_from_bodict(core3D):
     return core3D
 
 
-    
+
 def add_ligand_to_complex(
     ligand_donor_coords,
     ligand_all_coords,
