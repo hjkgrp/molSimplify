@@ -32,6 +32,28 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors  # needed by visualize_molecule
 import os
 
+def apply_aromatic_flags_from_bodict(core3D):
+    obmol = core3D.OBMol
+    for (i, j), bo in core3D.bo_dict.items():
+        is_ar = (bo == "ar") or (isinstance(bo, float) and abs(bo - 1.5) < 1e-6)
+        if not is_ar:
+            continue
+        bond = obmol.GetBond(i+1, j+1)  # OB is 1-based
+        if bond is None:
+            continue
+        if hasattr(bond, "SetAromatic"):
+            bond.SetAromatic(True)
+        a = obmol.GetAtom(i+1); b = obmol.GetAtom(j+1)
+        if hasattr(a, "SetAromatic"): a.SetAromatic(True)
+        if hasattr(b, "SetAromatic"): b.SetAromatic(True)
+
+def sync_obmol_from_bodict(core3D):
+    core3D.convert2OBMol(force_clean=True)
+    replace_bonds(core3D.OBMol, core3D.bo_dict)
+    apply_aromatic_flags_from_bodict(core3D)
+    return core3D
+
+
 
 def add_ligand_to_complex(
     ligand_donor_coords,
@@ -2784,15 +2806,39 @@ def _shares_metal(u, v, donors_by_m):
 
 
 def _pca_frame(P):
-    """Return orthonormal principal axes for points P (N,3) and the centroid."""
+    """Return 3x3 orthonormal principal axes for points P (N,3) and the centroid."""
+    P = np.asarray(P, float)
     C = P.mean(axis=0)
     X = P - C
+
+    # Not enough information for a stable frame
     if X.shape[0] < 2 or np.linalg.matrix_rank(X) < 2:
         return np.eye(3), C
-    U, _, _ = np.linalg.svd(X, full_matrices=False)
-    if np.linalg.det(U) < 0:
-        U[:, -1] *= -1
-    return U, C
+
+    # SVD: X = U S Vt ; principal directions in coordinate space are columns of V = Vt.T
+    _, _, Vt = np.linalg.svd(X, full_matrices=False)
+    V = Vt.T  # shape (3,k) where k=min(N,3)
+
+    if V.shape[1] == 3:
+        R = V
+    elif V.shape[1] == 2:
+        # Complete to 3D with a right-handed third axis
+        a = V[:, 0]
+        b = V[:, 1]
+        c = np.cross(a, b)
+        cn = np.linalg.norm(c)
+        if cn < 1e-12:
+            return np.eye(3), C
+        c = c / cn
+        R = np.column_stack([a, b, c])
+    else:
+        return np.eye(3), C
+
+    # Ensure right-handed frame
+    if np.linalg.det(R) < 0:
+        R[:, -1] *= -1
+
+    return R, C
 
 
 def _pca_align(P, Q):
@@ -2993,32 +3039,25 @@ def check_sterics_with_ff_embedding(
     per_atom_nonbonded=None,
     per_atom_vdw=None,
     per_atom_ff_force=None,
-    energy_source='none',     # 'none' | 'nonbonded' | 'vdw' | 'ff_force'
-    energy_weighted=False,
-    # ---- NEW: pair-energy gate (option 4) ----
-    pair_energy_threshold: float = 0.5,  # require mean(e_i,e_j) >= this to consider a clash
-    #
+    energy_source='none',     # keep for backwards compat
+    energy_weighted=False,    # keep for backwards compat
+
+    # --- NEW (replace pair_energy_threshold gating) ---
+    epsilon: float = 0.10,
+    gamma: float = 2.0,
+    pair_score_threshold: float = 0.05,   # in Å-equivalent if E_geom in Å
+
+    # old args
+    pair_energy_threshold: float = 0.5,   # deprecated; ignore or keep for legacy
     scale=1.0,
     default_vdw=1.5,
     exclude_hops=(1, 2, 3),
-    # ---- BASE clearance for heavy-heavy ----
     clearance_heavy: float = 0.20,
-    # ---- NEW: H-aware per-pair clearances (option 3) ----
-    clearance_HH: float = 0.35,   # H···H pairs must penetrate > this to count
-    clearance_HX: float = 0.30,   # H···X (X != H) must penetrate > this to count
-    #
+    clearance_HH: float = 0.35,
+    clearance_HX: float = 0.30,
     infer_H_bonds: bool = True,
-    H_bond_max: float = 1.25      # Å: attach isolated H to nearest atom if bo_dict lacks H bonds
+    H_bond_max: float = 1.25
 ):
-    """
-    Steric clash detection with:
-      - robust bond-graph pruning (≤3 hops),
-      - H-aware per-pair clearance (HH/HX/heavy-heavy),
-      - optional pair-energy gating based on a per-atom FF embedding,
-      - optional gentle energy weighting of severity.
-
-    Returns: (clashes (list[(i,j)]), severity_scores dict[(i,j)]->float)
-    """
     import numpy as np
     import networkx as nx
 
@@ -3034,14 +3073,10 @@ def check_sterics_with_ff_embedding(
             G.add_edge(i, j)
             bond_pairs.add((min(i, j), max(i, j)))
 
-    # --- infer missing H–X bonds if Hs are isolated (common in heavy-only bo_dicts) ---
+    # --- infer missing H–X bonds (unchanged) ---
     if infer_H_bonds:
-        import numpy as np
         xyz = np.asarray(coords, float)
-        is_H: NDArray[np.bool_] = np.array(
-            [str(z).upper() == "H" for z in elements],
-            dtype=bool,
-        )
+        is_H = np.array([str(z).upper() == "H" for z in elements], dtype=bool)
         for h in range(N):
             if not is_H[h] or G.degree[h] > 0:
                 continue
@@ -3052,7 +3087,7 @@ def check_sterics_with_ff_embedding(
                 G.add_edge(h, j)
                 bond_pairs.add((min(h, j), max(h, j)))
 
-    # --- choose FF embedding for energy/force info ---
+    # --- choose per-atom embedding (we care mainly about ff_force here) ---
     energies = None
     if energy_source == 'ff_force':
         energies = per_atom_ff_force
@@ -3060,13 +3095,18 @@ def check_sterics_with_ff_embedding(
         energies = per_atom_nonbonded
     elif energy_source == 'vdw':
         energies = per_atom_vdw
-    if energies is not None:
-        energies = np.clip(np.asarray(energies, float), 0.0, None)
 
-    is_H = np.array(
-        [str(z).upper() == "H" for z in elements],
-        dtype=bool,
-    )
+    if energies is not None:
+        w_raw = np.clip(np.asarray(energies, float), 0.0, None)
+        # robust normalization -> [0,1]
+        p10 = np.percentile(w_raw, 10)
+        p90 = np.percentile(w_raw, 90)
+        denom = (p90 - p10) + 1e-12
+        w = np.clip((w_raw - p10) / denom, 0.0, 1.0)
+    else:
+        w = None
+
+    is_H = np.array([str(z).upper() == "H" for z in elements], dtype=bool)
 
     clashes = set()
     severity_scores = {}
@@ -3075,24 +3115,17 @@ def check_sterics_with_ff_embedding(
 
     for i in range(N):
         ri = vdw_radii.get(elements[i], default_vdw)
-        e_i = (energies[i] if (energies is not None and i < len(energies)) else 0.0)
-
-        # Precompute hop distances up to cutoff (safe; no NodeNotFound)
         hop_len = nx.single_source_shortest_path_length(G, i, cutoff=max_hops) if max_hops > 0 else {}
 
         for j in tree.query_ball_point(coords[i], (ri + max_vdw) * scale):
             if i >= j:
                 continue
-
-            # bonded? skip
             if (min(i, j), max(i, j)) in bond_pairs:
                 continue
-
-            # prune 1–2/1–3/1–4 neighbors (if requested)
             if max_hops > 0 and (j in hop_len) and (hop_len[j] in exclude_hops):
                 continue
 
-            # dynamic, H-aware clearance
+            # dynamic clearance
             if is_H[i] and is_H[j]:
                 clearance = clearance_HH
             elif is_H[i] or is_H[j]:
@@ -3104,26 +3137,29 @@ def check_sterics_with_ff_embedding(
             cutoff = (ri + rj) * scale
             d = float(np.linalg.norm(coords[i] - coords[j]))
             penetration = cutoff - d
+
+            # must exceed clearance at all
             if penetration <= clearance:
                 continue
 
-            # pair-energy gate (mean of per-atom energies/forces)
-            if energies is not None and pair_energy_threshold is not None and pair_energy_threshold > 0.0:
-                e_j = energies[j] if j < len(energies) else 0.0
-                mean_e = 0.5 * (e_i + e_j)
-                if mean_e < pair_energy_threshold:
-                    continue  # too “quiet” energetically → not a real clash
+            # --- NEW: E_geom ---
+            E_geom = max(0.0, penetration - clearance)
 
-            # severity beyond the per-pair clearance
-            sev = penetration - clearance
-            if energy_weighted and (energies is not None):
-                # gentle up-weighting; avoids runaway from a single spiky atom
-                e_j = energies[j] if j < len(energies) else 0.0
-                sev *= np.log1p(0.5 * (e_i + e_j))
+            # --- NEW: pair weighting from per-atom ff_force (or other embedding) ---
+            if w is not None and i < len(w) and j < len(w):
+                w_ij = 0.5 * (w[i] + w[j])
+            else:
+                w_ij = 0.0
+
+            E_pair = E_geom * ((epsilon + w_ij) ** gamma)
+
+            # --- NEW: gate on pair score ---
+            if E_pair < pair_score_threshold:
+                continue
 
             key = (i, j)
-            severity_scores[key] = float(sev)
             clashes.add(key)
+            severity_scores[key] = E_pair
 
     return sorted(clashes), severity_scores
 
@@ -3261,8 +3297,7 @@ def add_haptic_multibonds_to_metal(
 
     # 5) write back, rebuild OBMol bonds
     core3D.bo_dict = bo
-    core3D.convert2OBMol(force_clean=True)
-    replace_bonds(core3D.OBMol, core3D.bo_dict)
+    core3D = sync_obmol_from_bodict(core3D)
 
 
 def map_ligand_local_to_core_indices_by_range(core_before_count, core_after_count, ligand_len):
@@ -3393,8 +3428,7 @@ def add_haptic_multibonds_to_metal_for_core(
 
     # write back and sync to OBMol
     core3D.bo_dict = bo
-    core3D.convert2OBMol(force_clean=True)
-    replace_bonds(core3D.OBMol, core3D.bo_dict)
+    core3D = sync_obmol_from_bodict(core3D)
 
 
 def reapply_all_haptics_and_sync(core3D, bond_order=1, prefer_nearest_metal=True):

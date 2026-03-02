@@ -189,6 +189,7 @@ def generate_complex(
 
     # sterics report
     run_sterics: bool = True,
+    ann_bool: bool = True,
 ):
     """
     Build an complex from a list of ligands.
@@ -353,8 +354,7 @@ def generate_complex(
             # END NEW
 
             # clean bonds & optimize
-            core3D.convert2OBMol(force_clean=True)
-            replace_bonds(core3D.OBMol, core3D.bo_dict)
+            core3D = sync_obmol_from_bodict(core3D)
 
             optimized_coords = constrained_forcefield_optimization(
                 core3D,
@@ -376,8 +376,8 @@ def generate_complex(
                 if len(keep_piercings) != 0:
                     new_coords2, moved_atoms = correct_ring_piercings(core3D, keep_piercings)
                     core3D = set_new_coords(core3D, new_coords2)
-                    core3D.convert2OBMol(force_clean=True)
-                    replace_bonds(core3D.OBMol, core3D.bo_dict)
+                    core3D = sync_obmol_from_bodict(core3D)
+
 
                     optimized_coords = constrained_forcefield_optimization(
                         core3D,
@@ -386,8 +386,8 @@ def generate_complex(
                         ff_name=ff_name
                     )
                     core3D = set_new_coords(core3D, optimized_coords)
-                    core3D.convert2OBMol(force_clean=True)
-                    replace_bonds(core3D.OBMol, core3D.bo_dict)
+                    core3D = sync_obmol_from_bodict(core3D)
+
 
                     optimized_coords = constrained_forcefield_optimization(
                         core3D,
@@ -406,8 +406,8 @@ def generate_complex(
                         ff_name='GAFF'
                     )
                     core3D = set_new_coords(core3D, optimized_coords)
-                    core3D.convert2OBMol(force_clean=True)
-                    replace_bonds(core3D.OBMol, core3D.bo_dict)
+                    core3D = sync_obmol_from_bodict(core3D)
+
 
                     optimized_coords = constrained_forcefield_optimization(
                         core3D,
@@ -440,13 +440,6 @@ def generate_complex(
         )
         reapply_all_haptics_and_sync(core3D, bond_order=1, prefer_nearest_metal=True)
 
-    clashes = None
-    severity = None
-    # get sterics report
-    if run_sterics:
-        clashes, severity, fig = run_sterics_check(core3D, max_steps, ff_name)
-    else:
-        fig = None  # just to be explicit
 
     # NEW: produce the final ordered list of core indices per filled backbone site
     backbone_core_indices = [core for (site, core) in sorted(backbone_core_pairs, key=lambda x: x[0])]  # NEW
@@ -454,8 +447,8 @@ def generate_complex(
     # -------------------- FINAL: unconstrained FF relax --------------------
     try:
         # make sure OBMol matches our current coords/bonds before the FF pass
-        core3D.convert2OBMol(force_clean=True)
-        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        core3D = sync_obmol_from_bodict(core3D)
+
 
         optimized_coords = constrained_forcefield_optimization(
             core3D,
@@ -465,23 +458,26 @@ def generate_complex(
         )
         core3D = set_new_coords(core3D, optimized_coords)
         # re-sync OBMol again for downstream writeout / sterics
-        core3D.convert2OBMol(force_clean=True)
-        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        core3D = sync_obmol_from_bodict(core3D)
+
     except Exception as e:
         if verbose:
             print(f"[warn] Final unconstrained FF relax failed; keeping previous geometry. ({e})")
+
+
+    core3D, per_atom_ff_force, optimized_coords = enforce_metal_ligand_distances_and_optimize(core3D, None, backbone_core_indices)
+    clashes = None
+    severity = None
+    # get sterics report
+    if run_sterics:
+        clashes, severity, fig = run_sterics_check(core3D, per_atom_ff_force, optimized_coords)
+    else:
+        fig = None  # just to be explicit
+
+
     return core3D, clashes, severity, fig, batslist, backbone_core_indices
 
-def run_sterics_check(core3D, max_steps, ff_name):
-    optimized_coords, per_atom_ff_force = constrained_forcefield_optimization(
-        core3D,
-        max_steps=max_steps,
-        ff_name=ff_name,
-        return_per_atom_ff_force=True,
-        fd_delta=1e-3,
-        isolate_vdw=True,  # optional: emphasize sterics
-    )
-
+def run_sterics_check(core3D, per_atom_ff_force, optimized_coords):
     elements = [at.sym for at in core3D.atoms]
     tree = KDTree(optimized_coords)
 
@@ -500,6 +496,9 @@ def run_sterics_check(core3D, max_steps, ff_name):
         clearance_HX=0.30,
         clearance_HH=0.35,
         exclude_hops=(1,2,3),
+        epsilon=0.10,
+        gamma=2.0,
+        pair_score_threshold=0.05,
     )
 
     # NOTE: pass clashes (list of pairs) to steric_pairs
@@ -899,8 +898,8 @@ def enforce_metal_ligand_distances_and_optimize(
 
     # 6) Constrained FF optimization (freeze metals + donors)
     if constrain:
-        core3D.convert2OBMol(force_clean=True)
-        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        core3D = sync_obmol_from_bodict(core3D)
+
         frozen = sorted(set(metal_indices + donor_idxs))
         optimized = constrained_forcefield_optimization(core3D, frozen, max_steps=max_steps, ff_name=ff_name)
         core3D = set_new_coords(core3D, optimized)
@@ -910,24 +909,26 @@ def enforce_metal_ligand_distances_and_optimize(
         had_haptics = bool(getattr(core3D, "_haptic_groups_global", None) or [])
 
         # Always resync OBMol/bonds before FF
-        core3D.convert2OBMol(force_clean=True)
-        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        core3D = sync_obmol_from_bodict(core3D)
+
 
         # Ask for fully-unconstrained relax.
         # If haptics exist, constrained_forcefield_optimization will automatically
         # freeze metal atoms only and disable rotor search (per our new implementation).
-        optimized2 = constrained_forcefield_optimization(
+        optimized2, per_atom_ff_force = constrained_forcefield_optimization(
             core3D,
-            fixed_atom_indices=None,
-            max_steps=final_relax_steps,
+            max_steps=max_steps,
             ff_name=ff_name,
+            return_per_atom_ff_force=True,
+            fd_delta=1e-3,
+            isolate_vdw=True,  # optional: emphasize sterics
         )
         core3D = set_new_coords(core3D, optimized2)
 
         # Final sync and reapply haptics for visual consistency
-        core3D.convert2OBMol(force_clean=True)
-        replace_bonds(core3D.OBMol, core3D.bo_dict)
+        core3D = sync_obmol_from_bodict(core3D)
+
         if had_haptics:
             reapply_all_haptics_and_sync(core3D, bond_order=1, prefer_nearest_metal=True)
 
-    return core3D
+    return core3D, per_atom_ff_force, optimized2
