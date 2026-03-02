@@ -44,8 +44,8 @@ def constrained_forcefield_optimization_bu(
             # optional: print once
             # print("reapplied aromaticity; aromatic bonds now:", count_aromatic(mol.OBMol))
 
-    
-    
+
+
     ff = openbabel.OBForceField.FindForceField(ff_name)
     if ff is None:
         raise RuntimeError(f"Forcefield '{ff_name}' not found.")
