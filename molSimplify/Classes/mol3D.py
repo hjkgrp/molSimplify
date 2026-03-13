@@ -6535,6 +6535,7 @@ class mol3D:
             if '<TRIPOS>BOND' in line:
                 read_atoms = False
             if '<TRIPOS>SUBSTRUCTURE' in line:
+                read_atoms = False
                 read_bonds = False
             if '<TRIPOS>UNITY_ATOM_ATTR' in line:
                 read_atoms = False
