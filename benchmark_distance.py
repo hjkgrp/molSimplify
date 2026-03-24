@@ -15,9 +15,9 @@ def benchmark():
     N = 500  # Number of atoms
     # Generate random coordinates
     coords = np.random.rand(N, 3).tolist()
-    
+
     print(f"Benchmarking with N={N} atoms ({N*(N-1)//2} pairs)...")
-    
+
     # 1. Old distance function (nested loop)
     start_time = time.time()
     old_distances = []
@@ -26,7 +26,7 @@ def benchmark():
             old_distances.append(old_distance(coords[i], coords[j]))
     old_time = time.time() - start_time
     print(f"1. Old nested loop with np.array(): {old_time:.4f} seconds")
-    
+
     # 2. New distance function with math.dist (nested loop)
     start_time = time.time()
     new_distances = []
@@ -35,7 +35,7 @@ def benchmark():
             new_distances.append(new_distance(coords[i], coords[j]))
     new_time = time.time() - start_time
     print(f"2. New nested loop with math.dist:  {new_time:.4f} seconds ({old_time/new_time:.1f}x speedup)")
-    
+
     # 3. Fully vectorized with scipy pdist
     start_time = time.time()
     coords_array = np.array(coords) # Include array conversion overhead
