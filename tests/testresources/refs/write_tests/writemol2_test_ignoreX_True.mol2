@@ -1,5 +1,5 @@
 @<TRIPOS>MOLECULE
-writemol2_test_ignoreX_True.mol2
+test
 3	2	1
 SMALL
 PartialCharges
@@ -12,6 +12,6 @@ Generated from molSimplify
 3 H2	-5.72102  1.28799  -0.71735 H	1 RES1 0.0
 @<TRIPOS>BOND
 1 1 2 1
-1 1 3 1
+2 1 3 1
 @<TRIPOS>SUBSTRUCTURE
 1 RES1 3

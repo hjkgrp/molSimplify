@@ -708,6 +708,7 @@ class Mol3DIO:
                 bond_count += 1
             elif b2 > b1 and bondorders:
                 ss += f'{bond_count} {b1+1} {b2+1} {self.bo_dict[(int(b1), int(b2))]}\n'
+                bond_count += 1
         ss += '@<TRIPOS>SUBSTRUCTURE\n'
         unique_group_names = np.unique(atom_group_names)
         for i, name in enumerate(unique_group_names):
