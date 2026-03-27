@@ -7,7 +7,7 @@ class Mol3DGeometry:
     def get_coords_matrix(self) -> np.ndarray:
         """
         Returns an (N, 3) numpy array of all atom coordinates.
-        
+
         Returns
         -------
             coords : np.ndarray
@@ -20,7 +20,7 @@ class Mol3DGeometry:
     def get_mass_vector(self) -> np.ndarray:
         """
         Returns an (N,) numpy array of all atom masses.
-        
+
         Returns
         -------
             masses : np.ndarray
@@ -48,7 +48,7 @@ class Mol3DGeometry:
                 # Weighted average of coordinates
                 cm = np.sum(coords * masses[:, np.newaxis], axis=0) / total_mass
                 return list(cm)
-        
+
         print('ERROR: Center of mass calculation failed. Structure will be inaccurate.\n')
         return False
 
@@ -79,6 +79,6 @@ class Mol3DGeometry:
             coords = self.get_coords_matrix()
             cs = np.mean(coords, axis=0)
             return list(cs)
-        
+
         print('ERROR: Center of symmetry calculation failed. Structure will be inaccurate.\n')
         return False

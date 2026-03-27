@@ -6745,5 +6745,3 @@ class mol3D(Mol3DGeometry, Mol3DIO):
             type_vector.append(atom.name)
         type_vector = np.array(type_vector)
         return type_vector
-
-
