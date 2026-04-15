@@ -268,12 +268,14 @@ def run_build_complex(args):
     fixed_ligand_list = []
     pydentate_bool = pargs.pydentate
     if pydentate_bool:
-        from pydentate import pydentate_lite
+        pydentate_lite = None
         i = 0
         for ligand in ligand_list:
             if ligand[1] is None:
                 print(f"Missing coordinating atoms for ligand {ligands[i]}. \n Using pydentate prediction...")
                 try:
+                    if pydentate_lite is None:
+                        from pydentate import pydentate_lite
                     pydentate_results = pydentate_lite.pydentate_lite(ligands[i])
                     catoms = pydentate_results[1]
                     from molSimplify.Classes import mol2D
@@ -357,7 +359,7 @@ def run_build_complex(args):
         for length in ANN_bondl:
             bondl.append(length[1])
 
-    mol = enforce_metal_ligand_distances_and_optimize(mol, bondl, backbone_core_indices)
+    mol, _, _ = enforce_metal_ligand_distances_and_optimize(mol, bondl, backbone_core_indices)
 
     # -------------------- auto-build run name --------------------
     import re, hashlib
