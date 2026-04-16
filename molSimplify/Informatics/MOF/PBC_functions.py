@@ -14,7 +14,7 @@ from molSimplify.Informatics.MOF.atomic import (
 
 # PBC: periodic boundary conditions
 
-def readcif(name):
+def readcif(name, readstring=False):
     """
     Reads a cif file and returns information about its structure and composition.
 
@@ -22,6 +22,8 @@ def readcif(name):
     ----------
     name : str
         The path of the cif file to be read.
+    readstring : bool
+        Whether the name argument should be interpreted as a path or string.
 
     Returns
     -------
@@ -34,93 +36,97 @@ def readcif(name):
         The fractional positions of the atoms of the cif file. Shape is (number of atoms, 3).
 
     """
-    with open(name , 'r', errors='ignore') as fi: # Ignore takes care of unicode errors in some cifs.
-        EIF = fi.readlines()
-        cond = False
-        atom_props_count = 0
-        atomlines = []
-        counter = 0
-        cell_parameter_boundary=[0.0,0.0]
-        for line in EIF:
-            line_stripped=line.strip()
-            if (not line) or line_stripped.startswith("#"):
+    if readstring:
+        EIF = name.splitlines(keepends=True)
+    else:
+        with open(name , 'r', errors='ignore') as fi: # Ignore takes care of unicode errors in some cifs.
+            EIF = fi.readlines()
+        
+    cond = False
+    atom_props_count = 0
+    atomlines = []
+    counter = 0
+    cell_parameter_boundary=[0.0,0.0]
+    for line in EIF:
+        line_stripped=line.strip()
+        if (not line) or line_stripped.startswith("#"):
+            continue
+        line_splitted=line.split()
+
+        if line_stripped.startswith("_cell_length_a"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_a = float(temp)
+            cell_parameter_boundary[0] = counter + 1
+        elif line_stripped.startswith("_cell_length_b"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_b = float(temp)
+        elif line_stripped.startswith("_cell_length_c"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_c = float(temp)
+        elif line_stripped.startswith("_cell_angle_alpha"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_alpha = float(temp)
+        elif line_stripped.startswith("_cell_angle_beta"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_beta = float(temp)
+        elif line_stripped.startswith("_cell_angle_gamma"):
+            temp = line_splitted[1].replace(')','')
+            temp = temp.replace('(','')
+            cell_gamma = float(temp)
+            cell_parameter_boundary[1] = counter + 1
+
+        if line_stripped.startswith("_atom") :
+
+            if line_stripped == "_atom_site_label" or line_stripped == '_atom_site_type_symbol':
+                cond = True # We have entered the block with the desired atom information.
+                # The reason for the or is that the order of these lines can vary depending on cif.
+            if line_stripped == '_atom_site_type_symbol':
+                type_index = atom_props_count
+            elif line_stripped == "_atom_site_fract_x":
+                fracx_index = atom_props_count
+            elif line_stripped == "_atom_site_fract_y":
+                fracy_index = atom_props_count
+            elif line_stripped == "_atom_site_fract_z":
+                fracz_index = atom_props_count
+
+            if cond:
+                atom_props_count += 1 # Another atom property in the block we are interested in.
+
+        elif cond:
+
+            if len(line_splitted) == atom_props_count:
+                atomlines.append(line)
+            elif line == '\n':
+                # Allow for newlines between the _atom_ lines and the lines holding the atom information.
                 continue
-            line_splitted=line.split()
+            else:
+                # Don't need to keep looking through the file,
+                # since we've seen all the desired information for all atoms.
+                # We left the block.
+                break
 
-            if line_stripped.startswith("_cell_length_a"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_a = float(temp)
-                cell_parameter_boundary[0] = counter + 1
-            elif line_stripped.startswith("_cell_length_b"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_b = float(temp)
-            elif line_stripped.startswith("_cell_length_c"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_c = float(temp)
-            elif line_stripped.startswith("_cell_angle_alpha"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_alpha = float(temp)
-            elif line_stripped.startswith("_cell_angle_beta"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_beta = float(temp)
-            elif line_stripped.startswith("_cell_angle_gamma"):
-                temp = line_splitted[1].replace(')','')
-                temp = temp.replace('(','')
-                cell_gamma = float(temp)
-                cell_parameter_boundary[1] = counter + 1
+        counter += 1
 
-            if line_stripped.startswith("_atom") :
+    positions = []
+    atomtypes = []
+    for cn,at in enumerate(atomlines):
+        ln=at.strip().split()
+        positions.append([float(ln[fracx_index].replace('(','').replace(')','')),
+                          float(ln[fracy_index].replace('(','').replace(')','')),
+                          float(ln[fracz_index].replace('(','').replace(')',''))])
+        ln[type_index] = ln[type_index].strip("_")
+        at_type = ln[type_index]
+        at_type = at_type.capitalize()
+        atomtypes.append(at_type)
 
-                if line_stripped == "_atom_site_label" or line_stripped == '_atom_site_type_symbol':
-                    cond = True # We have entered the block with the desired atom information.
-                    # The reason for the or is that the order of these lines can vary depending on cif.
-                if line_stripped == '_atom_site_type_symbol':
-                    type_index = atom_props_count
-                elif line_stripped == "_atom_site_fract_x":
-                    fracx_index = atom_props_count
-                elif line_stripped == "_atom_site_fract_y":
-                    fracy_index = atom_props_count
-                elif line_stripped == "_atom_site_fract_z":
-                    fracz_index = atom_props_count
-
-                if cond:
-                    atom_props_count += 1 # Another atom property in the block we are interested in.
-
-            elif cond:
-
-                if len(line_splitted) == atom_props_count:
-                    atomlines.append(line)
-                elif line == '\n':
-                    # Allow for newlines between the _atom_ lines and the lines holding the atom information.
-                    continue
-                else:
-                    # Don't need to keep looking through the file,
-                    # since we've seen all the desired information for all atoms.
-                    # We left the block.
-                    break
-
-            counter += 1
-
-        positions = []
-        atomtypes = []
-        for cn,at in enumerate(atomlines):
-            ln=at.strip().split()
-            positions.append([float(ln[fracx_index].replace('(','').replace(')','')),
-                              float(ln[fracy_index].replace('(','').replace(')','')),
-                              float(ln[fracz_index].replace('(','').replace(')',''))])
-            ln[type_index] = ln[type_index].strip("_")
-            at_type = ln[type_index]
-            at_type = at_type.capitalize()
-            atomtypes.append(at_type)
-
-        cpar = np.array([cell_a,cell_b,cell_c,cell_alpha,cell_beta,cell_gamma])
-        positions = np.array(positions)
-        return cpar, atomtypes, positions
+    cpar = np.array([cell_a,cell_b,cell_c,cell_alpha,cell_beta,cell_gamma])
+    positions = np.array(positions)
+    return cpar, atomtypes, positions
 
 def compute_image_flag(cell, fcoord1, fcoord2):
     """
