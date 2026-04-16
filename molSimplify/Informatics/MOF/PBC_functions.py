@@ -41,7 +41,7 @@ def readcif(name, readstring=False):
     else:
         with open(name , 'r', errors='ignore') as fi: # Ignore takes care of unicode errors in some cifs.
             EIF = fi.readlines()
-        
+
     cond = False
     atom_props_count = 0
     atomlines = []
