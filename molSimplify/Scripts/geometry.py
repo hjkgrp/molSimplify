@@ -50,6 +50,8 @@ def normalize(u):
     return norm_vect
 
 
+import math
+
 def distance(r1, r2):
     """Euclidean distance between points.
 
@@ -66,9 +68,7 @@ def distance(r1, r2):
                 Euclidean distance between points 1 and 2.
 
     """
-    delta_v = np.array(r1) - np.array(r2)
-    dist = norm(delta_v)
-    return dist
+    return math.dist(r1, r2)
 
 
 def vecdiff(r1, r2):
