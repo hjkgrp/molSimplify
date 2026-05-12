@@ -9,7 +9,7 @@ molSimplify is an open source toolkit for the automated, first-principles screen
 
 ### via pip, from PyPI
 
-Starting with version `1.7.4`, molSimplify is available on [PyPI](https://pypi.org) enabled by the [openbabel-wheel](https://pypi.org/project/openbabel-wheel/) project. It is recommended to make a new conda environment with Python 3.8, activate it, and then run the following command:
+Starting with version `1.7.4`, molSimplify is available on [PyPI](https://pypi.org) enabled by the [openbabel-wheel](https://pypi.org/project/openbabel-wheel/) project. It is recommended to make a new conda environment with Python 3.10, activate it, and then run the following command:
 
 ```bash
 pip install molSimplify
@@ -25,7 +25,7 @@ To obtain the latest development version or if you plan to modify the code we re
    git clone https://github.com/hjkgrp/molSimplify.git
    cd molSimplify
    ```
-2. Create a new conda environment and specify the desired Python version (we currently recommend 3.8). You can change the environment name `molsimp` according to your preference.
+2. Create a new conda environment and specify the desired Python version (we currently recommend 3.10). You can change the environment name `molsimp` according to your preference.
 
    ```bash
    conda create --name molsimp python=3.8
@@ -56,7 +56,7 @@ The easiest way of installing molSimplify including optional dependencies such a
    cd molSimplify
    ```
 
-3. Create a new conda environment and specify the desired Python version (we currently recommend 3.8).
+3. Create a new conda environment and specify the desired Python version (we currently recommend 3.10 -- ***3.8 IS DEPRACATED***).
 
    ```bash
    conda create --name molsimp python=3.8
