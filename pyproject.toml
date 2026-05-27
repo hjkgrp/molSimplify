@@ -4,7 +4,7 @@ version = "v2.0.0"
 license = {file = "LICENSE"}
 readme = "README.md"
 dependencies = [
-    "openbabel-wheel",
+    "openbabel>=3.2.0",
     "numpy",
     "scipy",
     "pandas",
