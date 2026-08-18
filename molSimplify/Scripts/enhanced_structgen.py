@@ -479,7 +479,6 @@ def generate_complex(
         raise RuntimeError("generate_complex failed to initialize core3D before final optimization/sterics.")
 
     # -------------------- FINAL: unconstrained FF relax --------------------
-    optimized_coords = np.array([at.coords() for at in core3D.atoms], dtype=float)
     per_atom_ff_force = None
     try:
         # make sure OBMol matches our current coords/bonds before the FF pass
