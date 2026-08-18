@@ -191,7 +191,7 @@ def generate_complex(
 
     # NEW
     placement_beam_topk: int = 3,
-    placement_early_exit_score: float | None = 0.25,
+    placement_early_exit_score: Optional[float] = 0.25,
     repair_ff_steps: int = 250,
     max_ring_piercing_retries: int = 1,
     bail_if_still_bad_after_repair: bool = False,
@@ -938,6 +938,11 @@ def enforce_metal_ligand_distances_and_optimize(
         new_coords[donor_idx] = M + direction * target_dist
     core3D = set_new_coords(core3D, new_coords)
 
+    # Fallbacks so the return below is always well-defined, even if both
+    # `constrain` and `final_relax` are disabled by the caller.
+    per_atom_ff_force = None
+    optimized2 = new_coords
+
     # 6) Constrained FF optimization (freeze metals + donors)
     if constrain:
         core3D = sync_obmol_from_bodict(core3D)
@@ -945,6 +950,7 @@ def enforce_metal_ligand_distances_and_optimize(
         frozen = sorted(set(metal_indices + donor_idxs))
         optimized = constrained_forcefield_optimization(core3D, frozen, max_steps=max_steps, ff_name=ff_name)
         core3D = set_new_coords(core3D, optimized)
+        optimized2 = optimized
 
     # 7) Final FF relaxation (haptics-aware behavior lives inside constrained_forcefield_optimization)
     if final_relax:
