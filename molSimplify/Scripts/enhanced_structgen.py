@@ -177,20 +177,25 @@ def generate_complex(
     smart_generation: bool = True,
     verbose: bool = False,
 
-    orientation_weight: float = 6.0,   # key knob
+    orientation_weight: float = 6.0,
     orientation_k_neighbors: int = 4,
     orientation_hinge: float = 0.5,
     orientation_cap: float = 1.0,
 
-    # existing multibond controls (already args)
     multibond_haptics: bool = True,
     multibond_bond_order: int = 1,
     multibond_prefer_nearest_metal: bool = True,
 
-    # sterics report
     run_sterics: bool = True,
     ann_bool: bool = True,
-):
+
+    # NEW
+    placement_beam_topk: int = 3,
+    placement_early_exit_score: Optional[float] = 0.25,
+    repair_ff_steps: int = 250,
+    max_ring_piercing_retries: int = 1,
+    bail_if_still_bad_after_repair: bool = False,
+    ):
     """
     Build an complex from a list of ligands.
 
@@ -198,6 +203,22 @@ def generate_complex(
     If fixed_bounds is None, it is computed from e_d as:
         (-e_d, e_d, -e_d, e_d, -e_d, e_d)
     """
+
+    def _bad_state_summary(m):
+        overlap, same_order = check_badjob(m)
+        piercings = detect_ring_piercing(
+            m,
+            angstrom_threshold=2.3,
+            edge_buffer=0.15,
+            inplane_pad=0.35,
+        )
+        keep_piercings = [p for p in piercings if 0 not in p]
+        return overlap, same_order, keep_piercings
+
+    def _hopeless(m, max_piercings=1):
+        overlap, same_order, keep_piercings = _bad_state_summary(m)
+        return overlap or (not same_order) or (len(keep_piercings) > max_piercings)
+
     # Compute fixed bounds if not provided (preserves old behavior)
     if fixed_bounds is None:
         fixed_bounds = (-1*e_d, 1*e_d, -1*e_d, 1*e_d, -1*e_d, 1*e_d)
@@ -211,6 +232,7 @@ def generate_complex(
     batslist = []
     # NEW: collect (backbone_site_1based, core_atom_index_1based) for every filled site
     backbone_core_pairs = []  # NEW
+    backbone_core_indices = []
 
     iteration = 0
     for ligand in ligand_list:
@@ -275,6 +297,9 @@ def generate_complex(
                 vis_view=vis_view,
                 vis_prefix=vis_prefix,
                 fixed_bounds=fixed_bounds,
+                beam_topk=placement_beam_topk,
+                early_exit_score=placement_early_exit_score,
+                verbose=verbose,
             )
 
             # mark sites occupied
@@ -367,28 +392,44 @@ def generate_complex(
 
             # smart generation / repair
             if smart_generation:
-                overlap, same_order = check_badjob(core3D)
-                if verbose:
-                    print(f"Overlap: {overlap}, Ordering: {same_order}\n")
+                overlap, same_order, keep_piercings = _bad_state_summary(core3D)
 
-                piercings = detect_ring_piercing(core3D, angstrom_threshold=2.3, edge_buffer=0.15, inplane_pad=0.35)
-                keep_piercings = [p for p in piercings if 0 not in p]
+                if verbose:
+                    print(f"Overlap: {overlap}, Ordering: {same_order}, Ring piercings: {len(keep_piercings)}")
+
+                repaired = False
+
+                # Prefer ring-piercing correction first if present
                 if len(keep_piercings) != 0:
                     new_coords2, moved_atoms = correct_ring_piercings(core3D, keep_piercings)
                     core3D = set_new_coords(core3D, new_coords2)
                     core3D = sync_obmol_from_bodict(core3D)
 
-
                     optimized_coords = constrained_forcefield_optimization(
                         core3D,
                         get_all_bonded_atoms_bonded_to_metal(core3D) + moved_atoms,
-                        max_steps=250,
+                        max_steps=repair_ff_steps,
                         ff_name=ff_name
                     )
                     core3D = set_new_coords(core3D, optimized_coords)
                     core3D = sync_obmol_from_bodict(core3D)
 
+                    repaired = True
 
+                elif overlap is True:
+                    optimized_coords = constrained_forcefield_optimization(
+                        core3D,
+                        get_all_bonded_atoms_bonded_to_metal(core3D),
+                        max_steps=repair_ff_steps,
+                        ff_name="GAFF"
+                    )
+                    core3D = set_new_coords(core3D, optimized_coords)
+                    core3D = sync_obmol_from_bodict(core3D)
+
+                    repaired = True
+
+                # one normal constrained cleanup after repair
+                if repaired:
                     optimized_coords = constrained_forcefield_optimization(
                         core3D,
                         get_all_bonded_atoms_bonded_to_metal(core3D),
@@ -396,26 +437,16 @@ def generate_complex(
                         ff_name=ff_name
                     )
                     core3D = set_new_coords(core3D, optimized_coords)
+                    core3D = sync_obmol_from_bodict(core3D)
                     metals_structures = copy.deepcopy(metals_structures_copy)
 
-                if overlap is True:
-                    optimized_coords = constrained_forcefield_optimization(
-                        core3D,
-                        get_all_bonded_atoms_bonded_to_metal(core3D),
-                        max_steps=250,
-                        ff_name='GAFF'
-                    )
-                    core3D = set_new_coords(core3D, optimized_coords)
-                    core3D = sync_obmol_from_bodict(core3D)
-
-
-                    optimized_coords = constrained_forcefield_optimization(
-                        core3D,
-                        get_all_bonded_atoms_bonded_to_metal(core3D),
-                        max_steps=max_steps,
-                        ff_name=ff_name
-                    )
-                    core3D = set_new_coords(core3D, optimized_coords)
+                # do not return early; always continue through final cleanup/export path
+                if bail_if_still_bad_after_repair and _hopeless(
+                    core3D,
+                    max_piercings=max_ring_piercing_retries,
+                ):
+                    if verbose:
+                        print("[bad-after-repair] continuing anyway so final bonding/sync/export remain valid")
 
             # OPTIONAL: add η^n bonds again after optimization (idempotent; keeps visuals consistent)
             if multibond_haptics and all_haptic_groups_global:
@@ -444,7 +475,11 @@ def generate_complex(
     # NEW: produce the final ordered list of core indices per filled backbone site
     backbone_core_indices = [core for (site, core) in sorted(backbone_core_pairs, key=lambda x: x[0])]  # NEW
 
+    if core3D is None:
+        raise RuntimeError("generate_complex failed to initialize core3D before final optimization/sterics.")
+
     # -------------------- FINAL: unconstrained FF relax --------------------
+    per_atom_ff_force = None
     try:
         # make sure OBMol matches our current coords/bonds before the FF pass
         core3D = sync_obmol_from_bodict(core3D)
@@ -470,14 +505,19 @@ def generate_complex(
     severity = None
     # get sterics report
     if run_sterics:
-        clashes, severity, fig = run_sterics_check(core3D, per_atom_ff_force, optimized_coords)
+        clashes, severity, fig = run_sterics_check(
+            core3D,
+            per_atom_ff_force,
+            optimized_coords,
+            make_figure=False,
+        )
     else:
         fig = None  # just to be explicit
 
 
     return core3D, clashes, severity, fig, batslist, backbone_core_indices
 
-def run_sterics_check(core3D, per_atom_ff_force, optimized_coords):
+def run_sterics_check(core3D, per_atom_ff_force, optimized_coords, make_figure=True):
     elements = [at.sym for at in core3D.atoms]
     tree = KDTree(optimized_coords)
 
@@ -502,13 +542,15 @@ def run_sterics_check(core3D, per_atom_ff_force, optimized_coords):
     )
 
     # NOTE: pass clashes (list of pairs) to steric_pairs
-    fig = visualize_molecule(
-        optimized_coords,
-        bond_dict=core3D.bo_dict,
-        steric_pairs=clashes,
-        severity_scores=severity,
-        severity_threshold=0.05
-    )
+    fig = None
+    if make_figure:
+        fig = visualize_molecule(
+            optimized_coords,
+            bond_dict=core3D.bo_dict,
+            steric_pairs=clashes,
+            severity_scores=severity,
+            severity_threshold=0.05
+        )
     return clashes, severity, fig
 
 def visualize_molecule(coords, bond_dict=None, steric_pairs=None, severity_scores=None, severity_threshold=0.05):
@@ -695,7 +737,7 @@ if __name__ == "__main__":
         vis_view = (22, -60)
 
     # Run build
-    mol = generate_complex(
+    mol, clash, severity, fig, batslist, backbone_core_indices = generate_complex(
         ligand_list,
         metals=args.metal,
         voxel_size=args.voxel_size,
@@ -896,6 +938,11 @@ def enforce_metal_ligand_distances_and_optimize(
         new_coords[donor_idx] = M + direction * target_dist
     core3D = set_new_coords(core3D, new_coords)
 
+    # Fallbacks so the return below is always well-defined, even if both
+    # `constrain` and `final_relax` are disabled by the caller.
+    per_atom_ff_force = None
+    optimized2 = new_coords
+
     # 6) Constrained FF optimization (freeze metals + donors)
     if constrain:
         core3D = sync_obmol_from_bodict(core3D)
@@ -903,6 +950,7 @@ def enforce_metal_ligand_distances_and_optimize(
         frozen = sorted(set(metal_indices + donor_idxs))
         optimized = constrained_forcefield_optimization(core3D, frozen, max_steps=max_steps, ff_name=ff_name)
         core3D = set_new_coords(core3D, optimized)
+        optimized2 = optimized
 
     # 7) Final FF relaxation (haptics-aware behavior lives inside constrained_forcefield_optimization)
     if final_relax:
