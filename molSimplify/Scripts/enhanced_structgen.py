@@ -475,6 +475,9 @@ def generate_complex(
     # NEW: produce the final ordered list of core indices per filled backbone site
     backbone_core_indices = [core for (site, core) in sorted(backbone_core_pairs, key=lambda x: x[0])]  # NEW
 
+    if core3D is None:
+        raise RuntimeError("generate_complex failed to initialize core3D before final optimization/sterics.")
+
     # -------------------- FINAL: unconstrained FF relax --------------------
     try:
         # make sure OBMol matches our current coords/bonds before the FF pass
