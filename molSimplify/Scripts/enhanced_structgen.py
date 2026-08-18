@@ -202,7 +202,7 @@ def generate_complex(
     Parameters mirror prior tuned constants; defaults preserve earlier behavior.
     If fixed_bounds is None, it is computed from e_d as:
         (-e_d, e_d, -e_d, e_d, -e_d, e_d)
-    """        
+    """
 
     def _bad_state_summary(m):
         overlap, same_order = check_badjob(m)
@@ -218,7 +218,7 @@ def generate_complex(
     def _hopeless(m, max_piercings=1):
         overlap, same_order, keep_piercings = _bad_state_summary(m)
         return overlap or (not same_order) or (len(keep_piercings) > max_piercings)
-        
+
     # Compute fixed bounds if not provided (preserves old behavior)
     if fixed_bounds is None:
         fixed_bounds = (-1*e_d, 1*e_d, -1*e_d, 1*e_d, -1*e_d, 1*e_d)
@@ -447,7 +447,7 @@ def generate_complex(
                 ):
                     if verbose:
                         print("[bad-after-repair] continuing anyway so final bonding/sync/export remain valid")
-                        
+
             # OPTIONAL: add η^n bonds again after optimization (idempotent; keeps visuals consistent)
             if multibond_haptics and all_haptic_groups_global:
                 add_haptic_multibonds_to_metal_for_core(
