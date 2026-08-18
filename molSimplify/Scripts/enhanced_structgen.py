@@ -497,7 +497,6 @@ def generate_complex(
         core3D = sync_obmol_from_bodict(core3D)
 
     except Exception as e:
-        optimized_coords = np.array([at.coords() for at in core3D.atoms], dtype=float)
         if verbose:
             print(f"[warn] Final unconstrained FF relax failed; keeping previous geometry. ({e})")
 
